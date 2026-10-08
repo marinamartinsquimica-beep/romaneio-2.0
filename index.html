@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Romaneio Paletes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b1320">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="vendor/zxing.min.js"></script>
+<script src="jsQR.js"></script>
+<script src="export-utils.js"></script>
+<script src="qr-parser.js"></script>
+<style>
+:root{--bg:#07111d;--panel:#ffffff;--text:#0f172a;--muted:#64748b;--line:#d9e2ec;--input:#fbfdff;--input-disabled:#edf2f7;--primary:#0875f5;--primary2:#055fc9;--success:#2eba4f;--success2:#159138;--danger:#ff3030;--danger2:#d71919;--yellow:#ffc107;--shadow:0 22px 50px rgba(0,0,0,.30);--radius:18px}*{box-sizing:border-box}html{scroll-behavior:smooth;width:100%;overflow-x:hidden}body{overflow-x:hidden}img,table,input,button{max-width:100%}body{margin:0;min-height:100vh;font-family:Arial,Roboto,sans-serif;background:radial-gradient(circle at top left,rgba(8,117,209,.30),transparent 30%),linear-gradient(135deg,#06111d 0%,#11171f 48%,#17191d 100%);color:var(--text);padding:18px 18px 80px}.app{width:100%;max-width:1220px;margin:0 auto}.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px;margin-bottom:18px;border-radius:24px;background:linear-gradient(135deg,rgba(15,30,45,.92),rgba(39,39,39,.94));border:1px solid rgba(255,255,255,.14);box-shadow:0 22px 48px rgba(0,0,0,.26);backdrop-filter:blur(14px)}.brand{display:flex;align-items:center;gap:16px;color:#fff}.brand-icon{width:58px;height:58px;border-radius:18px;background:#fff;padding:5px;box-shadow:0 12px 30px rgba(255,193,7,.28);object-fit:contain}.brand h1{margin:0;font-size:30px;line-height:1.05}.brand p{margin:7px 0 0;color:rgba(255,255,255,.72);font-size:15px}.status-pill{color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);padding:12px 18px;border-radius:999px;font-weight:800;white-space:nowrap;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}.dashboard{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}.metric{background:rgba(255,255,255,.98);border-radius:18px;padding:16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:13px}.metric .ico{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:25px;background:#fff4ce}.metric:nth-child(2) .ico{background:#e0f2fe}.metric:nth-child(3) .ico{background:#dcfce7}.metric:nth-child(4) .ico{background:#ede9fe}.metric b{display:block;font-size:27px;color:#075db1;line-height:1}.metric span{display:block;margin-top:5px;color:var(--muted);font-weight:700;font-size:13px}.layout{display:grid;grid-template-columns:minmax(310px,420px) 1fr;gap:18px;align-items:start}.card{background:rgba(255,255,255,.98);border:1px solid rgba(255,255,255,.70);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}.form-card{position:sticky;top:18px}.card-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}h2{margin:0;font-size:24px;color:var(--text);letter-spacing:-.3px}.badge{display:inline-flex;align-items:center;gap:7px;padding:10px 14px;border-radius:14px;color:#075db1;background:#e0f2fe;font-size:14px;font-weight:800}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}.full{grid-column:1/-1}.input-group{margin-bottom:14px}label{display:block;font-size:13px;font-weight:800;color:#233047;margin-bottom:8px}input{width:100%;height:45px;padding:10px 14px;border-radius:11px;border:1px solid #cfd8e3;background:var(--input);color:#111827;font-size:15px;outline:none;transition:.2s ease;box-shadow:inset 0 1px 2px rgba(15,23,42,.03)}input:focus{border-color:var(--primary);background:#fff;box-shadow:0 0 0 4px rgba(8,117,209,.12)}input:disabled{color:#667085;background:var(--input-disabled)}.actions{display:grid;gap:8px;margin-top:6px}button{width:100%;padding:13px 20px;border:0;border-radius:10px;color:#fff;font-size:16px;font-weight:800;cursor:pointer;transition:.2s ease}button:hover{transform:translateY(-1px);filter:brightness(1.03)}button:active{transform:translateY(0)}.btn-primary{background:linear-gradient(180deg,var(--primary),var(--primary2));box-shadow:0 10px 20px rgba(8,117,209,.24),inset 0 1px 0 rgba(255,255,255,.20)}.btn-blue{background:linear-gradient(180deg,#f59e0b,#d97706);box-shadow:0 10px 20px rgba(245,158,11,.22),inset 0 1px 0 rgba(255,255,255,.20)}.btn-danger{background:linear-gradient(180deg,var(--danger),var(--danger2));box-shadow:0 10px 20px rgba(239,45,45,.22),inset 0 1px 0 rgba(255,255,255,.20)}#btnExcel{background:linear-gradient(180deg,var(--success),var(--success2));box-shadow:0 10px 20px rgba(34,164,71,.24),inset 0 1px 0 rgba(255,255,255,.20)}.table-container{position:relative;overflow-x:auto;border-radius:13px;border:1px solid var(--line);background:#fff}.table-container.is-empty{min-height:340px}table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;min-width:840px;color:var(--text)}th,td{border:0;border-bottom:1px solid #edf2f7;padding:14px 12px;text-align:center;font-size:13px;white-space:nowrap}th{position:sticky;top:0;z-index:2;background:#f1f5f9;color:#172238;font-size:12px;letter-spacing:.4px;font-weight:900;cursor:pointer}tbody tr:nth-child(even){background:#f8fafc}tbody tr:hover{background:#eef6ff}tbody tr:last-child td{border-bottom:0}td .btn-blue,td .btn-danger{width:auto;padding:8px 10px;margin:2px;font-size:12px;border-radius:9px;box-shadow:none}.empty-state{display:none;min-height:275px;align-items:center;justify-content:center;flex-direction:column;text-align:center;color:#0f172a;padding:24px}.empty-icon{width:86px;height:86px;border-radius:50%;border:1px solid #d4dde8;display:flex;align-items:center;justify-content:center;color:#8a94a3;font-size:42px;margin-bottom:18px}.empty-state strong{font-size:20px;margin-bottom:8px}.empty-state span{color:#334155;font-size:16px;line-height:1.45;max-width:390px}.footer{margin-top:18px;padding:12px 18px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);color:rgba(255,255,255,.76);text-align:center;font-size:14px;box-shadow:0 14px 32px rgba(0,0,0,.18)}.footer strong{color:#fff}.fab{position:fixed;right:16px;bottom:18px;width:50px;height:50px;border-radius:50%;padding:0;background:linear-gradient(180deg,var(--primary),var(--primary2));box-shadow:0 12px 26px rgba(8,117,245,.32);font-size:24px}::-webkit-scrollbar{height:12px;width:12px}::-webkit-scrollbar-track{background:rgba(226,232,240,.8);border-radius:999px}::-webkit-scrollbar-thumb{background:#9aa0a6;border-radius:999px}@media(max-width:980px){.dashboard{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.form-card{position:static}}@media(max-width:620px){body{padding:8px 8px 74px;width:100%;min-width:0}.app{max-width:100%;width:100%;min-width:0}.topbar{padding:12px;border-radius:18px;align-items:flex-start;flex-direction:column}.brand{gap:10px;width:100%;min-width:0}.brand-icon{width:48px;height:48px;border-radius:15px}.brand h1{font-size:22px}.brand p{font-size:12px}.status-pill{display:none}.dashboard{grid-template-columns:1fr;gap:8px;margin-bottom:10px}.metric{padding:10px;gap:9px;border-radius:15px}.metric .ico{width:36px;height:36px;font-size:19px}.metric b{font-size:20px}.metric span{font-size:12px}.layout{gap:10px}.card{padding:12px;border-radius:16px;min-width:0}.form-grid{grid-template-columns:1fr;gap:0}.card-header{align-items:flex-start;gap:8px;flex-wrap:wrap;margin-bottom:12px}.badge{font-size:12px;padding:7px 9px}h2{font-size:20px}label{font-size:12px;margin-bottom:6px}.input-group{margin-bottom:10px}input{height:46px;font-size:16px;padding:9px 11px;min-width:0}button{min-height:45px;padding:11px 12px;font-size:15px}.actions{gap:7px}.empty-state{min-height:240px}.footer{font-size:12px;padding:10px;margin-top:10px}.fab{bottom:12px;right:10px;width:46px;height:46px}}
+
+.flow-card{grid-column:1/-1;text-align:center}.flow-card p{color:var(--muted);margin:6px 0 18px}.initial-pallet-setting{max-width:300px;margin:0 auto 16px;text-align:left}.initial-pallet-setting small{display:block;margin-top:6px;color:var(--muted);line-height:1.35}.flow-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.flow-actions button{min-height:54px}.btn-secondary{background:linear-gradient(180deg,#475569,#334155)}.update-banner,.install-banner{position:fixed;z-index:20;left:50%;bottom:18px;transform:translate(-50%,calc(100% + 40px));width:min(94vw,560px);display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:#fff;border:1px solid #cbd5e1;box-shadow:0 18px 45px rgba(0,0,0,.35);color:#0f172a;opacity:0;pointer-events:none;transition:.25s ease}.update-banner.show,.install-banner.show{transform:translate(-50%,0);opacity:1;pointer-events:auto}.update-banner div,.install-banner div{flex:1;text-align:left}.update-banner strong,.update-banner span,.install-banner strong,.install-banner span{display:block;color:#0f172a}.update-banner span,.install-banner span{margin-top:3px;color:#334155}.update-banner button,.install-banner button{width:auto;min-width:110px;background:#075db1;color:#fff;border:2px solid #075db1}.update-banner .banner-close,.install-banner .banner-close{min-width:44px;width:44px;padding:10px;background:#e2e8f0;color:#0f172a;border-color:#94a3b8}.qr-panel{margin-bottom:15px;padding:12px;border-radius:14px;background:#07111d;color:#fff}.qr-video{display:block;width:100%;max-height:360px;border-radius:10px;background:#000;object-fit:cover}.qr-status{margin:10px 0 0;line-height:1.4}.qr-summary{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}.qr-summary div{padding:10px;border:1px solid var(--line);border-radius:10px;background:#f8fafc}.qr-summary strong,.qr-summary span{display:block}.qr-summary strong{font-size:12px;color:var(--muted);margin-bottom:4px}.palete-andamento{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:14px;padding:11px;border-radius:11px;background:#e0f2fe;color:#075db1;font-weight:800}.qr-mode .manual-field{display:none}.qr-scanning .qr-operational-field,.qr-scanning #acoesComposicao{display:none}.camera-actions{display:flex;gap:8px;margin-top:10px}.camera-actions button{font-size:14px}.hidden{display:none!important}@media(max-width:620px){.flow-actions,.qr-summary{grid-template-columns:1fr}.flow-actions button{min-height:58px}.camera-actions{flex-direction:column}.update-banner,.install-banner{align-items:stretch;flex-wrap:wrap;bottom:8px}.update-banner div,.install-banner div{flex-basis:100%}.update-banner button,.install-banner button{flex:1}}
+
+#btnExcelInicial,#btnExcelCaminhao{background:linear-gradient(180deg,var(--success),var(--success2));box-shadow:0 10px 20px rgba(34,164,71,.24),inset 0 1px 0 rgba(255,255,255,.20)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}.tab-button{background:#334155;border:2px solid rgba(255,255,255,.22)}.tab-button.active{background:linear-gradient(180deg,var(--primary),var(--primary2));border-color:#60a5fa}.truck-layout{display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:18px;align-items:start}.truck-entries{grid-column:1/-1}.truck-help{margin:0 0 16px;color:#475569;line-height:1.45}.truck-pallets{display:grid;gap:8px}.truck-pallet{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:11px;background:#f8fafc}.truck-pallet input{width:22px;height:22px;margin:0}.truck-pallet strong,.truck-pallet span{display:block}.truck-pallet span{margin-top:3px;color:#64748b;font-size:12px}.truck-pallet .truck-current{font-size:12px;font-weight:800;color:#075db1}.truck-empty{padding:28px;text-align:center;color:#64748b}.truck-summary{margin-top:12px;padding:11px;border-radius:11px;background:#e0f2fe;color:#075db1;font-weight:800}@media(max-width:980px){.truck-layout{grid-template-columns:1fr}}@media(max-width:620px){.tabs{grid-template-columns:1fr;gap:7px;margin-bottom:10px}.truck-pallet{grid-template-columns:auto 1fr}.truck-pallet .truck-current{grid-column:2}}
+.recovery-overlay{position:fixed;z-index:30;inset:0;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(3,10,18,.72)}.recovery-overlay.show{display:flex}.recovery-dialog{width:min(94vw,520px);padding:22px;border-radius:18px;background:#fff;color:#0f172a;box-shadow:0 24px 70px rgba(0,0,0,.45)}.recovery-dialog h2{margin-bottom:10px}.recovery-dialog p{margin:0 0 16px;color:#334155;line-height:1.5}.recovery-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}.recovery-metrics div{padding:11px;border-radius:11px;background:#eef6ff;text-align:center}.recovery-metrics strong,.recovery-metrics span{display:block}.recovery-metrics strong{font-size:12px;color:#475569}.recovery-metrics span{margin-top:4px;font-size:20px;font-weight:900;color:#075db1}.recovery-actions{display:grid;gap:9px}.recovery-actions .finish-open-pallet{background:linear-gradient(180deg,var(--success),var(--success2))}@media(max-width:620px){.recovery-dialog{padding:17px}.recovery-metrics{grid-template-columns:1fr}.recovery-metrics div{display:flex;align-items:center;justify-content:space-between}.recovery-metrics span{margin:0;font-size:18px}}
+.truck-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.truck-stat{padding:10px;border-radius:10px;background:#f1f5f9}.truck-stat strong,.truck-stat span{display:block}.truck-stat strong{font-size:20px;color:#075db1}.truck-stat span{margin-top:3px;font-size:11px;font-weight:800;color:#475569}.truck-select-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.truck-pallet.selected{background:#e0f2fe;border-color:#3b82f6}.truck-pallet.available{background:#f0fdf4;border-color:#86efac}.truck-pallet.open{background:#fff7ed;border-color:#fb923c}.truck-pallet.open .truck-current{color:#c2410c}.btn-finish-truck{background:linear-gradient(180deg,var(--success),var(--success2));box-shadow:0 10px 20px rgba(34,164,71,.24)}.search-romaneio{margin-bottom:12px}.history-actions{display:grid;gap:8px;min-width:170px}.history-actions button,.history-actions .btn-blue,.history-actions .btn-danger{display:block;width:100%;min-height:45px;margin:0;padding:11px 12px;border-radius:10px;font-size:14px;box-shadow:0 8px 16px rgba(15,23,42,.14)}.destination-panel{grid-column:1/-1}.destination-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}.destination-card{padding:14px;border:1px solid #bfdbfe;border-radius:14px;background:#f8fbff}.destination-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}.destination-card-header strong{font-size:18px;overflow-wrap:anywhere}.destination-card-header span{color:#475569;font-size:12px;font-weight:800;text-align:right}.destination-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}.destination-actions button{font-size:13px;padding:10px}.destination-pallets{display:grid;gap:7px}.destination-pallet{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;padding:9px;border-radius:10px;background:#fff;border:1px solid #dbeafe}.destination-pallet strong,.destination-pallet span{display:block}.destination-pallet span{margin-top:3px;color:#64748b;font-size:12px}.destination-pallet button{width:auto;min-width:120px;padding:9px;font-size:12px}@media(max-width:620px){.truck-stats{grid-template-columns:1fr 1fr}.truck-select-actions,.destination-actions{grid-template-columns:1fr}.destination-grid{grid-template-columns:1fr}.destination-pallet{grid-template-columns:1fr}.destination-pallet button{width:100%}#tabelaHistoricoCaminhoes,#tabelaHistoricoCaminhoes tbody,#tabelaHistoricoCaminhoes tr,#tabelaHistoricoCaminhoes td{display:block;width:100%}#tabelaHistoricoCaminhoes{min-width:0}#tabelaHistoricoCaminhoes thead{display:none}#tabelaHistoricoCaminhoes tr{margin:10px 0;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}#tabelaHistoricoCaminhoes td{display:flex;justify-content:space-between;gap:12px;text-align:right;padding:8px;border-bottom:1px solid #edf2f7;white-space:normal}#tabelaHistoricoCaminhoes td:before{content:attr(data-label);font-weight:900;color:#475569;text-align:left}#tabelaHistoricoCaminhoes td:last-child{display:block;text-align:center;border-bottom:0}.history-actions:before{display:block;margin-bottom:8px}.history-actions button{min-height:48px;font-size:15px}}
+.destination-panel{grid-column:2}#abaTotal>.card:last-child{grid-column:1/-1}.dashboard{grid-template-columns:repeat(5,1fr)}select{width:100%;height:45px;padding:10px 14px;border-radius:11px;border:1px solid #cfd8e3;background:#fbfdff;color:#111827;font-size:15px;outline:none}select:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(8,117,209,.12)}.footer-credit{display:block;margin-top:7px;color:#fff;font-weight:800}.destination-actions{grid-template-columns:repeat(3,1fr)}@media(max-width:980px){.destination-panel{grid-column:1}.dashboard{grid-template-columns:repeat(2,1fr)}}@media(max-width:620px){.dashboard{grid-template-columns:1fr}.destination-actions{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio Paletes</h1><p>Sistema local para controle de paletes</p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
+<section class="dashboard"><div class="metric"><div class="ico">📋</div><div><b id="dashRegistros">0</b><span id="dashRegistrosLabel">Registros totais</span></div></div><div class="metric"><div class="ico">📦</div><div><b id="dashCaixas">0</b><span id="dashCaixasLabel">Caixas totais</span></div></div><div class="metric"><div class="ico">🧱</div><div><b id="dashPaletes">0</b><span id="dashPaletesLabel">Paletes totais</span></div></div><div class="metric"><div class="ico">📍</div><div><b id="dashDestinos">0</b><span id="dashDestinosLabel">Destinos totais</span></div></div><div class="metric"><div class="ico">🕒</div><div><b id="dashUltimo">--</b><span>Último registro</span></div></div></section>
+<nav class="tabs" aria-label="Abas do romaneio"><button id="tabTotal" class="tab-button active" type="button" onclick="abrirAba('total')">ROMANEIO TOTAL</button><button id="tabCaminhao" class="tab-button" type="button" onclick="abrirAba('caminhao')">ROMANEIO POR CAMINHÃO</button></nav>
+<main class="layout" id="abaTotal">
+<section class="card flow-card" id="escolhaFluxo"><div class="card-header"><h2>Adicionar palete</h2><span class="badge">Nova entrada</span></div><p>Leia a etiqueta do palete ou utilize o preenchimento manual.</p><div class="initial-pallet-setting"><label for="campoPaleteInicial">PALETE INICIAL</label><input id="campoPaleteInicial" type="number" min="1" step="1" inputmode="numeric" placeholder="Vazio = próximo palete ou palete 1" onchange="salvarPaleteInicial()"><small>Informe qualquer número para iniciar por ele; depois o app segue pelos próximos números livres.</small></div><div class="flow-actions"><button class="btn-primary" type="button" onclick="abrirLeitorQr()">📷 LER CÓDIGO</button><button class="btn-secondary" type="button" onclick="usarInsercaoManual()">INSERÇÃO MANUAL</button><button id="btnExcelInicial" type="button" onclick="gerarExcel()">GERAR E SALVAR EXCEL TOTAL</button><button id="btnReiniciarInicial" class="btn-danger" type="button" onclick="reiniciarEntradas()">APAGAR TODO O ROMANEIO</button></div></section>
+<section class="card form-card hidden" id="formEntrada"><div class="card-header"><h2 id="tituloEntrada">Romaneio Paletes</h2><span class="badge" id="badgeEntrada">Entrada</span></div>
+<div class="palete-andamento" id="paleteAndamento"><span>PALETE <b id="numeroPaleteAtual">1</b></span><span>Itens: <b id="itensPaleteAtual">0</b></span><span>Total de caixas: <b id="caixasPaleteAtual">0</b></span></div>
+<div class="qr-panel hidden" id="qrPanel"><video id="qrVideo" class="qr-video" playsinline muted></video><canvas id="qrCanvas" class="hidden"></canvas><p class="qr-status" id="qrStatus" aria-live="polite">Aponte a câmera para o Data Matrix ou QR Code.</p><div class="camera-actions"><button class="btn-secondary" type="button" onclick="cancelarLeitorQr()">Cancelar leitura</button><button class="btn-blue" type="button" onclick="usarInsercaoManual()">Usar inserção manual</button></div></div>
+<div class="qr-summary hidden" id="qrResumo"><div><strong>SKU</strong><span id="qrResumoSku"></span></div><div><strong>Lote</strong><span id="qrResumoLote"></span></div><div><strong>Data de Postura</strong><span id="qrResumoPostura"></span></div><div><strong>Lote Completo</strong><span id="qrResumoCompleto"></span></div></div>
+<div class="form-grid">
+<div class="input-group manual-field"><label>Data</label><input type="date" id="campoData"></div>
+<div class="input-group manual-field"><label>SKU</label><input type="text" id="campoSku"></div>
+<div class="input-group full qr-operational-field"><label for="campoDestinoExistente">Escolher destino já utilizado</label><select id="campoDestinoExistente" onchange="selecionarDestinoExistente()"><option value="">Selecione um destino</option><option value="__novo__">Adicionar novo destino</option></select></div>
+<div class="input-group full qr-operational-field"><label for="campoDestino">Destino / novo destino</label><input type="text" id="campoDestino" list="listaDestinos" maxlength="100" placeholder="Escolha acima ou digite um novo"><datalist id="listaDestinos"></datalist></div>
+<div class="input-group full manual-field"><label>Palete</label><input type="text" id="campoPalete" disabled placeholder="Automático ao salvar"></div>
+<div class="input-group manual-field"><label>Lote (formato Lxx.xx)</label><input type="text" id="campoLote3" maxlength="6" oninput="formatarLote()"></div>
+<div class="input-group manual-field"><label>Data de Postura (formato .xx.xx.xx)</label><input type="text" id="campoLote10" maxlength="9" oninput="formatarPostura()"></div>
+<div class="input-group full manual-field"><label>Lote Completo</label><input type="text" id="campoLote" disabled></div>
+<div class="input-group full qr-operational-field"><label>Quantidade de Caixas</label><input type="number" id="campoCaixas" min="1"></div>
+<div class="input-group full qr-operational-field"><label>Observações</label><input type="text" id="campoObservacoes" maxlength="250"></div>
+</div><div class="actions"><div id="acoesComposicao" class="actions"><button id="btnAdicionarMais" class="btn-blue" type="button" onclick="salvarComposicao(false)">ADICIONAR MAIS AO PALETE</button><button id="btnFinalizarPalete" class="btn-primary" type="button" onclick="salvarComposicao(true)">FINALIZAR PALETE</button></div><button id="btnLerQrAtual" class="btn-secondary" type="button" onclick="abrirLeitorQr()">Ler código neste palete</button><button class="btn-secondary" type="button" onclick="voltarEscolhaFluxo()">Voltar</button><button id="btnExcel" onclick="gerarExcel()">Gerar e salvar Excel total</button><button id="btnReiniciar" class="btn-danger" onclick="reiniciarEntradas()">Apagar todo o romaneio</button></div></section>
+<section class="card destination-panel"><div class="card-header"><h2>Romaneios por Destino</h2><span class="badge" id="badgeDestinos">0 destinos</span></div><p class="truck-help">Cada Destino pode receber novos paletes e gerar sua própria planilha. O romaneio total permanece completo.</p><div id="listaRomaneiosDestino" class="destination-grid"></div><div id="destinosVazio" class="truck-empty">Os romaneios aparecerão aqui após a primeira entrada com Destino.</div></section>
+<section class="card"><div class="card-header"><h2>Entradas</h2><span class="badge">Lista</span></div><div class="input-group search-romaneio"><label for="buscaRomaneio">PESQUISAR NO ROMANEIO</label><input id="buscaRomaneio" type="search" placeholder="Palete, SKU, destino, lote, data ou placa" oninput="filtrarRomaneio()"></div><div class="table-container" id="tableContainer"><table id="tabela"><thead><tr><th onclick="ordenarTabela(0)">DATA</th><th onclick="ordenarTabela(1)">SKU</th><th onclick="ordenarTabela(2)">DESTINO</th><th onclick="ordenarTabela(3)">PALETE</th><th onclick="ordenarTabela(4)">LOTE COMPLETO</th><th>LOTE</th><th>POST</th><th>CX</th><th>OBSERVAÇÕES</th><th>AÇÃO</th></tr></thead><tbody></tbody></table><div class="empty-state" id="emptyState"><div class="empty-icon">📋</div><strong>Nenhuma entrada encontrada</strong><span>Preencha o formulário para adicionar o primeiro romaneio.</span></div></div></section>
+</main>
+<main id="abaCaminhao" class="truck-layout hidden">
+<section class="card"><div class="card-header"><h2>Romaneio por Caminhão</h2><span class="badge">Placa atual</span></div><p class="truck-help">Informe a placa e selecione os paletes que serão carregados neste caminhão.</p><div class="input-group"><label for="campoPlaca">PLACA</label><input id="campoPlaca" type="text" maxlength="8" placeholder="ABC1D23" oninput="formatarPlaca(); atualizarSelecaoCaminhao()"></div><div class="input-group"><label for="campoDataCarregamento">DATA DO CARREGAMENTO</label><input id="campoDataCarregamento" type="date"></div><div class="input-group"><label for="campoResponsavelCaminhao">MOTORISTA OU RESPONSÁVEL (OPCIONAL)</label><input id="campoResponsavelCaminhao" type="text" maxlength="100"></div><div class="input-group"><label for="campoObservacaoCaminhao">OBSERVAÇÃO (OPCIONAL)</label><input id="campoObservacaoCaminhao" type="text" maxlength="250"></div><div class="actions"><button class="btn-finish-truck" type="button" onclick="finalizarCaminhao()">FINALIZAR CAMINHÃO</button><button class="btn-danger" type="button" onclick="reiniciarCaminhoes()">LIMPAR SOMENTE CAMINHÕES</button></div><div class="truck-summary" id="resumoCaminhao">Nenhum palete selecionado</div><div class="truck-stats"><div class="truck-stat"><strong id="statPaletesDisponiveis">0</strong><span>Paletes disponíveis</span></div><div class="truck-stat"><strong id="statPaletesDistribuidos">0</strong><span>Paletes distribuídos</span></div><div class="truck-stat"><strong id="statCaixasRestantes">0</strong><span>Caixas ainda disponíveis</span></div><div class="truck-stat"><strong id="statCaminhoesFinalizados">0</strong><span>Caminhões finalizados</span></div></div></section>
+<section class="card"><div class="card-header"><h2>Selecionar paletes</h2><span class="badge" id="badgePaletesCaminhao">0 paletes</span></div><div class="truck-select-actions"><button class="btn-primary" type="button" onclick="selecionarTodosPaletes()">SELECIONAR TODOS</button><button class="btn-secondary" type="button" onclick="limparSelecaoPaletes()">LIMPAR SELEÇÃO</button></div><div id="listaPaletesCaminhao" class="truck-pallets"></div></section>
+<section class="card truck-entries"><div class="card-header"><h2>Histórico de caminhões</h2><span class="badge" id="badgeHistoricoCaminhoes">0 caminhões</span></div><div class="table-container"><table id="tabelaHistoricoCaminhoes"><thead><tr><th>PLACA</th><th>PALETES</th><th>DESTINO</th><th>CAIXAS</th><th>CARREGAMENTO</th><th>RESPONSÁVEL</th><th>FINALIZADO EM</th><th>AÇÃO</th></tr></thead><tbody></tbody></table><div class="truck-empty" id="historicoCaminhoesVazio">Nenhum caminhão finalizado neste romaneio.</div></div></section>
+</main>
+<footer class="footer">🛡️ <strong>Romaneio Paletes</strong> &nbsp;•&nbsp; Dados salvos localmente no aparelho<span class="footer-credit">Criado por: Marina Martins Costa</span><div class="app-version">Versão <span id="appVersion">1.8.3</span></div></footer></div><button class="fab" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<div id="updateBanner" class="update-banner" aria-live="polite">
+  <div><strong>🚀 Nova versão disponível</strong><span>Toque para atualizar o app.</span></div>
+  <button id="updateNowBtn" type="button">Atualizar agora</button>
+</div>
+<div id="installBanner" class="install-banner" aria-live="polite">
+  <div><strong>📲 Instalar aplicativo</strong><span>Use como app no celular.</span></div>
+  <button id="installNowBtn" type="button">Instalar</button>
+  <button id="installCloseBtn" type="button" class="banner-close" aria-label="Fechar">×</button>
+</div>
+<div id="recoveryOverlay" class="recovery-overlay" role="dialog" aria-modal="true" aria-labelledby="recoveryTitle">
+  <div class="recovery-dialog"><h2 id="recoveryTitle">PALETE EM ABERTO</h2><p id="recoveryMessage">Existe um palete que ainda não foi finalizado. Deseja continuar adicionando itens ou finalizar esse palete?</p><div class="recovery-metrics"><div><strong>Palete</strong><span id="recoveryPallet">-</span></div><div><strong>Itens</strong><span id="recoveryItems">0</span></div><div><strong>Total de caixas</strong><span id="recoveryBoxes">0</span></div></div><div class="recovery-actions"><button class="btn-primary" type="button" onclick="continuarPaleteAberto()">ADICIONAR MAIS AO PALETE</button><button class="finish-open-pallet" type="button" onclick="finalizarPaleteAbertoSemRegistro()">FINALIZAR PALETE</button></div></div>
+</div>
+
+<script>
+const APP_VERSION = "1.8.3";
+const VERSION_URL = "version.json";
+const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
+const RASCUNHO_KEY = "romaneio_rascunho";
+const CAMINHOES_KEY = "romaneio_caminhoes";
+const HISTORICO_CAMINHOES_KEY = "romaneio_historico_caminhoes";
+const PALETE_INICIAL_KEY = "romaneio_palete_inicial";
+let fluxoEntrada = null;
+let cameraStream = null;
+let scanFrameId = null;
+let leituraTravada = false;
+let decodificandoQr = false;
+let ultimoFrameQr = 0;
+let detectorQr = null;
+let leitorDataMatrix = null;
+let paleteAtual = null;
+let adicionandoEmPaleteFechado = false;
+let abaAtiva = "total";
+let destinoPreselecionado = "";
+
+function dataLocalISO() {
+    const agora = new Date();
+    const ano = agora.getFullYear();
+    const mes = String(agora.getMonth() + 1).padStart(2, "0");
+    const dia = String(agora.getDate()).padStart(2, "0");
+    return `${ano}-${mes}-${dia}`;
+}
+
+function lerJsonLocalStorage(chave, valorPadrao) {
+    try {
+        const valor = JSON.parse(localStorage.getItem(chave));
+        return valor ?? valorPadrao;
+    } catch (_) {
+        return valorPadrao;
+    }
+}
+
+function lerEstadoOperacional() {
+    const estado = lerJsonLocalStorage(ESTADO_OPERACIONAL_KEY, null);
+    if (!estado || estado.paleteAberto !== true || !estado.paleteAtual) return null;
+    return { paleteAtual: String(estado.paleteAtual), paleteAberto: true };
+}
+
+function persistirPaleteAberto(numero) {
+    paleteAtual = String(numero);
+    localStorage.setItem(ESTADO_OPERACIONAL_KEY, JSON.stringify({ paleteAtual, paleteAberto: true }));
+    atualizarAcoesAdicionarEntrada();
+}
+
+function finalizarEstadoPalete() {
+    localStorage.setItem(ESTADO_OPERACIONAL_KEY, JSON.stringify({ paleteAtual: null, paleteAberto: false }));
+    paleteAtual = null;
+    atualizarAcoesAdicionarEntrada();
+}
+
+function lerRascunho() {
+    const rascunho = lerJsonLocalStorage(RASCUNHO_KEY, null);
+    return rascunho && rascunho.palete ? rascunho : null;
+}
+
+function salvarRascunhoAtual() {
+    if (indiceEditando !== null || adicionandoEmPaleteFechado || paleteAtual === null) return;
+    const rascunho = {
+        data: campoData.value,
+        sku: campoSku.value,
+        destino: campoDestino.value,
+        palete: String(paleteAtual),
+        loteCompleto: campoLote.value,
+        lote: campoLote3.value,
+        postura: campoLote10.value,
+        caixas: campoCaixas.value,
+        observacoes: campoObservacoes.value,
+        origem: fluxoEntrada || "manual"
+    };
+    if (![rascunho.sku, rascunho.destino, rascunho.lote, rascunho.postura, rascunho.caixas, rascunho.observacoes].some(valor => String(valor || "").trim())) return;
+    localStorage.setItem(RASCUNHO_KEY, JSON.stringify(rascunho));
+}
+
+function limparRascunho() {
+    localStorage.removeItem(RASCUNHO_KEY);
+}
+
+function restaurarRascunho(rascunho) {
+    if (!rascunho) return false;
+    paleteAtual = String(rascunho.palete);
+    usarInsercaoManual();
+    campoData.value = rascunho.data || "";
+    campoSku.value = rascunho.sku || "";
+    campoDestino.value = rascunho.destino || "";
+    campoPalete.value = paleteAtual;
+    campoLote3.value = rascunho.lote || "";
+    campoLote10.value = rascunho.postura || "";
+    campoLote.value = rascunho.loteCompleto || "";
+    campoCaixas.value = rascunho.caixas || "";
+    campoObservacoes.value = rascunho.observacoes || "";
+    fluxoEntrada = rascunho.origem === "qr" ? "qr" : "manual";
+    if (fluxoEntrada === "qr") {
+        const formulario = document.getElementById("formEntrada");
+        formulario.classList.add("qr-mode");
+        formulario.classList.remove("qr-scanning");
+        document.getElementById("tituloEntrada").textContent = "Leitura de código";
+        document.getElementById("badgeEntrada").textContent = "Código recuperado";
+        document.getElementById("qrResumoSku").textContent = campoSku.value;
+        document.getElementById("qrResumoLote").textContent = campoLote3.value;
+        document.getElementById("qrResumoPostura").textContent = campoLote10.value;
+        document.getElementById("qrResumoCompleto").textContent = campoLote.value;
+        document.getElementById("qrResumo").classList.remove("hidden");
+    }
+    atualizarResumoPaleteAtual();
+    return true;
+}
+
+function resumoDoPalete(numero) {
+    const linhas = Array.from(document.querySelectorAll("#tabela tbody tr"))
+        .filter(linha => String(linha.cells[3]?.textContent || "") === String(numero));
+    return {
+        itens: linhas.length,
+        caixas: linhas.reduce((total, linha) => total + Number(linha.cells[7]?.textContent || 0), 0)
+    };
+}
+
+function mostrarAvisoPaleteAberto(temRascunho = false) {
+    const estado = lerEstadoOperacional();
+    if (!estado) return;
+    paleteAtual = estado.paleteAtual;
+    const resumo = resumoDoPalete(paleteAtual);
+    document.getElementById("recoveryPallet").textContent = paleteAtual;
+    document.getElementById("recoveryItems").textContent = String(resumo.itens);
+    document.getElementById("recoveryBoxes").textContent = String(resumo.caixas);
+    document.getElementById("recoveryMessage").textContent = temRascunho
+        ? "Existe uma inclusão não concluída neste palete. Seus campos foram restaurados para você continuar ou finalizar o palete sem adicionar essa inclusão."
+        : "Existe um palete que ainda não foi finalizado. Deseja continuar adicionando itens ou finalizar esse palete?";
+    document.getElementById("recoveryOverlay").classList.add("show");
+}
+
+function esconderAvisoPaleteAberto() {
+    document.getElementById("recoveryOverlay").classList.remove("show");
+}
+
+function continuarPaleteAberto() {
+    esconderAvisoPaleteAberto();
+    const rascunho = lerRascunho();
+    if (rascunho && String(rascunho.palete) === String(paleteAtual)) {
+        if (document.getElementById("formEntrada").classList.contains("hidden")) restaurarRascunho(rascunho);
+        return;
+    }
+    abrirLeitorQr();
+}
+
+function finalizarPaleteAbertoSemRegistro() {
+    pararCamera();
+    limparRascunho();
+    finalizarEstadoPalete();
+    esconderAvisoPaleteAberto();
+    exibirPaginaInicial();
+}
+
+function salvarPaleteInicial() {
+    const campo = document.getElementById("campoPaleteInicial");
+    const texto = String(campo?.value || "").trim();
+    if (!texto) {
+        localStorage.removeItem(PALETE_INICIAL_KEY);
+        return;
+    }
+    const numero = Number(texto);
+    if (!Number.isInteger(numero) || numero < 1) {
+        alert("O palete inicial deve ser um número inteiro maior ou igual a 1.");
+        campo.value = localStorage.getItem(PALETE_INICIAL_KEY) || "";
+        return;
+    }
+    campo.value = String(numero);
+    localStorage.setItem(PALETE_INICIAL_KEY, String(numero));
+}
+
+function proximoNumeroPalete() {
+    const numeros = Array.from(document.querySelectorAll("#tabela tbody tr"))
+        .map((linha) => String(linha.cells[3]?.textContent || "").trim())
+        .map((valor) => /^(?:palete\s*)?(\d+)$/i.exec(valor))
+        .filter(Boolean)
+        .map((resultado) => Number(resultado[1]));
+    const configurado = Number(localStorage.getItem(PALETE_INICIAL_KEY));
+    if (Number.isInteger(configurado) && configurado >= 1) {
+        const ocupados = new Set(numeros);
+        let proximoLivre = configurado;
+        while (ocupados.has(proximoLivre)) proximoLivre += 1;
+        return proximoLivre;
+    }
+    return numeros.length ? Math.max(...numeros) + 1 : 1;
+}
+
+function obterRomaneiosDestino() {
+    const destinos = new Map();
+    document.querySelectorAll("#tabela tbody tr").forEach(linha => {
+        const nome = String(linha.cells[2]?.textContent || "").trim();
+        if (!nome) return;
+        const chave = nome.toLocaleLowerCase("pt-BR");
+        const destino = destinos.get(chave) || { nome, linhas: [], paletes: new Map(), caixas: 0 };
+        const palete = String(linha.cells[3]?.textContent || "").trim();
+        const caixas = Number(linha.cells[7]?.textContent || 0);
+        destino.linhas.push(linha);
+        destino.caixas += caixas;
+        destino.paletes.set(palete, (destino.paletes.get(palete) || 0) + caixas);
+        destinos.set(chave, destino);
+    });
+    return Array.from(destinos.values()).sort((a, b) =>
+        a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
+    );
+}
+
+function atualizarListaDestinos(romaneios = obterRomaneiosDestino()) {
+    const lista = document.getElementById("listaDestinos");
+    const seletor = document.getElementById("campoDestinoExistente");
+    if (lista) lista.replaceChildren();
+    if (seletor) {
+        seletor.replaceChildren();
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "Selecione um destino";
+        seletor.appendChild(placeholder);
+    }
+    romaneios.forEach(item => {
+        const opcao = document.createElement("option");
+        opcao.value = item.nome;
+        if (lista) lista.appendChild(opcao);
+        if (seletor) {
+            const opcaoSeletor = document.createElement("option");
+            opcaoSeletor.value = item.nome;
+            opcaoSeletor.textContent = item.nome;
+            seletor.appendChild(opcaoSeletor);
+        }
+    });
+    if (seletor) {
+        const novo = document.createElement("option");
+        novo.value = "__novo__";
+        novo.textContent = "Adicionar novo destino";
+        seletor.appendChild(novo);
+        const atual = String(document.getElementById("campoDestino")?.value || "").trim();
+        seletor.value = romaneios.some(item => item.nome === atual) ? atual : "";
+    }
+}
+
+function selecionarDestinoExistente() {
+    const seletor = document.getElementById("campoDestinoExistente");
+    const campo = document.getElementById("campoDestino");
+    if (!seletor || !campo) return;
+    if (seletor.value === "__novo__") {
+        destinoPreselecionado = "";
+        campo.readOnly = false;
+        campo.value = "";
+        campo.focus();
+    } else if (seletor.value) {
+        campo.readOnly = false;
+        campo.value = seletor.value;
+        campo.focus();
+    }
+    salvarRascunhoAtual();
+}
+
+function marcarDestinoNoSeletor(destino, bloquear = false) {
+    const seletor = document.getElementById("campoDestinoExistente");
+    if (!seletor) return;
+    const valor = String(destino || "").trim();
+    seletor.value = Array.from(seletor.options).some(opcao => opcao.value === valor) ? valor : "";
+    seletor.disabled = bloquear;
+}
+
+function prepararNovoPaleteDestino(destino) {
+    if (lerEstadoOperacional()) {
+        alert("Finalize primeiro o palete que está aberto antes de iniciar outro palete.");
+        return;
+    }
+    exibirPaginaInicial();
+    destinoPreselecionado = String(destino || "").trim();
+    campoDestino.value = destinoPreselecionado;
+    marcarDestinoNoSeletor(destinoPreselecionado, true);
+    document.querySelector("#escolhaFluxo h2").textContent = `Adicionar palete — ${destinoPreselecionado}`;
+    document.querySelector("#escolhaFluxo .badge").textContent = "Destino selecionado";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function prepararEntradaPaleteDestino(palete, destino) {
+    if (lerEstadoOperacional()) {
+        alert("Finalize primeiro o palete que está aberto antes de adicionar caixas a outro palete.");
+        return;
+    }
+    pararCamera();
+    limparCampos();
+    paleteAtual = String(palete);
+    adicionandoEmPaleteFechado = true;
+    destinoPreselecionado = String(destino || "").trim();
+    campoDestino.value = destinoPreselecionado;
+    campoDestino.readOnly = true;
+    marcarDestinoNoSeletor(destinoPreselecionado, true);
+    document.querySelector("#escolhaFluxo h2").textContent = `Adicionar caixas ao palete ${palete}`;
+    document.querySelector("#escolhaFluxo .badge").textContent = destinoPreselecionado || "Palete fechado";
+    document.getElementById("formEntrada").classList.add("hidden");
+    document.getElementById("escolhaFluxo").classList.remove("hidden");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function nomeSeguroArquivo(valor) {
+    return String(valor || "destino")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9_-]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "destino";
+}
+
+function baixarExcelDestino(destino) {
+    const chave = String(destino || "").trim().toLocaleLowerCase("pt-BR");
+    const linhas = Array.from(document.querySelectorAll("#tabela tbody tr"))
+        .filter(linha => String(linha.cells[2]?.textContent || "").trim().toLocaleLowerCase("pt-BR") === chave);
+    if (!linhas.length) {
+        alert("Este Destino não possui entradas para gerar o Excel.");
+        return;
+    }
+    const caixas = linhas.reduce((total, linha) => total + Number(linha.cells[7]?.textContent || 0), 0);
+    const hoje = dataLocalISO().split("-").reverse().join("-");
+    gerarArquivoExcel(linhas, `romaneio_${nomeSeguroArquivo(destino)}_${hoje}_${caixas}-caixas.xlsx`, `Destino ${destino}`);
+}
+
+function apagarDestino(destino) {
+    const nomeDestino = String(destino || "").trim();
+    const chave = nomeDestino.toLocaleLowerCase("pt-BR");
+    const linhas = Array.from(document.querySelectorAll("#tabela tbody tr"))
+        .filter(linha => String(linha.cells[2]?.textContent || "").trim().toLocaleLowerCase("pt-BR") === chave);
+    if (!linhas.length) {
+        alert("Este Destino não possui entradas para apagar.");
+        return;
+    }
+    const paletes = new Set(linhas.map(linha => String(linha.cells[3]?.textContent || "").trim()).filter(Boolean));
+    const caixas = linhas.reduce((total, linha) => total + Number(linha.cells[7]?.textContent || 0), 0);
+    const estado = lerEstadoOperacional();
+    const paleteAbertoSeraAfetado = Boolean(estado && paletes.has(String(estado.paleteAtual)));
+    const avisoPaleteAberto = paleteAbertoSeraAfetado ? "\nO palete aberto deste Destino também será encerrado." : "";
+    const mensagem = `APAGAR O DESTINO ${nomeDestino}?\n\nSerão apagadas ${linhas.length} entrada(s), ${paletes.size} palete(s) e ${caixas} caixas.${avisoPaleteAberto}\n\nOs demais Destinos serão preservados.\nEsta ação não pode ser desfeita.`;
+    if (!confirm(mensagem)) return;
+    linhas.forEach(linha => linha.remove());
+    if (paleteAbertoSeraAfetado) {
+        localStorage.removeItem(ESTADO_OPERACIONAL_KEY);
+        localStorage.removeItem(RASCUNHO_KEY);
+        paleteAtual = null;
+        adicionandoEmPaleteFechado = false;
+        esconderAvisoPaleteAberto();
+    }
+    salvarLocalStorage();
+    alert(`Destino ${nomeDestino} apagado. As entradas dos demais Destinos foram mantidas.`);
+}
+
+function renderizarRomaneiosDestino() {
+    const lista = document.getElementById("listaRomaneiosDestino");
+    if (!lista) return;
+    const romaneios = obterRomaneiosDestino();
+    atualizarListaDestinos(romaneios);
+    lista.replaceChildren();
+    romaneios.forEach(item => {
+        const card = document.createElement("article");
+        card.className = "destination-card";
+        const cabecalho = document.createElement("div");
+        cabecalho.className = "destination-card-header";
+        const titulo = document.createElement("strong");
+        titulo.textContent = item.nome;
+        const totais = document.createElement("span");
+        totais.textContent = `${item.paletes.size} palete(s) • ${item.caixas} caixas`;
+        cabecalho.append(titulo, totais);
+
+        const acoes = document.createElement("div");
+        acoes.className = "destination-actions";
+        const novo = document.createElement("button");
+        novo.className = "btn-primary";
+        novo.type = "button";
+        novo.textContent = "Adicionar palete";
+        novo.addEventListener("click", () => prepararNovoPaleteDestino(item.nome));
+        const excel = document.createElement("button");
+        excel.className = "btn-finish-truck";
+        excel.type = "button";
+        excel.textContent = "Baixar Excel";
+        excel.addEventListener("click", () => baixarExcelDestino(item.nome));
+        const apagar = document.createElement("button");
+        apagar.className = "btn-danger";
+        apagar.type = "button";
+        apagar.textContent = "Apagar destino";
+        apagar.addEventListener("click", () => apagarDestino(item.nome));
+        acoes.append(novo, excel, apagar);
+
+        const paletes = document.createElement("div");
+        paletes.className = "destination-pallets";
+        Array.from(item.paletes.entries()).sort((a, b) =>
+            String(a[0]).localeCompare(String(b[0]), "pt-BR", { numeric: true })
+        ).forEach(([numero, caixas]) => {
+            const linha = document.createElement("div");
+            linha.className = "destination-pallet";
+            const descricao = document.createElement("div");
+            const nome = document.createElement("strong");
+            nome.textContent = `Palete ${numero}`;
+            const quantidade = document.createElement("span");
+            quantidade.textContent = `${caixas} caixas`;
+            descricao.append(nome, quantidade);
+            const adicionar = document.createElement("button");
+            adicionar.className = "btn-blue";
+            adicionar.type = "button";
+            adicionar.textContent = "Adicionar caixas";
+            adicionar.addEventListener("click", () => prepararEntradaPaleteDestino(numero, item.nome));
+            linha.append(descricao, adicionar);
+            paletes.appendChild(linha);
+        });
+        card.append(cabecalho, acoes, paletes);
+        lista.appendChild(card);
+    });
+    const vazio = document.getElementById("destinosVazio");
+    const badge = document.getElementById("badgeDestinos");
+    if (vazio) vazio.classList.toggle("hidden", romaneios.length > 0);
+    if (badge) badge.textContent = `${romaneios.length} destino(s)`;
+}
+
+function garantirPaleteAtual() {
+    if (paleteAtual === null) {
+        const estado = lerEstadoOperacional();
+        paleteAtual = estado ? estado.paleteAtual : String(proximoNumeroPalete());
+    }
+    if (indiceEditando === null && !adicionandoEmPaleteFechado) persistirPaleteAberto(paleteAtual);
+    campoPalete.value = String(paleteAtual);
+    atualizarResumoPaleteAtual();
+    return paleteAtual;
+}
+
+function atualizarResumoPaleteAtual() {
+    if (paleteAtual === null) return;
+    const linhas = Array.from(document.querySelectorAll("#tabela tbody tr"))
+        .filter((linha) => String(linha.cells[3]?.textContent || "") === String(paleteAtual));
+    const caixas = linhas.reduce((total, linha) => total + Number(linha.cells[7]?.textContent || 0), 0);
+    document.getElementById("numeroPaleteAtual").textContent = String(paleteAtual);
+    document.getElementById("itensPaleteAtual").textContent = String(linhas.length);
+    document.getElementById("caixasPaleteAtual").textContent = String(caixas);
+}
+
+function configurarAcoesComposicao(editando) {
+    document.getElementById("btnAdicionarMais").classList.toggle("hidden", editando);
+    document.getElementById("btnLerQrAtual").classList.toggle("hidden", editando);
+    document.getElementById("btnFinalizarPalete").textContent = editando ? "Salvar Alterações" : "FINALIZAR PALETE";
+}
+
+function pararCamera() {
+    if (scanFrameId !== null) cancelAnimationFrame(scanFrameId);
+    scanFrameId = null;
+    leituraTravada = true;
+    decodificandoQr = false;
+
+    if (cameraStream) {
+        cameraStream.getTracks().forEach((track) => track.stop());
+        cameraStream = null;
+    }
+
+    const video = document.getElementById("qrVideo");
+    if (video) {
+        video.pause();
+        video.srcObject = null;
+    }
+}
+
+function mostrarFalhaQr(mensagem) {
+    const status = document.getElementById("qrStatus");
+    if (status) status.textContent = `${mensagem} Use a inserção manual para continuar.`;
+}
+
+async function criarDetectorNativo() {
+    if (!("BarcodeDetector" in window)) return null;
+
+    let formatos = ["data_matrix", "qr_code"];
+    if (typeof BarcodeDetector.getSupportedFormats === "function") {
+        try {
+            const suportados = await BarcodeDetector.getSupportedFormats();
+            formatos = formatos.filter((formato) => suportados.includes(formato));
+        } catch (_) {
+            // Tenta os dois formatos diretamente em navegadores sem consulta confiável.
+        }
+    }
+
+    if (!formatos.length) return null;
+
+    try {
+        return new BarcodeDetector({ formats: formatos });
+    } catch (_) {
+        try {
+            return new BarcodeDetector({ formats: ["qr_code"] });
+        } catch (_) {
+            return null;
+        }
+    }
+}
+
+function criarLeitorDataMatrix() {
+    if (!window.ZXing || typeof window.ZXing.MultiFormatReader !== "function") return null;
+
+    const dicas = new Map();
+    dicas.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS, [window.ZXing.BarcodeFormat.DATA_MATRIX]);
+    dicas.set(window.ZXing.DecodeHintType.TRY_HARDER, true);
+
+    const leitor = new window.ZXing.MultiFormatReader();
+    leitor.setHints(dicas);
+    return leitor;
+}
+
+async function abrirLeitorQr() {
+    pararCamera();
+    limparCampos();
+    if (destinoPreselecionado) {
+        campoDestino.value = destinoPreselecionado;
+        campoDestino.readOnly = true;
+        marcarDestinoNoSeletor(destinoPreselecionado, true);
+    }
+    fluxoEntrada = "qr";
+    leituraTravada = false;
+    garantirPaleteAtual();
+    configurarAcoesComposicao(false);
+
+    const escolha = document.getElementById("escolhaFluxo");
+    const formulario = document.getElementById("formEntrada");
+    escolha.classList.add("hidden");
+    formulario.classList.remove("hidden");
+    formulario.classList.add("qr-mode", "qr-scanning");
+    document.getElementById("qrPanel").classList.remove("hidden");
+    document.getElementById("qrResumo").classList.add("hidden");
+    document.getElementById("tituloEntrada").textContent = "Leitura de código";
+    document.getElementById("badgeEntrada").textContent = "Código";
+    document.getElementById("qrStatus").textContent = "Solicitando acesso à câmera...";
+    campoData.value = dataLocalISO();
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        mostrarFalhaQr("Câmera não disponível neste navegador.");
+        return;
+    }
+
+    if (!("BarcodeDetector" in window) &&
+        typeof window.jsQR !== "function" &&
+        (!window.ZXing || typeof window.ZXing.MultiFormatReader !== "function")) {
+        mostrarFalhaQr("Leitor de código indisponível.");
+        return;
+    }
+
+    try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: "environment" } },
+            audio: false
+        });
+
+        const video = document.getElementById("qrVideo");
+        video.srcObject = cameraStream;
+        await video.play();
+
+        detectorQr = await criarDetectorNativo();
+        leitorDataMatrix = criarLeitorDataMatrix();
+
+        document.getElementById("qrStatus").textContent = "Aponte a câmera para o Data Matrix ou QR Code.";
+        scanFrameId = requestAnimationFrame(processarQuadroQr);
+    } catch (_) {
+        pararCamera();
+        mostrarFalhaQr("Não foi possível acessar a câmera.");
+    }
+}
+
+async function processarQuadroQr(timestamp) {
+    if (!cameraStream || leituraTravada) return;
+    scanFrameId = requestAnimationFrame(processarQuadroQr);
+    if (decodificandoQr || timestamp - ultimoFrameQr < 120) return;
+
+    const video = document.getElementById("qrVideo");
+    if (!video || video.readyState < 2 || !video.videoWidth) return;
+
+    ultimoFrameQr = timestamp;
+    decodificandoQr = true;
+    let texto = "";
+
+    try {
+        if (detectorQr) {
+            try {
+                const codigos = await detectorQr.detect(video);
+                texto = codigos[0]?.rawValue || "";
+            } catch (_) {
+                detectorQr = null;
+            }
+        }
+
+        if (!texto && (leitorDataMatrix || typeof window.jsQR === "function")) {
+            const canvas = document.getElementById("qrCanvas");
+            const contexto = canvas.getContext("2d", { willReadFrequently: true });
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            contexto.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const pixels = contexto.getImageData(0, 0, canvas.width, canvas.height);
+
+            if (leitorDataMatrix) {
+                try {
+                    const fonte = new window.ZXing.RGBLuminanceSource(
+                        new Int32Array(
+                            pixels.data.buffer,
+                            pixels.data.byteOffset,
+                            pixels.width * pixels.height
+                        ),
+                        pixels.width,
+                        pixels.height
+                    );
+                    const bitmap = new window.ZXing.BinaryBitmap(
+                        new window.ZXing.HybridBinarizer(fonte)
+                    );
+                    const resultadoDataMatrix = leitorDataMatrix.decode(bitmap);
+                    texto = resultadoDataMatrix?.getText?.() || resultadoDataMatrix?.text || "";
+                } catch (_) {
+                    leitorDataMatrix.reset();
+                }
+            }
+
+            if (!texto && typeof window.jsQR === "function") {
+                const resultadoQr = window.jsQR(
+                    pixels.data,
+                    pixels.width,
+                    pixels.height,
+                    { inversionAttempts: "dontInvert" }
+                );
+                texto = resultadoQr?.data || "";
+            }
+        }
+
+        if (texto) preencherFormularioComQr(texto);
+    } catch (_) {
+        // Uma falha em um quadro não encerra a câmera; o próximo quadro será tentado.
+    } finally {
+        decodificandoQr = false;
+    }
+}
+
+function preencherFormularioComQr(texto) {
+    let dados;
+    try {
+        dados = window.qrPaleteParser.parse(texto);
+    } catch (erro) {
+        const status = document.getElementById("qrStatus");
+        status.textContent = `${erro.message} Aponte para um Data Matrix ou QR válido.`;
+        return;
+    }
+
+    leituraTravada = true;
+    campoSku.value = dados.sku;
+    campoLote3.value = dados.lote;
+    campoLote10.value = dados.postura;
+    montarLoteCompleto();
+
+    document.getElementById("qrResumoSku").textContent = dados.sku;
+    document.getElementById("qrResumoLote").textContent = dados.lote;
+    document.getElementById("qrResumoPostura").textContent = dados.postura;
+    document.getElementById("qrResumoCompleto").textContent = campoLote.value;
+
+    pararCamera();
+    document.getElementById("qrPanel").classList.add("hidden");
+    document.getElementById("qrResumo").classList.remove("hidden");
+    document.getElementById("formEntrada").classList.remove("qr-scanning");
+    salvarRascunhoAtual();
+    campoDestino.focus();
+}
+
+function cancelarLeitorQr() {
+    pararCamera();
+    voltarEscolhaFluxo();
+}
+
+function usarInsercaoManual() {
+    pararCamera();
+    fluxoEntrada = "manual";
+    document.getElementById("escolhaFluxo").classList.add("hidden");
+    const formulario = document.getElementById("formEntrada");
+    formulario.classList.remove("hidden", "qr-mode", "qr-scanning");
+    document.getElementById("qrPanel").classList.add("hidden");
+    document.getElementById("qrResumo").classList.add("hidden");
+    document.getElementById("tituloEntrada").textContent = indiceEditando === null ? "Palete misto / inserção manual" : "Editar entrada";
+    document.getElementById("badgeEntrada").textContent = indiceEditando === null ? "Manual" : "Edição";
+    if (destinoPreselecionado) {
+        if (!campoDestino.value) campoDestino.value = destinoPreselecionado;
+        campoDestino.readOnly = true;
+        marcarDestinoNoSeletor(destinoPreselecionado, true);
+    }
+    garantirPaleteAtual();
+    configurarAcoesComposicao(indiceEditando !== null);
+}
+
+function exibirPaginaInicial() {
+    pararCamera();
+    limparCampos();
+    fluxoEntrada = null;
+    paleteAtual = null;
+    adicionandoEmPaleteFechado = false;
+    destinoPreselecionado = "";
+    campoDestino.readOnly = false;
+    marcarDestinoNoSeletor("", false);
+    document.querySelector("#escolhaFluxo h2").textContent = "Adicionar palete";
+    document.querySelector("#escolhaFluxo .badge").textContent = "Nova entrada";
+    document.getElementById("formEntrada").classList.add("hidden");
+    document.getElementById("formEntrada").classList.remove("qr-mode", "qr-scanning");
+    document.getElementById("escolhaFluxo").classList.remove("hidden");
+}
+
+function voltarEscolhaFluxo() {
+    salvarRascunhoAtual();
+    exibirPaginaInicial();
+    if (lerEstadoOperacional()) setTimeout(() => mostrarAvisoPaleteAberto(Boolean(lerRascunho())), 0);
+}
+
+window.addEventListener("pagehide", () => {
+    salvarRascunhoAtual();
+    pararCamera();
+});
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        salvarRascunhoAtual();
+        pararCamera();
+    }
+});
+
+const CAMPOS_RASCUNHO = new Set(["campoData", "campoSku", "campoDestino", "campoLote3", "campoLote10", "campoCaixas", "campoObservacoes"]);
+document.addEventListener("input", event => {
+    if (event.target && CAMPOS_RASCUNHO.has(event.target.id)) salvarRascunhoAtual();
+});
+document.addEventListener("change", event => {
+    if (event.target && CAMPOS_RASCUNHO.has(event.target.id)) salvarRascunhoAtual();
+});
+
+function formatarLote() {
+    let v = campoLote3.value.replace(/\W/g, "");
+    v = v.substring(0, 5);
+
+    if (!v.startsWith("L")) v = "L" + v;
+
+    let bloco1 = v.substring(0,3);
+    let bloco2 = v.substring(3,5);
+
+    campoLote3.value = bloco1 + "." + bloco2;
+
+    montarLoteCompleto();
+}
+
+function formatarPostura() {
+    let v = campoLote10.value.replace(/\D/g, "");
+    v = v.substring(0, 6);
+
+    let formatado = ".";
+
+    if (v.length > 0) formatado += v.substring(0,2);
+    if (v.length > 2) formatado += "." + v.substring(2,4);
+    if (v.length > 4) formatado += "." + v.substring(4,6);
+
+    campoLote10.value = formatado;
+
+    montarLoteCompleto();
+}
+
+function montarLoteCompleto() {
+    let lote = campoLote3.value;
+    let postura = campoLote10.value;
+
+    if (lote.length === 6 && postura.length === 9) {
+        campoLote.value = lote + postura;
+    } else {
+        campoLote.value = "";
+    }
+}
+
+let indiceEditando = null;
+let ordemAsc = true;
+
+function normalizarPlaca(valor) {
+    return String(valor || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 7);
+}
+
+function formatarPlaca() {
+    const campo = document.getElementById("campoPlaca");
+    if (campo) campo.value = normalizarPlaca(campo.value);
+}
+
+function placaValida(placa) {
+    return /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(placa);
+}
+
+function lerCaminhoes() {
+    const dados = lerJsonLocalStorage(CAMINHOES_KEY, {});
+    return dados && typeof dados === "object" && !Array.isArray(dados) ? dados : {};
+}
+
+function salvarCaminhoes(dados) {
+    localStorage.setItem(CAMINHOES_KEY, JSON.stringify(dados));
+}
+
+function lerHistoricoCaminhoes() {
+    const dados = lerJsonLocalStorage(HISTORICO_CAMINHOES_KEY, {});
+    return dados && typeof dados === "object" && !Array.isArray(dados) ? dados : {};
+}
+
+function salvarHistoricoCaminhoes(dados) {
+    localStorage.setItem(HISTORICO_CAMINHOES_KEY, JSON.stringify(dados));
+}
+
+function obterPaletes() {
+    const resumo = new Map();
+    document.querySelectorAll("#tabela tbody tr").forEach(linha => {
+        const palete = String(linha.cells[3]?.textContent || "").trim();
+        if (!palete) return;
+        const atual = resumo.get(palete) || { palete, itens: 0, caixas: 0, destinos: new Set() };
+        atual.itens += 1;
+        atual.caixas += Number(linha.cells[7]?.textContent || 0);
+        const destino = String(linha.cells[2]?.textContent || "").trim();
+        if (destino) atual.destinos.add(destino);
+        resumo.set(palete, atual);
+    });
+    return Array.from(resumo.values()).map(item => ({
+        ...item,
+        destinos: Array.from(item.destinos)
+    })).sort((a, b) =>
+        String(a.palete).localeCompare(String(b.palete), "pt-BR", { numeric: true })
+    );
+}
+
+function abrirAba(aba) {
+    const caminhao = aba === "caminhao";
+    abaAtiva = caminhao ? "caminhao" : "total";
+    document.getElementById("abaTotal").classList.toggle("hidden", caminhao);
+    document.getElementById("abaCaminhao").classList.toggle("hidden", !caminhao);
+    document.getElementById("tabTotal").classList.toggle("active", !caminhao);
+    document.getElementById("tabCaminhao").classList.toggle("active", caminhao);
+    if (caminhao) renderizarPaletesCaminhao();
+    atualizarDashboardVisual();
+}
+
+function atualizarCoresSelecaoPaletes() {
+    document.querySelectorAll("#listaPaletesCaminhao .truck-pallet").forEach(card => {
+        const checkbox = card.querySelector("input[type='checkbox']");
+        const botao = card.querySelector(".btn-vinculo-caminhao");
+        const selecionado = Boolean(checkbox?.checked);
+        const aberto = Boolean(checkbox?.disabled);
+        card.classList.toggle("selected", selecionado && !aberto);
+        card.classList.toggle("available", !selecionado && !aberto);
+        card.classList.toggle("open", aberto);
+        if (botao) {
+            botao.className = `${selecionado ? "btn-danger" : "btn-primary"} btn-vinculo-caminhao`;
+            botao.textContent = selecionado ? "Excluir do caminhão" : "Adicionar ao caminhão";
+        }
+    });
+}
+
+function selecionarTodosPaletes() {
+    document.querySelectorAll("#listaPaletesCaminhao input[type='checkbox']:not(:disabled)").forEach(input => { input.checked = true; });
+    atualizarResumoCaminhao();
+}
+
+function limparSelecaoPaletes() {
+    document.querySelectorAll("#listaPaletesCaminhao input[type='checkbox']").forEach(input => { input.checked = false; });
+    atualizarResumoCaminhao();
+}
+
+function atualizarIndicadoresCaminhoes() {
+    const paletes = obterPaletes();
+    const caminhoes = lerCaminhoes();
+    const historico = lerHistoricoCaminhoes();
+    const disponiveis = paletes.filter(item => !caminhoes[item.palete]);
+    const distribuidos = paletes.filter(item => Boolean(caminhoes[item.palete]));
+    const caixasRestantes = disponiveis.reduce((total, item) => total + Number(item.caixas || 0), 0);
+    document.getElementById("statPaletesDisponiveis").textContent = disponiveis.length;
+    document.getElementById("statPaletesDistribuidos").textContent = distribuidos.length;
+    document.getElementById("statCaixasRestantes").textContent = caixasRestantes;
+    document.getElementById("statCaminhoesFinalizados").textContent = Object.keys(historico).length;
+}
+
+function renderizarPaletesCaminhao() {
+    const lista = document.getElementById("listaPaletesCaminhao");
+    if (!lista) return;
+    const paletes = obterPaletes();
+    const caminhoes = lerCaminhoes();
+    const estadoAberto = lerEstadoOperacional();
+    const placaDigitada = normalizarPlaca(document.getElementById("campoPlaca")?.value);
+    const paletesDisponiveis = paletes.filter(item =>
+        !caminhoes[item.palete] || caminhoes[item.palete] === placaDigitada
+    );
+    lista.replaceChildren();
+
+    if (!paletes.length) {
+        const vazio = document.createElement("div");
+        vazio.className = "truck-empty";
+        vazio.textContent = "Ainda não há paletes no romaneio total.";
+        lista.appendChild(vazio);
+    } else if (!paletesDisponiveis.length) {
+        const vazio = document.createElement("div");
+        vazio.className = "truck-empty";
+        vazio.textContent = "Todos os paletes já foram adicionados a caminhões.";
+        lista.appendChild(vazio);
+    }
+
+    paletesDisponiveis.forEach(item => {
+        const paleteAberto = String(estadoAberto?.paleteAtual || "") === String(item.palete);
+        const rotulo = document.createElement("div");
+        rotulo.className = "truck-pallet";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.dataset.palete = item.palete;
+        checkbox.checked = Boolean(placaDigitada && caminhoes[item.palete] === placaDigitada);
+        checkbox.disabled = paleteAberto;
+        checkbox.addEventListener("change", atualizarResumoCaminhao);
+        const descricao = document.createElement("div");
+        const titulo = document.createElement("strong");
+        const destinoPalete = item.destinos.length ? item.destinos.join(" / ") : "Não informado";
+        titulo.textContent = `Palete ${item.palete} — Destino: ${destinoPalete}`;
+        const detalhes = document.createElement("span");
+        detalhes.textContent = `${item.itens} item(ns) • ${item.caixas} caixas`;
+        descricao.append(titulo, detalhes);
+        const atual = document.createElement("div");
+        atual.className = "truck-current";
+        atual.textContent = paleteAberto ? "Palete aberto — finalize antes" : (caminhoes[item.palete] ? `Placa: ${caminhoes[item.palete]}` : "Sem caminhão");
+        const acoes = document.createElement("div");
+        acoes.className = "truck-current";
+        acoes.style.gridColumn = "2 / -1";
+        acoes.style.display = "flex";
+        acoes.style.gap = "6px";
+        acoes.style.flexWrap = "wrap";
+        const vinculo = document.createElement("button");
+        vinculo.className = `${checkbox.checked ? "btn-danger" : "btn-primary"} btn-vinculo-caminhao`;
+        vinculo.type = "button";
+        vinculo.disabled = paleteAberto;
+        vinculo.textContent = paleteAberto ? "Palete ainda aberto" : (checkbox.checked ? "Excluir do caminhão" : "Adicionar ao caminhão");
+        vinculo.addEventListener("click", () => {
+            checkbox.checked = !checkbox.checked;
+            atualizarResumoCaminhao();
+        });
+        acoes.append(vinculo);
+        rotulo.append(checkbox, descricao, atual, acoes);
+        lista.appendChild(rotulo);
+    });
+    atualizarResumoCaminhao();
+    renderizarHistoricoCaminhoes();
+    atualizarIndicadoresCaminhoes();
+}
+
+function atualizarSelecaoCaminhao() {
+    renderizarPaletesCaminhao();
+}
+
+function atualizarResumoCaminhao() {
+    const selecionados = Array.from(document.querySelectorAll("#listaPaletesCaminhao input:checked"));
+    const caixas = selecionados.reduce((total, checkbox) => {
+        const item = obterPaletes().find(p => p.palete === checkbox.dataset.palete);
+        return total + Number(item?.caixas || 0);
+    }, 0);
+    const resumo = document.getElementById("resumoCaminhao");
+    const badge = document.getElementById("badgePaletesCaminhao");
+    if (resumo) resumo.textContent = selecionados.length ? `${selecionados.length} palete(s) • ${caixas} caixas` : "Nenhum palete selecionado";
+    if (badge) badge.textContent = `${selecionados.length} palete(s)`;
+    atualizarCoresSelecaoPaletes();
+    if (abaAtiva === "caminhao") atualizarDashboardVisual();
+}
+
+function linhasDaPlaca(placa) {
+    const caminhoes = lerCaminhoes();
+    return Array.from(document.querySelectorAll("#tabela tbody tr"))
+        .filter(linha => caminhoes[String(linha.cells[3]?.textContent || "").trim()] === placa);
+}
+
+function abrirCaminhaoHistorico(placa) {
+    const historico = lerHistoricoCaminhoes();
+    const dados = historico[placa] || {};
+    const campo = document.getElementById("campoPlaca");
+    if (campo) campo.value = placa;
+    document.getElementById("campoDataCarregamento").value = dados.dataCarregamento || dataLocalISO();
+    document.getElementById("campoResponsavelCaminhao").value = dados.responsavel || "";
+    document.getElementById("campoObservacaoCaminhao").value = dados.observacao || "";
+    renderizarPaletesCaminhao();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function baixarCaminhaoHistorico(placa) {
+    const linhas = linhasDaPlaca(placa);
+    if (!linhas.length) {
+        alert("Este caminhão não possui mais entradas no romaneio.");
+        return;
+    }
+    const caixas = linhas.reduce((total, linha) => total + Number(linha.cells[7]?.textContent || 0), 0);
+    const hoje = dataLocalISO().split("-").reverse().join("-");
+    gerarArquivoExcel(linhas, `romaneio_${placa}_${hoje}_${caixas}-caixas.xlsx`, `Caminhão ${placa}`);
+}
+
+function excluirCaminhaoHistorico(placa) {
+    const caminhoes = lerCaminhoes();
+    const paletes = Object.keys(caminhoes).filter(palete => caminhoes[palete] === placa);
+    if (!confirm(`Excluir o caminhão ${placa} do histórico e liberar seus ${paletes.length} palete(s)?\nAs entradas do romaneio total não serão apagadas.`)) return;
+    paletes.forEach(palete => { delete caminhoes[palete]; });
+    salvarCaminhoes(caminhoes);
+    const historico = lerHistoricoCaminhoes();
+    delete historico[placa];
+    salvarHistoricoCaminhoes(historico);
+    const campo = document.getElementById("campoPlaca");
+    if (campo && normalizarPlaca(campo.value) === placa) campo.value = "";
+    renderizarPaletesCaminhao();
+    atualizarDashboardVisual();
+    alert(`Caminhão ${placa} excluído. Os paletes foram liberados.`);
+}
+
+function renderizarHistoricoCaminhoes() {
+    const tbody = document.querySelector("#tabelaHistoricoCaminhoes tbody");
+    if (!tbody) return;
+    const historico = lerHistoricoCaminhoes();
+    const registros = Object.entries(historico)
+        .map(([placa, dados]) => ({ placa, ...dados, linhas: linhasDaPlaca(placa) }))
+        .filter(item => item.linhas.length)
+        .sort((a, b) => String(b.finalizadoEm || "").localeCompare(String(a.finalizadoEm || "")));
+    tbody.replaceChildren();
+
+    registros.forEach(item => {
+        const linha = tbody.insertRow();
+        const paletes = new Set(item.linhas.map(registro => registro.cells[3]?.textContent).filter(Boolean));
+        const caixas = item.linhas.reduce((total, registro) => total + Number(registro.cells[7]?.textContent || 0), 0);
+        const finalizado = item.finalizadoEm ? new Date(item.finalizadoEm).toLocaleString("pt-BR") : "--";
+        const carregamento = item.dataCarregamento ? formatarDataBR(item.dataCarregamento) : "--";
+        const listaPaletes = Array.from(paletes).sort((a, b) =>
+            String(a).localeCompare(String(b), "pt-BR", { numeric: true })
+        );
+        const destinos = Array.from(new Set(item.linhas
+            .map(registro => String(registro.cells[2]?.textContent || "").trim())
+            .filter(Boolean)));
+        const valores = [item.placa, `${paletes.size} — ${listaPaletes.join(", ")}`, destinos.length ? destinos.join(" / ") : "Não informado", caixas, carregamento, item.responsavel || "--", finalizado];
+        const rotulos = ["Placa", "Paletes", "Destino", "Caixas", "Carregamento", "Responsável", "Finalizado em"];
+        valores.forEach((valor, indice) => {
+            const celula = linha.insertCell();
+            celula.textContent = valor;
+            celula.dataset.label = rotulos[indice];
+        });
+        const acoes = linha.insertCell();
+        acoes.className = "history-actions";
+        acoes.dataset.label = "Ações";
+        const abrir = document.createElement("button");
+        abrir.className = "btn-blue";
+        abrir.type = "button";
+        abrir.textContent = "Abrir";
+        abrir.addEventListener("click", () => abrirCaminhaoHistorico(item.placa));
+        const baixar = document.createElement("button");
+        baixar.className = "btn-primary";
+        baixar.type = "button";
+        baixar.textContent = "Baixar Excel";
+        baixar.addEventListener("click", () => baixarCaminhaoHistorico(item.placa));
+        const excluir = document.createElement("button");
+        excluir.className = "btn-danger";
+        excluir.type = "button";
+        excluir.textContent = "Excluir caminhão";
+        excluir.addEventListener("click", () => excluirCaminhaoHistorico(item.placa));
+        acoes.append(abrir, baixar, excluir);
+    });
+
+    const vazio = document.getElementById("historicoCaminhoesVazio");
+    const badge = document.getElementById("badgeHistoricoCaminhoes");
+    if (vazio) vazio.classList.toggle("hidden", registros.length > 0);
+    if (badge) badge.textContent = `${registros.length} caminhão(ões)`;
+}
+
+function salvarCaminhao(silencioso = false) {
+    const placa = normalizarPlaca(document.getElementById("campoPlaca")?.value);
+    if (!placaValida(placa)) {
+        alert("Informe uma placa válida no formato ABC1D23 ou ABC1234.");
+        return false;
+    }
+    const selecionados = new Set(Array.from(document.querySelectorAll("#listaPaletesCaminhao input:checked")).map(input => input.dataset.palete));
+    if (!selecionados.size) {
+        alert("Selecione pelo menos um palete para este caminhão.");
+        return false;
+    }
+    const caminhoes = lerCaminhoes();
+    const paleteIndisponivel = Array.from(selecionados).find(palete => caminhoes[palete] && caminhoes[palete] !== placa);
+    if (paleteIndisponivel) {
+        alert(`O palete ${paleteIndisponivel} já pertence ao caminhão ${caminhoes[paleteIndisponivel]}. Atualize a lista e tente novamente.`);
+        renderizarPaletesCaminhao();
+        return false;
+    }
+    Object.keys(caminhoes).forEach(palete => {
+        if (caminhoes[palete] === placa && !selecionados.has(palete)) delete caminhoes[palete];
+    });
+    selecionados.forEach(palete => { caminhoes[palete] = placa; });
+    salvarCaminhoes(caminhoes);
+    renderizarPaletesCaminhao();
+    if (!silencioso) alert(`Caminhão ${placa} salvo com ${selecionados.size} palete(s).`);
+    return true;
+}
+
+function finalizarCaminhao() {
+    const placa = normalizarPlaca(document.getElementById("campoPlaca")?.value);
+    const dataCarregamento = document.getElementById("campoDataCarregamento").value || dataLocalISO();
+    const responsavel = document.getElementById("campoResponsavelCaminhao").value.trim();
+    const observacao = document.getElementById("campoObservacaoCaminhao").value.trim();
+    const selecionados = Array.from(document.querySelectorAll("#listaPaletesCaminhao input:checked"));
+    const paletesSelecionados = selecionados.map(input => String(input.dataset.palete));
+    const resumoPaletesSelecionados = paletesSelecionados.map(numero => {
+        const item = obterPaletes().find(palete => palete.palete === numero);
+        const destinos = item?.destinos?.length ? item.destinos.join(" / ") : "Não informado";
+        return `Palete ${numero} — Destino: ${destinos}`;
+    });
+    const caixas = selecionados.reduce((total, input) => {
+        const item = obterPaletes().find(palete => palete.palete === input.dataset.palete);
+        return total + Number(item?.caixas || 0);
+    }, 0);
+    const estadoAberto = lerEstadoOperacional();
+    if (estadoAberto && paletesSelecionados.includes(String(estadoAberto.paleteAtual))) {
+        alert(`O palete ${estadoAberto.paleteAtual} ainda está aberto. Finalize o palete no romaneio total antes de adicionar ao caminhão.`);
+        return;
+    }
+    if (paletesSelecionados.some(numero => {
+        const item = obterPaletes().find(palete => palete.palete === numero);
+        return !item || Number(item.caixas) <= 0;
+    })) {
+        alert("Existe palete selecionado sem caixas. Revise o romaneio total antes de finalizar.");
+        return;
+    }
+    if (!placaValida(placa) || !paletesSelecionados.length) {
+        salvarCaminhao(true);
+        return;
+    }
+    const resumo = `Confirmar finalização?\n\nPlaca: ${placa}\nData: ${formatarDataBR(dataCarregamento)}\n\n${resumoPaletesSelecionados.join("\n")}\n\nTotal de paletes: ${paletesSelecionados.length}\nTotal de caixas: ${caixas}${responsavel ? `\nResponsável: ${responsavel}` : ""}`;
+    if (!confirm(resumo)) return;
+    if (!salvarCaminhao(true)) return;
+    const historico = lerHistoricoCaminhoes();
+    historico[placa] = { finalizadoEm: new Date().toISOString(), dataCarregamento, responsavel, observacao };
+    salvarHistoricoCaminhoes(historico);
+    document.getElementById("campoPlaca").value = "";
+    document.getElementById("campoDataCarregamento").value = dataLocalISO();
+    document.getElementById("campoResponsavelCaminhao").value = "";
+    document.getElementById("campoObservacaoCaminhao").value = "";
+    renderizarPaletesCaminhao();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    alert(`Caminhão ${placa} finalizado. A tela está pronta para o próximo caminhão.`);
+}
+
+function preencherLinha(linha, item) {
+    linha.replaceChildren();
+    const valores = [item.data, item.sku, item.destino || "", item.palete, item.loteCompleto, item.lote, item.postura, item.caixas, item.observacoes || ""];
+
+    valores.forEach((valor) => {
+        const celula = linha.insertCell();
+        celula.textContent = valor ?? "";
+    });
+
+    const acoes = linha.insertCell();
+    const adicionar = document.createElement("button");
+    adicionar.className = "btn-primary btn-adicionar-entrada";
+    adicionar.type = "button";
+    adicionar.textContent = "Adicionar caixas";
+    adicionar.addEventListener("click", () => adicionarEntradaPaleteFechado(adicionar));
+
+    const editar = document.createElement("button");
+    editar.className = "btn-blue";
+    editar.type = "button";
+    editar.textContent = "Editar";
+    editar.addEventListener("click", () => editarLinha(editar));
+
+    const excluir = document.createElement("button");
+    excluir.className = "btn-danger";
+    excluir.type = "button";
+    excluir.textContent = "Excluir";
+    excluir.addEventListener("click", () => excluirLinha(excluir));
+    acoes.append(adicionar, editar, excluir);
+}
+
+function atualizarAcoesAdicionarEntrada() {
+    const estado = lerEstadoOperacional();
+    document.querySelectorAll(".btn-adicionar-entrada").forEach(botao => {
+        const numero = botao.closest("tr")?.cells[3]?.textContent || "";
+        botao.classList.toggle("hidden", Boolean(estado && String(estado.paleteAtual) === String(numero)));
+    });
+}
+
+function adicionarEntradaPaleteFechado(botao) {
+    const linha = botao.closest("tr");
+    if (!linha) return;
+    prepararEntradaPaleteDestino(linha.cells[3].textContent, linha.cells[2].textContent);
+}
+
+function salvarLocalStorage() {
+    let tbody = document.querySelector("#tabela tbody");
+    let dados = [];
+
+    for (let linha of tbody.rows) {
+        dados.push({
+            data: linha.cells[0].innerText,
+            sku: linha.cells[1].innerText,
+            destino: linha.cells[2].innerText,
+            palete: linha.cells[3].innerText,
+            loteCompleto: linha.cells[4].innerText,
+            lote: linha.cells[5].innerText,
+            postura: linha.cells[6].innerText,
+            caixas: linha.cells[7].innerText,
+            observacoes: linha.cells[8].innerText
+        });
+    }
+
+    localStorage.setItem("entradas", JSON.stringify(dados));
+    const paletesAtuais = new Set(dados.map(item => String(item.palete)));
+    const caminhoes = lerCaminhoes();
+    Object.keys(caminhoes).forEach(palete => {
+        if (!paletesAtuais.has(String(palete))) delete caminhoes[palete];
+    });
+    salvarCaminhoes(caminhoes);
+    const placasAtuais = new Set(Object.values(caminhoes));
+    const historico = lerHistoricoCaminhoes();
+    Object.keys(historico).forEach(placa => {
+        if (!placasAtuais.has(placa)) delete historico[placa];
+    });
+    salvarHistoricoCaminhoes(historico);
+    renderizarRomaneiosDestino();
+    if (typeof atualizarDashboardVisual === "function") atualizarDashboardVisual();
+    if (typeof filtrarRomaneio === "function") filtrarRomaneio();
+    if (!document.getElementById("abaCaminhao")?.classList.contains("hidden")) renderizarPaletesCaminhao();
+}
+
+function carregarLocalStorage() {
+    let dados = lerJsonLocalStorage("entradas", []);
+    if (!Array.isArray(dados)) dados = [];
+    let tbody = document.querySelector("#tabela tbody");
+
+    dados.forEach(item => {
+        let linha = tbody.insertRow();
+        preencherLinha(linha, item);
+    });
+    atualizarAcoesAdicionarEntrada();
+    renderizarRomaneiosDestino();
+}
+
+window.onload = function() {
+    carregarLocalStorage();
+    iniciarInterfaceVisual();
+    const campoPaleteInicial = document.getElementById("campoPaleteInicial");
+    if (campoPaleteInicial) campoPaleteInicial.value = localStorage.getItem(PALETE_INICIAL_KEY) || "";
+    const dataCarregamento = document.getElementById("campoDataCarregamento");
+    if (dataCarregamento && !dataCarregamento.value) dataCarregamento.value = dataLocalISO();
+    const estado = lerEstadoOperacional();
+    if (!estado) return;
+    paleteAtual = estado.paleteAtual;
+    const rascunho = lerRascunho();
+    const restaurado = Boolean(rascunho && String(rascunho.palete) === paleteAtual && restaurarRascunho(rascunho));
+    setTimeout(() => mostrarAvisoPaleteAberto(restaurado), 0);
+};
+
+function limparCampos() {
+    campoData.value = "";
+    campoSku.value = "";
+    campoDestino.value = "";
+    campoPalete.value = "";
+    campoLote.value = "";
+    campoLote3.value = "";
+    campoLote10.value = "";
+    campoCaixas.value = "";
+    campoObservacoes.value = "";
+    campoDestino.readOnly = false;
+    marcarDestinoNoSeletor("", false);
+    indiceEditando = null;
+}
+
+function salvarEntrada() {
+    const tbody = document.querySelector("#tabela tbody");
+    const novoRegistro = indiceEditando === null;
+    if (novoRegistro) campoPalete.value = String(garantirPaleteAtual());
+
+    let dataISO = campoData.value;
+    let dataBR = formatarDataBR(dataISO);
+
+    let sku = campoSku.value.trim();
+    let destino = campoDestino.value.trim();
+    let palete = campoPalete.value;
+    let loteCompleto = campoLote.value;
+    let lote = campoLote3.value;
+    let postura = campoLote10.value;
+    let caixas = campoCaixas.value;
+    let observacoes = campoObservacoes.value.trim();
+
+    if (!dataISO || !sku || !destino || !palete || !loteCompleto || !caixas || Number(caixas) <= 0) {
+        alert("Preencha todos os campos obrigatórios.");
+        return false;
+    }
+
+    if (indiceEditando !== null) {
+        let linha = tbody.rows[indiceEditando];
+        linha.cells[0].textContent = dataBR;
+        linha.cells[1].textContent = sku;
+        linha.cells[2].textContent = destino;
+        linha.cells[3].textContent = palete;
+        linha.cells[4].textContent = loteCompleto;
+        linha.cells[5].textContent = lote;
+        linha.cells[6].textContent = postura;
+        linha.cells[7].textContent = caixas;
+        linha.cells[8].textContent = observacoes;
+    } else {
+        let linha = tbody.insertRow();
+        preencherLinha(linha, { data: dataBR, sku, destino, palete, loteCompleto, lote, postura, caixas, observacoes });
+    }
+
+    destinoPreselecionado = destino;
+    salvarLocalStorage();
+    limparRascunho();
+    limparCampos();
+    atualizarResumoPaleteAtual();
+    return true;
+}
+
+function salvarComposicao(finalizarPalete) {
+    const editando = indiceEditando !== null;
+    const inclusaoEmPaleteFechado = adicionandoEmPaleteFechado;
+    if (!salvarEntrada()) return false;
+
+    if (editando) {
+        paleteAtual = null;
+        exibirPaginaInicial();
+        return true;
+    }
+
+    if (inclusaoEmPaleteFechado) {
+        exibirPaginaInicial();
+        return true;
+    }
+
+    if (finalizarPalete) {
+        finalizarEstadoPalete();
+        exibirPaginaInicial();
+        return true;
+    }
+
+    persistirPaleteAberto(paleteAtual);
+    setTimeout(abrirLeitorQr, 0);
+    return true;
+}
+
+function editarLinha(botao) {
+    let linha = botao.parentNode.parentNode;
+    indiceEditando = linha.rowIndex - 1;
+
+    let dataBR = linha.cells[0].innerText;
+    let partes = dataBR.split("/");
+    campoData.value = `${partes[2]}-${partes[1]}-${partes[0]}`;
+
+    campoSku.value = linha.cells[1].innerText;
+    campoDestino.value = linha.cells[2].innerText;
+    campoPalete.value = linha.cells[3].innerText;
+
+    campoLote.value = linha.cells[4].innerText;
+    campoLote3.value = linha.cells[5].innerText;
+    campoLote10.value = linha.cells[6].innerText;
+
+    campoCaixas.value = linha.cells[7].innerText;
+    campoObservacoes.value = linha.cells[8].innerText;
+    paleteAtual = linha.cells[3].innerText;
+    usarInsercaoManual();
+}
+
+function excluirLinha(botao) {
+    botao.parentNode.parentNode.remove();
+    salvarLocalStorage();
+    atualizarResumoPaleteAtual();
+    indiceEditando = null;
+}
+
+function reiniciarEntradas() {
+    if (!confirm("APAGAR TODO O ROMANEIO?\n\nEsta ação apagará todas as entradas, paletes, placas e o histórico dos caminhões. Não será possível desfazer.")) return;
+
+    localStorage.removeItem("entradas");
+    localStorage.removeItem(ESTADO_OPERACIONAL_KEY);
+    localStorage.removeItem(RASCUNHO_KEY);
+    localStorage.removeItem(CAMINHOES_KEY);
+    localStorage.removeItem(HISTORICO_CAMINHOES_KEY);
+    localStorage.removeItem(PALETE_INICIAL_KEY);
+
+    let tbody = document.querySelector("#tabela tbody");
+    tbody.innerHTML = "";
+    paleteAtual = null;
+    const campoPlaca = document.getElementById("campoPlaca");
+    if (campoPlaca) campoPlaca.value = "";
+    const campoPaleteInicial = document.getElementById("campoPaleteInicial");
+    if (campoPaleteInicial) campoPaleteInicial.value = "";
+    esconderAvisoPaleteAberto();
+    exibirPaginaInicial();
+    renderizarPaletesCaminhao();
+    renderizarRomaneiosDestino();
+    atualizarDashboardVisual();
+
+    alert("Todo o romaneio foi apagado: entradas, paletes, placas e histórico dos caminhões.");
+}
+
+function reiniciarCaminhoes() {
+    const caminhoes = lerCaminhoes();
+    const historico = lerHistoricoCaminhoes();
+    const totalCaminhoes = Object.keys(historico).length;
+    const totalPaletes = Object.keys(caminhoes).length;
+    if (!totalCaminhoes && !totalPaletes) {
+        alert("Não há entradas de caminhões para apagar.");
+        return;
+    }
+    if (!confirm(`Apagar somente os dados dos caminhões?\nSerão removidos ${totalCaminhoes} caminhão(ões) e liberados ${totalPaletes} palete(s).\nAs entradas do romaneio total serão preservadas.`)) return;
+    localStorage.removeItem(CAMINHOES_KEY);
+    localStorage.removeItem(HISTORICO_CAMINHOES_KEY);
+    const campo = document.getElementById("campoPlaca");
+    if (campo) campo.value = "";
+    document.getElementById("campoDataCarregamento").value = dataLocalISO();
+    document.getElementById("campoResponsavelCaminhao").value = "";
+    document.getElementById("campoObservacaoCaminhao").value = "";
+    renderizarPaletesCaminhao();
+    atualizarDashboardVisual();
+    alert("Entradas de caminhões apagadas. O romaneio total foi preservado.");
+}
+
+function filtrarRomaneio() {
+    const termo = String(document.getElementById("buscaRomaneio")?.value || "").trim().toLocaleLowerCase("pt-BR");
+    const caminhoes = lerCaminhoes();
+    document.querySelectorAll("#tabela tbody tr").forEach(linha => {
+        const palete = String(linha.cells[3]?.textContent || "").trim();
+        const texto = `${Array.from(linha.cells).slice(0, 9).map(celula => celula.textContent).join(" ")} ${caminhoes[palete] || ""}`.toLocaleLowerCase("pt-BR");
+        linha.classList.toggle("hidden", Boolean(termo && !texto.includes(termo)));
+    });
+}
+
+function ordenarTabela(coluna) {
+    let tbody = document.querySelector("#tabela tbody");
+    let linhas = Array.from(tbody.rows);
+
+    linhas.sort((a, b) => {
+        let A = a.cells[coluna].innerText;
+        let B = b.cells[coluna].innerText;
+
+        if (coluna === 0) {
+            let [dA, mA, aA] = A.split("/");
+            let [dB, mB, aB] = B.split("/");
+            return ordemAsc
+                ? new Date(aA, mA - 1, dA) - new Date(aB, mB - 1, dB)
+                : new Date(aB, mB - 1, dB) - new Date(aA, mA - 1, dA);
+        }
+
+        return ordemAsc ? A.localeCompare(B) : B.localeCompare(A);
+    });
+
+    ordemAsc = !ordemAsc;
+    linhas.forEach(l => tbody.appendChild(l));
+}
+
+function formatarDataBR(dataISO) {
+    const partes = dataISO.split("-");
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+async function gerarExcel() {
+    const tabela = document.getElementById("tabela");
+
+    const linhas = Array.from(tabela.querySelectorAll("tbody tr"));
+    if (linhas.length === 0) {
+        alert("Não há entradas salvas para gerar o Excel.");
+        return;
+    }
+
+    const caixas = linhas.reduce((total, linha) => total + Number(linha.cells[7]?.textContent || 0), 0);
+    const hoje = dataLocalISO().split("-").reverse().join("-");
+    gerarArquivoExcel(linhas, `romaneio_total_${hoje}_${caixas}-caixas.xlsx`, "Romaneio Total");
+}
+
+function gerarArquivoExcel(linhas, nomeArquivo, nomeAba) {
+    function dataBRParaExcel(dataBR) {
+        if (!dataBR) return null;
+
+        const partes = String(dataBR).trim().split("/");
+        if (partes.length !== 3) return null;
+
+        const [dia, mes, ano] = partes.map((parte) => Number(parte));
+        if (!Number.isInteger(dia) || !Number.isInteger(mes) || !Number.isInteger(ano)) {
+            return null;
+        }
+
+        // Grava a data como número serial do Excel, sem criar objeto Date UTC.
+        // Isso evita o problema de aparecer 1 dia antes em celulares/computadores.
+        const dataLocal = new Date(ano, mes - 1, dia);
+        if (Number.isNaN(dataLocal.getTime())) return null;
+
+        const excelEpoch = new Date(1899, 11, 30);
+        return Math.round((dataLocal - excelEpoch) / (1000 * 60 * 60 * 24));
+    }
+
+    const cabecalho = [
+        "DATA", "PALETE", "SKU", "LOTE COMPLETO", "LOTE", "POST", "CX",
+        "DESTINO", "PLACA", "COMPLEMENTO", "RESPONSÁVEL", "OBSERVAÇÕES",
+        "OBSERVAÇÕES CAMINHÃO"
+    ];
+    const caminhoes = lerCaminhoes();
+    const historico = lerHistoricoCaminhoes();
+    const dados = linhas.map((linha) => {
+        const valor = indice => String(linha.cells[indice]?.innerText || "").trim();
+        const data = valor(0);
+        const sku = valor(1);
+        const destino = valor(2);
+        const palete = valor(3);
+        const placa = caminhoes[palete] || "";
+        const dadosCaminhao = historico[placa] || {};
+        return [
+            data,
+            palete,
+            sku,
+            valor(4),
+            valor(5),
+            valor(6),
+            valor(7),
+            destino,
+            placa,
+            `${sku}${destino}`,
+            dadosCaminhao.responsavel || "",
+            valor(8),
+            dadosCaminhao.observacao || ""
+        ];
+    });
+
+    const ws_data = [cabecalho, ...dados.map((linha) =>
+        linha.map((valor, indiceColuna) => {
+            if (indiceColuna === 0) {
+                const numeroExcel = dataBRParaExcel(valor);
+                return numeroExcel !== null ? numeroExcel : valor;
+            }
+            if (indiceColuna === 6) {
+                const caixasNumero = Number(valor);
+                return Number.isFinite(caixasNumero) ? caixasNumero : 0;
+            }
+            return valor;
+        })
+    )];
+
+    const ws = XLSX.utils.aoa_to_sheet(ws_data);
+    ws["!cols"] = [{ wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 8 }, { wch: 20 }, { wch: 12 }, { wch: 28 }, { wch: 24 }, { wch: 36 }, { wch: 36 }];
+
+    const range = XLSX.utils.decode_range(ws["!ref"]);
+    for (let row = 1; row <= range.e.r; row++) {
+        const dataRef = XLSX.utils.encode_cell({ r: row, c: 0 });
+        if (ws[dataRef] && typeof ws[dataRef].v === "number") {
+            ws[dataRef].t = "n";
+            ws[dataRef].z = "dd/mm/yyyy";
+        }
+        const caixasRef = XLSX.utils.encode_cell({ r: row, c: 6 });
+        if (ws[caixasRef]) {
+            ws[caixasRef].t = "n";
+            ws[caixasRef].z = "#,##0";
+        }
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, nomeAba.slice(0, 31));
+
+    const excelBin = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+
+    const arquivo = new Blob([excelBin], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    });
+
+    const url = URL.createObjectURL(arquivo);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nomeArquivo;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    alert("Arquivo Excel gerado e salvo com sucesso.");
+}
+
+let swRegistration = null;
+let pendingServiceWorker = null;
+
+function showUpdateBanner(worker) {
+    pendingServiceWorker = worker || pendingServiceWorker;
+    const banner = document.getElementById("updateBanner");
+    if (banner) banner.classList.add("show");
+}
+
+function hideUpdateBanner() {
+    const banner = document.getElementById("updateBanner");
+    if (banner) banner.classList.remove("show");
+}
+
+function aplicarAtualizacao() {
+    if (pendingServiceWorker) {
+        pendingServiceWorker.postMessage({ type: "SKIP_WAITING" });
+        return;
+    }
+    window.location.reload();
+}
+
+async function verificarVersaoPublicada() {
+    try {
+        const resp = await fetch(VERSION_URL + "?t=" + Date.now(), { cache: "no-store" });
+        if (!resp.ok) return;
+        const dados = await resp.json();
+        const versaoPublicada = dados.version;
+        const ultimaVista = localStorage.getItem("romaneio_version_seen");
+        if (!ultimaVista) localStorage.setItem("romaneio_version_seen", APP_VERSION);
+        if (versaoPublicada && versaoPublicada !== APP_VERSION) {
+            showUpdateBanner(null);
+        }
+    } catch (e) {
+        console.warn("Não foi possível verificar atualizações.", e);
+    }
+}
+
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js").then(reg => {
+        swRegistration = reg;
+        if (reg.waiting) showUpdateBanner(reg.waiting);
+        reg.addEventListener("updatefound", () => {
+            const novoWorker = reg.installing;
+            if (!novoWorker) return;
+            novoWorker.addEventListener("statechange", () => {
+                if (novoWorker.state === "installed" && navigator.serviceWorker.controller) {
+                    showUpdateBanner(novoWorker);
+                }
+            });
+        });
+        setInterval(() => reg.update(), 60 * 60 * 1000);
+    });
+
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+        window.location.reload();
+    });
+}
+
+window.addEventListener("online", () => {
+    if (swRegistration) swRegistration.update();
+    verificarVersaoPublicada();
+});
+
+window.addEventListener("load", verificarVersaoPublicada);
+
+document.addEventListener("click", (ev) => {
+    if (ev.target && ev.target.id === "updateNowBtn") aplicarAtualizacao();
+});
+
+let deferredInstallPrompt = null;
+window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    if (!window.matchMedia("(display-mode: standalone)").matches) {
+        const banner = document.getElementById("installBanner");
+        if (banner) setTimeout(() => banner.classList.add("show"), 800);
+    }
+});
+
+document.addEventListener("click", async (ev) => {
+    if (ev.target && ev.target.id === "installCloseBtn") {
+        const banner = document.getElementById("installBanner");
+        if (banner) banner.classList.remove("show");
+    }
+    if (ev.target && ev.target.id === "installNowBtn") {
+        if (!deferredInstallPrompt) return;
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        const banner = document.getElementById("installBanner");
+        if (banner) banner.classList.remove("show");
+    }
+});
+
+
+function atualizarDashboardVisual() {
+    const todasAsLinhas = Array.from(document.querySelectorAll("#tabela tbody tr"));
+    let linhas = todasAsLinhas;
+    if (abaAtiva === "caminhao") {
+        const paletesSelecionados = new Set(
+            Array.from(document.querySelectorAll("#listaPaletesCaminhao input:checked"))
+                .map(input => String(input.dataset.palete || ""))
+        );
+        linhas = todasAsLinhas.filter(linha => paletesSelecionados.has(String(linha.cells[3]?.innerText || "")));
+    }
+    const totalRegistros = linhas.length;
+    const totalCaixas = linhas.reduce((s, linha) => s + Number(linha.cells[7]?.innerText || 0), 0);
+    const totalPaletes = new Set(linhas.map(linha => linha.cells[3]?.innerText).filter(Boolean)).size;
+    const totalDestinos = new Set(linhas.map(linha => String(linha.cells[2]?.innerText || "").trim().toLocaleLowerCase("pt-BR")).filter(Boolean)).size;
+    const ultimo = totalRegistros ? linhas[totalRegistros - 1].cells[0].innerText : "--";
+
+    const elReg = document.getElementById("dashRegistros");
+    const elCx = document.getElementById("dashCaixas");
+    const elPal = document.getElementById("dashPaletes");
+    const elDestinos = document.getElementById("dashDestinos");
+    const elUlt = document.getElementById("dashUltimo");
+    const labelReg = document.getElementById("dashRegistrosLabel");
+    const labelCx = document.getElementById("dashCaixasLabel");
+    const labelPal = document.getElementById("dashPaletesLabel");
+    const labelDestinos = document.getElementById("dashDestinosLabel");
+
+    if (elReg) elReg.innerText = totalRegistros;
+    if (elCx) elCx.innerText = totalCaixas;
+    if (elPal) elPal.innerText = totalPaletes;
+    if (elDestinos) elDestinos.innerText = totalDestinos;
+    if (elUlt) elUlt.innerText = ultimo === "--" ? "--" : ultimo.substring(0, 5);
+    if (labelReg) labelReg.innerText = abaAtiva === "caminhao" ? "Registros do caminhão" : "Registros totais";
+    if (labelCx) labelCx.innerText = abaAtiva === "caminhao" ? "Caixas do caminhão" : "Caixas totais";
+    if (labelPal) labelPal.innerText = abaAtiva === "caminhao" ? "Paletes do caminhão" : "Paletes totais";
+    if (labelDestinos) labelDestinos.innerText = abaAtiva === "caminhao" ? "Destinos do caminhão" : "Destinos totais";
+
+    const emptyState = document.getElementById("emptyState");
+    const tableContainer = document.getElementById("tableContainer");
+    if (emptyState) emptyState.style.display = todasAsLinhas.length ? "none" : "flex";
+    if (tableContainer) tableContainer.classList.toggle("is-empty", todasAsLinhas.length === 0);
+}
+
+function iniciarInterfaceVisual() {
+    atualizarDashboardVisual();
+    const tbody = document.querySelector("#tabela tbody");
+    if (tbody) {
+        const observer = new MutationObserver(atualizarDashboardVisual);
+        observer.observe(tbody, { childList: true, subtree: true, characterData: true });
+    }
+}
+</script>
+</body>
+</html>
