@@ -5,7 +5,7 @@
 <title>Romaneio de Paletes 2.0</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0b1320">
+<meta name="theme-color" content="#254D69">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -36,14 +36,37 @@
 .eme-aviso-diferenca{background:#fff0e4;color:#9a3412;padding:12px;border-radius:10px;font-weight:700;margin:12px 0}
 .eme-aviso-ok{width:100%;border:0;background:#1764b4;color:white;border-radius:10px;padding:13px;font-weight:800;font-size:15px;cursor:pointer}
 .eme-aviso-ok:focus-visible{outline:3px solid #f59e0b;outline-offset:3px}
+
+/* Identidade visual Raiar Orgânicos: aplicação exclusivamente visual */
+:root{--bg:#f4fafc;--panel:#fff;--text:#254D69;--muted:#496579;--line:#cce6ee;--input:#fff;--input-disabled:#edf5f7;--primary:#254D69;--primary2:#1b3f59;--success:#254D69;--success2:#1b3f59;--danger:#b43d38;--danger2:#922d29;--yellow:#FFD043;--shadow:0 10px 28px rgba(37,77,105,.11);--radius:20px}
+body{font-family:"Trebuchet MS",Arial,sans-serif;background:linear-gradient(150deg,#e8faff 0%,#fff 52%,#fff5ef 100%);color:var(--text)}
+.topbar{background:#254D69;border:1px solid #254D69;border-radius:22px;box-shadow:0 10px 28px rgba(37,77,105,.16);backdrop-filter:none}
+.brand h1{letter-spacing:-.5px}.brand p{color:#e0f6fb}
+.brand-icon{box-shadow:none;border-radius:16px}
+.status-pill{background:rgba(92,220,242,.17);border-color:rgba(92,220,242,.35);box-shadow:none}
+.card,.metric{background:#fff;border:1px solid #d7edf2;box-shadow:var(--shadow);border-radius:20px}
+.metric b{color:#254D69}.metric .ico{background:#fff3cb}.metric:nth-child(2) .ico{background:#dff9fd}.metric:nth-child(3) .ico{background:#ffe6df}.metric:nth-child(4) .ico{background:#fff3cb}
+h2,label{color:#254D69}.badge{background:#dff8fd;color:#254D69;border-radius:999px}
+input{border-color:#bfdce5;background:#fff;color:#254D69}input:focus{border-color:#5CDCF2;box-shadow:0 0 0 4px rgba(92,220,242,.23)}
+button{border-radius:13px;font-family:inherit}.btn-primary{background:#254D69;box-shadow:none}.btn-blue{background:#FFD043;color:#254D69;box-shadow:none}.btn-danger{background:#b43d38;box-shadow:none}
+#btnExcel{background:#254D69;box-shadow:none}
+.table-container{border-color:#d1e7ed;border-radius:16px}th{background:#e4f8fc;color:#254D69}tbody tr:nth-child(even){background:#f6fbfd}tbody tr:hover{background:#e9f9fd}
+.footer{background:#254D69;color:#e8f8fb;border-color:#254D69;box-shadow:none}.footer strong{color:#fff}
+.eme-aviso-overlay{background:rgba(37,77,105,.47)}
+.eme-aviso-card{border-top:5px solid #FFD043;border-radius:22px;color:#254D69;font-family:"Trebuchet MS",Arial,sans-serif}
+.eme-aviso-topo{color:#254D69}.eme-aviso-sub{color:#496579}
+.eme-aviso-dado{background:#e8f9fc}.eme-aviso-dado span{color:#496579}
+.eme-aviso-diferenca{background:#ffe8df;color:#8e3b29}
+.eme-aviso-ok{background:#254D69;border-radius:13px}
+.eme-aviso-ok:focus-visible{outline-color:#FFD043}
 </style>
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.14</strong></p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.15</strong></p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
 
 <section class="card" id="painelEstoqueTeste" style="margin:14px 0;padding:20px">
-  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.14</small></h2><span class="badge">Reserva local de teste</span></div>
+  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.15</small></h2><span class="badge">Reserva local de teste</span></div>
   <p style="margin:8px 0;color:#475569">Importe uma CÓPIA do Excel. A importação é opcional. Sem Excel, o Romaneio funciona normalmente. Com Excel, novas entradas passam por reserva local. O arquivo não é modificado.</p>
   <label for="arquivoEstoqueTeste" style="display:block;margin:10px 0">Selecionar planilha de estoque (.xlsx)</label>
   <input id="arquivoEstoqueTeste" type="file" accept=".xlsx,.xls" onchange="importarEstoqueTeste(event)" style="max-width:100%;margin-bottom:10px">
@@ -97,7 +120,7 @@
 </div>
 
 <script>
-const APP_VERSION = "2.0.14";
+const APP_VERSION = "2.0.15";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
