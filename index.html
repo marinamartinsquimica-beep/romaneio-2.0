@@ -82,7 +82,7 @@
 </div>
 
 <script>
-const APP_VERSION = "2.0.5";
+const APP_VERSION = "2.0.6";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -1364,7 +1364,8 @@ function salvarEntrada() {
     }
 
     const linhaEditadaReservada = indiceEditando !== null && tbody.rows[indiceEditando]?.dataset.reservaTeste === "1";
-    if (window.estoqueTesteConsulta) {
+    // Registros antigos sem reserva não passam a reservar apenas por serem editados.
+    if (window.estoqueTesteConsulta && (novoRegistro || linhaEditadaReservada)) {
         const erro = validarReservaTeste(sku, loteCompleto, Number(caixas), indiceEditando);
         if (erro) { alert(erro); return false; }
     }
