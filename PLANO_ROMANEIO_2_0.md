@@ -89,3 +89,10 @@
 - Interface deve mostrar pendentes, sincronizados, divergentes e falhas; retry seguro e indicação de última sincronização.
 - Evitar duplicidade por reenvio, alterações em dois dispositivos e divergência entre cache local e estoque central. Sem conexão, saldo local é apenas referência e reservas ainda não são garantidas globalmente.
 - Testar desligamento de rede, fechamento/reabertura, reconexão, reenvio duplicado, conflitos e exportação offline antes de liberar em produção.
+
+## Avisos de divergência no Romaneio e na planilha oficial
+- Ao identificar divergência, manter a expedição liberada e criar ocorrência de conferência vinculada a SKU, lote completo e data de postura, além de quantidade lançada, saldo do estoque, diferença, data/hora e origem.
+- Exibir observação de conferência na entrada correspondente do Romaneio e na área Controle de Estoque; operador pode reconhecer e resolver com rastreabilidade.
+- Quando houver conexão e integração autenticada, registrar observação visível na(s) linha(s) correspondentes de SKU + lote completo + postura na planilha oficial SharePoint, sem alterar saldo por causa do alerta. Tratar múltiplas linhas correspondentes sem duplicar a divergência ou sobrescrever observações existentes.
+- Offline: enfileirar aviso localmente e sincronizar após reconexão com ID único e idempotência; não alegar que a planilha foi anotada até a confirmação da gravação.
+- O ajuste de saldo permanece exclusivo do processo de baixa confirmada ou inventário autorizado; um alerta não efetua baixa.
