@@ -58,3 +58,10 @@
 - O operador não deverá apagar manualmente o arquivo antigo nem copiar a planilha atualizada.
 - A mesma política de gravação segura vale para baixas efetivas de expedição.
 - **Ainda não implementado**: depende da integração autenticada com o SharePoint e testes com cópia, nunca diretamente no arquivo oficial durante desenvolvimento.
+
+## Escopo definitivo da aba AJUSTE ESTOQUE — inventário físico
+- Esta aba é **exclusiva para contagem física in loco e correção de divergências de lançamentos**, não faz parte da rotina diária de expedição ou confirmação de baixas.
+- Fluxo: iniciar inventário por escopo (SKU/lote), registrar caixas contadas, comparar saldo registrado x saldo físico, revisar diferenças, autorizar ajustes e atualizar o Excel oficial no SharePoint com segurança.
+- Contagens sem divergência não devem alterar saldos; itens fora do escopo da contagem não devem ser modificados.
+- Tratar reservas ativas e baixas pendentes, definindo um momento de corte/congelamento lógico e conciliação, para evitar diferenças falsas e alterações concorrentes durante inventário.
+- Preservar as regras existentes do ajuste no aplicativo de referência após análise do código, além de trilha de auditoria e permissões.
