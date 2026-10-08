@@ -79,3 +79,13 @@
 - Manter download e compartilhamento para vendas independentemente de divergências.
 - Na confirmação da baixa, exigir tratamento/conciliação de divergências sem atualização incorreta do estoque oficial.
 - Protótipo local v2.0.8: aviso e registro local no navegador; visualização central pelo operador do estoque ainda depende da integração futura. Recalcular divergências dinamicamente após edição/importação é melhoria pendente.
+
+## Requisito obrigatório — operação offline e sincronização posterior
+- Na versão definitiva, consulta normal de estoque no SharePoint; importação manual de Excel apenas para testes.
+- PWA deve permitir lançamento de caixas, leitura de etiquetas, paletes, destinos, caminhões, exportação e compartilhamento quando offline (quando suportado pelo dispositivo), sem bloquear a expedição.
+- Persistir movimentos localmente em fila durável com ID único, timestamp, SKU, lote, quantidade, destino, palete, operador, status de sincronização; não perder registros em recarga/queda de conexão.
+- Na reconexão, sincronizar pendências com serviço central autenticado, garantir idempotência e proteção contra concorrência, consultar saldo vigente, reconciliar reservas e apontar divergências ao operador do estoque sem descartar movimentos.
+- Não realizar baixa oficial automaticamente na reconexão: requer confirmação autorizada no Controle de Estoque; somente depois atualizar com segurança o Excel oficial no SharePoint e confirmar gravação.
+- Interface deve mostrar pendentes, sincronizados, divergentes e falhas; retry seguro e indicação de última sincronização.
+- Evitar duplicidade por reenvio, alterações em dois dispositivos e divergência entre cache local e estoque central. Sem conexão, saldo local é apenas referência e reservas ainda não são garantidas globalmente.
+- Testar desligamento de rede, fechamento/reabertura, reconexão, reenvio duplicado, conflitos e exportação offline antes de liberar em produção.
