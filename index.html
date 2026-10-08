@@ -27,10 +27,10 @@
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.10</strong></p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.11</strong></p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
 
 <section class="card" id="painelEstoqueTeste" style="margin:14px 0;padding:20px">
-  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.10</small></h2><span class="badge">Reserva local de teste</span></div>
+  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.11</small></h2><span class="badge">Reserva local de teste</span></div>
   <p style="margin:8px 0;color:#475569">Importe uma CÓPIA do Excel. A importação é opcional. Sem Excel, o Romaneio funciona normalmente. Com Excel, novas entradas passam por reserva local. O arquivo não é modificado.</p>
   <label for="arquivoEstoqueTeste" style="display:block;margin:10px 0">Selecionar planilha de estoque (.xlsx)</label>
   <input id="arquivoEstoqueTeste" type="file" accept=".xlsx,.xls" onchange="importarEstoqueTeste(event)" style="max-width:100%;margin-bottom:10px">
@@ -84,7 +84,7 @@
 </div>
 
 <script>
-const APP_VERSION = "2.0.10";
+const APP_VERSION = "2.0.11";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -1865,6 +1865,24 @@ function atualizarResumoReservaTeste() {
   const reservadas = [...reservas.values()].reduce((acc,n) => acc+n,0);
   const divergencias = [...reservas.entries()].filter(([chave,qtd]) => !saldos.has(chave) || qtd>saldos.get(chave));
   alvo.textContent = "Estoque: "+total.toLocaleString("pt-BR")+" CX | Reservadas neste navegador: "+reservadas.toLocaleString("pt-BR")+" CX | Disponíveis (estimativa): "+(total-reservadas).toLocaleString("pt-BR")+" CX"+(divergencias.length?" | Divergências: "+divergencias.length:"");
+  // Observação visual derivada do saldo atual: não altera observações originais nem o Excel.
+  document.querySelectorAll("#tabela tbody tr").forEach(linha => {
+    const chave = chaveReservaTeste(linha.cells[1].textContent,linha.cells[4].textContent);
+    const qtd = reservas.get(chave) || 0;
+    const saldo = saldos.get(chave);
+    const divergente = linha.dataset.reservaTeste === "1" && (saldo === undefined || qtd > saldo);
+    const celula = linha.cells[8];
+    const anterior = celula.querySelector(".observacao-divergencia-estoque");
+    if (anterior) anterior.remove();
+    linha.style.outline = divergente ? "2px solid #c2410c" : "";
+    if (divergente) {
+      const aviso = document.createElement("div");
+      aviso.className = "observacao-divergencia-estoque";
+      aviso.style.cssText = "margin-top:5px;padding:5px 7px;background:#fff1e6;color:#7c2d12;border-radius:5px;font-size:12px;font-weight:700;white-space:normal";
+      aviso.textContent = "CONFERIR ESTOQUE — SKU "+linha.cells[1].textContent+" | Lote "+linha.cells[4].textContent+" | Postura "+linha.cells[6].textContent+" | Lançado "+qtd+" CX | Saldo "+(saldo===undefined?"não encontrado":saldo+" CX")+" | Diferença "+(saldo===undefined?"a conferir":(qtd-saldo)+" CX");
+      celula.appendChild(aviso);
+    }
+  });
   if (!detalhes) return;
   detalhes.replaceChildren();
   detalhes.style.display = divergencias.length ? "block" : "none";
@@ -1876,7 +1894,8 @@ function atualizarResumoReservaTeste() {
   divergencias.forEach(([chave,qtd]) => {
     const saldo = saldos.get(chave);
     const li = document.createElement("li");
-    li.textContent = chave.replace("|"," / ")+" — romaneio: "+qtd+" CX; estoque: "+(saldo===undefined?"lote não encontrado":saldo+" CX")+"; diferença: "+(saldo===undefined?"a conferir":(qtd-saldo)+" CX");
+    const posturas = [...new Set(Array.from(document.querySelectorAll("#tabela tbody tr")).filter(l => l.dataset.reservaTeste === "1" && chaveReservaTeste(l.cells[1].textContent,l.cells[4].textContent) === chave).map(l => l.cells[6].textContent.trim()).filter(Boolean))].join(", ");
+    li.textContent = chave.replace("|"," / ")+" | Postura: "+(posturas||"não informada")+" — romaneio: "+qtd+" CX; estoque: "+(saldo===undefined?"lote não encontrado":saldo+" CX")+"; diferença: "+(saldo===undefined?"a conferir":(qtd-saldo)+" CX");
     lista.appendChild(li);
   });
   detalhes.appendChild(lista);
