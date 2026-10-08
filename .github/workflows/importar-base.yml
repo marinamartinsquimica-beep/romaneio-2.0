@@ -25,9 +25,7 @@ jobs:
 
       - name: Copiar todos os arquivos do aplicativo
         run: |
-          rsync -a --exclude='.git/' --exclude='README.md' --exclude='.github/workflows/' /tmp/romaneio-original/ ./
-          mkdir -p .github/workflows
-          cp /tmp/romaneio-original/.github/workflows/pages.yml .github/workflows/pages.yml
+          rsync -a --exclude='.git/' --exclude='README.md' --exclude='.github/' /tmp/romaneio-original/ ./
           git status --short
 
       - name: Registrar importacao sem alterar o original
