@@ -32,3 +32,20 @@
 - [ ] Validar protótipo de reserva/baixa com a operação.
 - [ ] Implementar reserva automática e reconciliação com persistência segura.
 - [ ] Testar e publicar Romaneio 2.0 separadamente.
+
+## Arquitetura definitiva aprovada (08/10/2026)
+- Um único aplicativo Romaneio 2.0 com três áreas: **ROMANEIO**, **CONTROLE DE ESTOQUE** e **AJUSTE ESTOQUE**.
+- ROMANEIO: leitura Data Matrix, paletes, destinos, caminhões, reserva automática e finalização de expedição.
+- CONTROLE DE ESTOQUE: operador autenticado confere romaneios finalizados, confirma baixa efetiva, acompanha gravação no SharePoint e concilia reservas; impedir baixa duplicada.
+- AJUSTE ESTOQUE: reproduzir integralmente as regras de negócio, validações, rastreabilidade e resultados do módulo Ajuste Estoque do projeto de Baixa Estoque existente, **somente após análise do código-fonte de referência**. Restringir a usuários autorizados; não confundir ajuste com baixa de expedição.
+- O SharePoint será a origem oficial do saldo. Integração exige autenticação, persistência central compartilhada, controle de concorrência, atualização segura e confirmação da gravação. Não prometer atualização direta antes da integração testada.
+- O painel de importação/estoque atual é **temporário e exclusivo de teste**. A versão definitiva não o exibirá; importação manual não será exigida.
+- A inserção manual e a leitura Data Matrix **nunca podem depender** de importar uma planilha. Sem estoque conectado, não alegar reserva efetivada; exibir status adequado.
+- Projetos antigos são somente referência/cópia; nunca editar, publicar ou fazer commits neles.
+
+## Ponto de retomada — v2.0.5
+- Cópia do aplicativo e exportação Excel validadas pela operação.
+- Leitura Excel validada: 122 lotes e 1.510 caixas.
+- Teste local exibiu 37 caixas reservadas e 1.473 disponíveis.
+- **Próxima etapa:** testar edição de quantidade, exclusão de entrada, exclusão por destino, lote inexistente e saldo insuficiente; verificar recálculo de reservas e funcionamento sem Excel. Corrigir defeitos sem modificar recursos aprovados.
+- **Depois:** persistência central, integração SharePoint, tela de confirmação de baixas e módulo Ajuste Estoque conforme código de referência.
