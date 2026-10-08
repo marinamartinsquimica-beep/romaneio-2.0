@@ -1291,7 +1291,8 @@ function salvarLocalStorage() {
     salvarHistoricoCaminhoes(historico);
     renderizarRomaneiosDestino();
     if (typeof atualizarResumoReservaTeste === "function") atualizarResumoReservaTeste();
-    if (typeof atualizarDashboardVisual === "function") atualizarDashboardVisual();\n    if (typeof atualizarResumoReservaTeste === "function") atualizarResumoReservaTeste();
+    if (typeof atualizarDashboardVisual === "function") atualizarDashboardVisual();
+    if (typeof atualizarResumoReservaTeste === "function") atualizarResumoReservaTeste();
     if (typeof filtrarRomaneio === "function") filtrarRomaneio();
     if (!document.getElementById("abaCaminhao")?.classList.contains("hidden")) renderizarPaletesCaminhao();
 }
