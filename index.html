@@ -27,10 +27,10 @@
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.1</strong></p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.2</strong></p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
 
 <section class="card" id="painelEstoqueTeste" style="margin:14px 0;padding:20px">
-  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.1</small></h2><span class="badge">Somente leitura</span></div>
+  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.2</small></h2><span class="badge">Somente leitura</span></div>
   <p style="margin:8px 0;color:#475569">Importe uma CÓPIA do Excel. Esta etapa apenas consulta os saldos; não reserva caixas nem modifica o estoque.</p>
   <label for="arquivoEstoqueTeste" style="display:block;margin:10px 0">Selecionar planilha de estoque (.xlsx)</label>
   <input id="arquivoEstoqueTeste" type="file" accept=".xlsx,.xls" onchange="importarEstoqueTeste(event)" style="max-width:100%;margin-bottom:10px">
@@ -65,7 +65,7 @@
 <section class="card"><div class="card-header"><h2>Selecionar paletes</h2><span class="badge" id="badgePaletesCaminhao">0 paletes</span></div><div class="truck-select-actions"><button class="btn-primary" type="button" onclick="selecionarTodosPaletes()">SELECIONAR TODOS</button><button class="btn-secondary" type="button" onclick="limparSelecaoPaletes()">LIMPAR SELEÇÃO</button></div><div id="listaPaletesCaminhao" class="truck-pallets"></div></section>
 <section class="card truck-entries"><div class="card-header"><h2>Histórico de caminhões</h2><span class="badge" id="badgeHistoricoCaminhoes">0 caminhões</span></div><div class="table-container"><table id="tabelaHistoricoCaminhoes"><thead><tr><th>PLACA</th><th>PALETES</th><th>DESTINO</th><th>CAIXAS</th><th>CARREGAMENTO</th><th>RESPONSÁVEL</th><th>FINALIZADO EM</th><th>AÇÃO</th></tr></thead><tbody></tbody></table><div class="truck-empty" id="historicoCaminhoesVazio">Nenhum caminhão finalizado neste romaneio.</div></div></section>
 </main>
-<footer class="footer">🛡️ <strong>Romaneio de Paletes 2.0</strong> &nbsp;•&nbsp; Dados salvos localmente no aparelho<span class="footer-credit">Criado por: Marina Martins Costa</span><div class="app-version">Versão <span id="appVersion">1.8.3</span></div></footer></div><button class="fab" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+<footer class="footer">🛡️ <strong>Romaneio de Paletes 2.0</strong> &nbsp;•&nbsp; Dados salvos localmente no aparelho<span class="footer-credit">Criado por: Marina Martins Costa</span></footer></div><button class="fab" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <div id="updateBanner" class="update-banner" aria-live="polite">
   <div><strong>🚀 Nova versão disponível</strong><span>Toque para atualizar o app.</span></div>
@@ -81,7 +81,7 @@
 </div>
 
 <script>
-const APP_VERSION = "2.0.1";
+const APP_VERSION = "2.0.2";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -1807,7 +1807,7 @@ async function importarEstoqueTeste(event) {
     const linhas = XLSX.utils.sheet_to_json(wb.Sheets[nomeAba], {header:1, defval:"", raw:true});
     const normalizar = v => String(v ?? "").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").trim().toUpperCase();
     const cab = linhas.findIndex(l => l.some(v => normalizar(v)==="SKU") && l.some(v => normalizar(v)==="LOTE COMPLETO") && l.some(v => normalizar(v)==="SALDO"));
-    if (cab < 0) throw new Error("Colunas SKU, Lote Completo e Saldo não encontradas na aba Estoque.");
+    if (cab < 0) throw new Error("Colunas SKU, Lote Completo e Saldo não encontradas. Cabeçalhos identificados: "+linhas.slice(0,5).map(l=>l.filter(v=>String(v).trim()).slice(0,14).join(" | ")).join(" / "));
     const h = linhas[cab].map(normalizar), iSku=h.indexOf("SKU"), iLote=h.indexOf("LOTE COMPLETO"), iSaldo=h.indexOf("SALDO");
     const mapa = new Map();
     for (const l of linhas.slice(cab+1)) {
