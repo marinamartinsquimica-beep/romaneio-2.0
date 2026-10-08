@@ -59,14 +59,19 @@ button{border-radius:13px;font-family:inherit}.btn-primary{background:#254D69;bo
 .eme-aviso-diferenca{background:#ffe8df;color:#8e3b29}
 .eme-aviso-ok{background:#254D69;border-radius:13px}
 .eme-aviso-ok:focus-visible{outline-color:#FFD043}
+
+/* Destaque exclusivo para baixar/exportar Excel: amarelo da paleta Raiar */
+.btn-download-excel,#btnExcel,#btnExcelInicial,#btnExcelCaminhao{background:#FFD043!important;color:#254D69!important;border:2px solid #e6b92f!important;box-shadow:0 3px 0 rgba(37,77,105,.16)!important;font-weight:800!important}
+.btn-download-excel:hover,#btnExcel:hover,#btnExcelInicial:hover,#btnExcelCaminhao:hover{background:#ffe17d!important;color:#254D69!important}
+.btn-download-excel:focus-visible,#btnExcel:focus-visible,#btnExcelInicial:focus-visible,#btnExcelCaminhao:focus-visible{outline:3px solid #5CDCF2;outline-offset:2px}
 </style>
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.15</strong></p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.16</strong></p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
 
 <section class="card" id="painelEstoqueTeste" style="margin:14px 0;padding:20px">
-  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.15</small></h2><span class="badge">Reserva local de teste</span></div>
+  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.16</small></h2><span class="badge">Reserva local de teste</span></div>
   <p style="margin:8px 0;color:#475569">Importe uma CÓPIA do Excel. A importação é opcional. Sem Excel, o Romaneio funciona normalmente. Com Excel, novas entradas passam por reserva local. O arquivo não é modificado.</p>
   <label for="arquivoEstoqueTeste" style="display:block;margin:10px 0">Selecionar planilha de estoque (.xlsx)</label>
   <input id="arquivoEstoqueTeste" type="file" accept=".xlsx,.xls" onchange="importarEstoqueTeste(event)" style="max-width:100%;margin-bottom:10px">
@@ -120,7 +125,7 @@ button{border-radius:13px;font-family:inherit}.btn-primary{background:#254D69;bo
 </div>
 
 <script>
-const APP_VERSION = "2.0.15";
+const APP_VERSION = "2.0.16";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -494,7 +499,7 @@ function renderizarRomaneiosDestino() {
         novo.textContent = "Adicionar palete";
         novo.addEventListener("click", () => prepararNovoPaleteDestino(item.nome));
         const excel = document.createElement("button");
-        excel.className = "btn-finish-truck";
+        excel.className = "btn-finish-truck btn-download-excel";
         excel.type = "button";
         excel.textContent = "Baixar Excel";
         excel.addEventListener("click", () => baixarExcelDestino(item.nome));
@@ -1158,7 +1163,7 @@ function renderizarHistoricoCaminhoes() {
         abrir.textContent = "Abrir";
         abrir.addEventListener("click", () => abrirCaminhaoHistorico(item.placa));
         const baixar = document.createElement("button");
-        baixar.className = "btn-primary";
+        baixar.className = "btn-primary btn-download-excel";
         baixar.type = "button";
         baixar.textContent = "Baixar Excel";
         baixar.addEventListener("click", () => baixarCaminhaoHistorico(item.placa));
