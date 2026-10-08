@@ -27,11 +27,11 @@
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.4</strong></p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.5</strong></p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
 
 <section class="card" id="painelEstoqueTeste" style="margin:14px 0;padding:20px">
-  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.4</small></h2><span class="badge">Reserva local de teste</span></div>
-  <p style="margin:8px 0;color:#475569">Importe uma CÓPIA do Excel. Novas entradas serão reservadas automaticamente após a importação. Registros anteriores não entram nas reservas. O Excel não será modificado.</p>
+  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.5</small></h2><span class="badge">Reserva local de teste</span></div>
+  <p style="margin:8px 0;color:#475569">Importe uma CÓPIA do Excel. A importação é opcional. Sem Excel, o Romaneio funciona normalmente. Com Excel, novas entradas passam por reserva local. O arquivo não é modificado.</p>
   <label for="arquivoEstoqueTeste" style="display:block;margin:10px 0">Selecionar planilha de estoque (.xlsx)</label>
   <input id="arquivoEstoqueTeste" type="file" accept=".xlsx,.xls" onchange="importarEstoqueTeste(event)" style="max-width:100%;margin-bottom:10px">
   <p id="resumoReservaTeste" role="status">Reservas: aguardando importação do estoque.</p>
@@ -82,7 +82,7 @@
 </div>
 
 <script>
-const APP_VERSION = "2.0.4";
+const APP_VERSION = "2.0.5";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -1367,9 +1367,6 @@ function salvarEntrada() {
     if (window.estoqueTesteConsulta) {
         const erro = validarReservaTeste(sku, loteCompleto, Number(caixas), indiceEditando);
         if (erro) { alert(erro); return false; }
-    } else if (window.reservaTesteAtiva) {
-        alert("Importe novamente a planilha de estoque para reservar novas caixas.");
-        return false;
     }
 
     if (indiceEditando !== null) {
@@ -1837,7 +1834,7 @@ function atualizarResumoReservaTeste() {
   const naoEncontradas=[...reservasAtuaisTeste().entries()].filter(([k])=>![...window.estoqueTesteConsulta.values()].some(x=>chaveReservaTeste(x.sku,x.lote)===k)).length;
   alvo.textContent="Estoque: "+total.toLocaleString("pt-BR")+" CX | Reservadas neste navegador: "+reservadas.toLocaleString("pt-BR")+" CX | Disponíveis (estimativa): "+(total-reservadas).toLocaleString("pt-BR")+" CX"+(naoEncontradas?" | ATENÇÃO: "+naoEncontradas+" lote(s) reservado(s) ausente(s) no Excel atual.":"");
 }
-\n// Etapa 2A: leitura isolada do estoque. Não modifica registros, reservas ou arquivos.
+// Etapa 2A: leitura isolada do estoque. Não modifica registros, reservas ou arquivos.
 async function importarEstoqueTeste(event) {
   const arquivo = event.target.files && event.target.files[0];
   if (!arquivo) return;
