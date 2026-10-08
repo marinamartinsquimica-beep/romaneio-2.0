@@ -27,10 +27,10 @@
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.12</strong></p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.13</strong></p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
 
 <section class="card" id="painelEstoqueTeste" style="margin:14px 0;padding:20px">
-  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.12</small></h2><span class="badge">Reserva local de teste</span></div>
+  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.13</small></h2><span class="badge">Reserva local de teste</span></div>
   <p style="margin:8px 0;color:#475569">Importe uma CÓPIA do Excel. A importação é opcional. Sem Excel, o Romaneio funciona normalmente. Com Excel, novas entradas passam por reserva local. O arquivo não é modificado.</p>
   <label for="arquivoEstoqueTeste" style="display:block;margin:10px 0">Selecionar planilha de estoque (.xlsx)</label>
   <input id="arquivoEstoqueTeste" type="file" accept=".xlsx,.xls" onchange="importarEstoqueTeste(event)" style="max-width:100%;margin-bottom:10px">
@@ -84,7 +84,7 @@
 </div>
 
 <script>
-const APP_VERSION = "2.0.12";
+const APP_VERSION = "2.0.13";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -1878,7 +1878,7 @@ function atualizarResumoReservaTeste() {
     const posturas = [...new Set(Array.from(document.querySelectorAll("#tabela tbody tr"))
       .filter(l => l.dataset.reservaTeste === "1" && chaveReservaTeste(l.cells[1].textContent,l.cells[4].textContent) === chave)
       .map(l => l.cells[6].textContent.trim()).filter(Boolean))].join(", ");
-    alert("ATENÇÃO — DIVERGÊNCIA DE ESTOQUE\\nSKU / Lote: "+chave.replace("|"," / ")+"\\nPostura: "+(posturas||"não informada")+"\\nRomaneio: "+qtd+" CX\\nEstoque: "+(saldo===undefined?"não encontrado":saldo+" CX")+"\\nDiferença: "+(saldo===undefined?"a conferir":(qtd-saldo)+" CX")+"\\n\\nClique OK para continuar. A divergência permanece pendente para o estoque.");
+    alert("ATENÇÃO — DIVERGÊNCIA DE ESTOQUE\nSKU / Lote: "+chave.replace("|"," / ")+"\nPostura: "+(posturas||"não informada")+"\nRomaneio: "+qtd+" CX\nEstoque: "+(saldo===undefined?"não encontrado":saldo+" CX")+"\nDiferença: "+(saldo===undefined?"a conferir":(qtd-saldo)+" CX")+"\n\nClique OK para continuar. A divergência permanece pendente para o estoque.");
   }
 }
 // Etapa 2A: leitura isolada do estoque. Não modifica registros, reservas ou arquivos.
