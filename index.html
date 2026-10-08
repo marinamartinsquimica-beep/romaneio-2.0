@@ -27,13 +27,15 @@
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.8</strong></p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.9</strong></p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
 
 <section class="card" id="painelEstoqueTeste" style="margin:14px 0;padding:20px">
-  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.8</small></h2><span class="badge">Reserva local de teste</span></div>
+  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.9</small></h2><span class="badge">Reserva local de teste</span></div>
   <p style="margin:8px 0;color:#475569">Importe uma CÓPIA do Excel. A importação é opcional. Sem Excel, o Romaneio funciona normalmente. Com Excel, novas entradas passam por reserva local. O arquivo não é modificado.</p>
   <label for="arquivoEstoqueTeste" style="display:block;margin:10px 0">Selecionar planilha de estoque (.xlsx)</label>
   <input id="arquivoEstoqueTeste" type="file" accept=".xlsx,.xls" onchange="importarEstoqueTeste(event)" style="max-width:100%;margin-bottom:10px">
+  <button type="button" onclick="conferirEntradasExistentesTeste()" style="padding:9px 12px;margin:8px 0;cursor:pointer">Conferir entradas anteriores (teste)</button>
+  <p id="divergenciasEstoqueTeste" role="status" aria-live="polite"></p>
   <p id="resumoReservaTeste" role="status">Reservas: aguardando importação do estoque.</p>
   <p id="resultadoEstoqueTeste" role="status" aria-live="polite">Nenhuma planilha importada nesta sessão.</p>
   <div id="resumoEstoqueTeste" class="hidden" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th>SKU</th><th>Lote completo</th><th>Saldo (CX)</th></tr></thead><tbody id="linhasEstoqueTeste"></tbody></table></div>
@@ -82,7 +84,7 @@
 </div>
 
 <script>
-const APP_VERSION = "2.0.8";
+const APP_VERSION = "2.0.9";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -1389,6 +1391,7 @@ function salvarEntrada() {
         preencherLinha(linha, { data: dataBR, sku, destino, palete, loteCompleto, lote, postura, caixas, observacoes });
     }
 
+    if (novoRegistro) tbody.rows[tbody.rows.length - 1].dataset.reservaTeste = "1";
     if (window.estoqueTesteConsulta) {
         if (novoRegistro) tbody.rows[tbody.rows.length - 1].dataset.reservaTeste = "1";
         else if (linhaEditadaReservada) tbody.rows[indiceEditando].dataset.reservaTeste = "1";
@@ -1837,15 +1840,45 @@ function validarReservaTeste(sku,lote,caixas,indiceIgnorado) {
   if (caixas+reservado>item.saldo) return "Saldo insuficiente. Estoque: "+item.saldo+" CX; já reservado: "+reservado+" CX; disponível: "+Math.max(0,item.saldo-reservado)+" CX.";
   return "";
 }
+function conferirEntradasExistentesTeste() {
+  if (!window.estoqueTesteConsulta) { alert("Importe o Excel de teste antes de conferir."); return; }
+  const antigas = Array.from(document.querySelectorAll("#tabela tbody tr")).filter(l => l.dataset.reservaTeste !== "1");
+  if (!antigas.length) { alert("Não há entradas anteriores pendentes de conferência."); return; }
+  if (!confirm("Incluir "+antigas.length+" entradas anteriores na conferência de estoque deste navegador? Não altera o Excel nem efetua baixa.")) return;
+  antigas.forEach(l => { l.dataset.reservaTeste = "1"; });
+  salvarLocalStorage();
+  atualizarResumoReservaTeste();
+}
 function atualizarResumoReservaTeste() {
-  const alvo=document.getElementById("resumoReservaTeste");
+  const alvo = document.getElementById("resumoReservaTeste");
+  const detalhes = document.getElementById("divergenciasEstoqueTeste");
   if (!alvo) return;
-  if (!window.estoqueTesteConsulta) {alvo.textContent="Reservas: importe a planilha. Registros anteriores permanecem fora do controle.";return;}
-  const total=[...window.estoqueTesteConsulta.values()].reduce((a,x)=>a+x.saldo,0);
-  const reservadas=[...reservasAtuaisTeste().values()].reduce((a,n)=>a+n,0);
-  const divergencias = Array.from(document.querySelectorAll("#tabela tbody tr")).filter(l => l.dataset.divergenciaTeste).length;
-  const naoEncontradas=[...reservasAtuaisTeste().entries()].filter(([k])=>![...window.estoqueTesteConsulta.values()].some(x=>chaveReservaTeste(x.sku,x.lote)===k)).length;
-  alvo.textContent="Estoque: "+total.toLocaleString("pt-BR")+" CX | Reservadas neste navegador: "+reservadas.toLocaleString("pt-BR")+" CX | Disponíveis (estimativa): "+(total-reservadas).toLocaleString("pt-BR")+" CX"+(naoEncontradas?" | ATENÇÃO: "+naoEncontradas+" lote(s) reservado(s) ausente(s) no Excel atual.":"")+(divergencias?" | DIVERGÊNCIAS PARA CONFERÊNCIA: "+divergencias:"");
+  if (!window.estoqueTesteConsulta) {
+    alvo.textContent = "Reservas: importe a planilha. Entradas novas ficam registradas para conferência posterior.";
+    if (detalhes) detalhes.textContent = "";
+    return;
+  }
+  const itens = [...window.estoqueTesteConsulta.values()];
+  const saldos = new Map(itens.map(x => [chaveReservaTeste(x.sku,x.lote),x.saldo]));
+  const reservas = reservasAtuaisTeste();
+  const total = itens.reduce((acc,x) => acc+x.saldo,0);
+  const reservadas = [...reservas.values()].reduce((acc,n) => acc+n,0);
+  const divergencias = [...reservas.entries()].filter(([chave,qtd]) => !saldos.has(chave) || qtd>saldos.get(chave));
+  alvo.textContent = "Estoque: "+total.toLocaleString("pt-BR")+" CX | Reservadas neste navegador: "+reservadas.toLocaleString("pt-BR")+" CX | Disponíveis (estimativa): "+(total-reservadas).toLocaleString("pt-BR")+" CX"+(divergencias.length?" | Divergências: "+divergencias.length:"");
+  if (!detalhes) return;
+  detalhes.replaceChildren();
+  if (!divergencias.length) return;
+  const titulo = document.createElement("strong");
+  titulo.textContent = "Divergências para conferência (somente neste navegador):";
+  detalhes.appendChild(titulo);
+  const lista = document.createElement("ul");
+  divergencias.forEach(([chave,qtd]) => {
+    const saldo = saldos.get(chave);
+    const li = document.createElement("li");
+    li.textContent = chave.replace("|"," / ")+" — romaneio: "+qtd+" CX; estoque: "+(saldo===undefined?"lote não encontrado":saldo+" CX")+"; diferença: "+(saldo===undefined?"a conferir":(qtd-saldo)+" CX");
+    lista.appendChild(li);
+  });
+  detalhes.appendChild(lista);
 }
 // Etapa 2A: leitura isolada do estoque. Não modifica registros, reservas ou arquivos.
 async function importarEstoqueTeste(event) {
