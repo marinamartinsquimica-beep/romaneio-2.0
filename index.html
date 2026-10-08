@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Romaneio Paletes</title>
+<title>Romaneio de Paletes 2.0</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b1320">
@@ -27,12 +27,12 @@
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio Paletes</h1><p>Sistema local para controle de paletes</p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes</p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
 <section class="dashboard"><div class="metric"><div class="ico">📋</div><div><b id="dashRegistros">0</b><span id="dashRegistrosLabel">Registros totais</span></div></div><div class="metric"><div class="ico">📦</div><div><b id="dashCaixas">0</b><span id="dashCaixasLabel">Caixas totais</span></div></div><div class="metric"><div class="ico">🧱</div><div><b id="dashPaletes">0</b><span id="dashPaletesLabel">Paletes totais</span></div></div><div class="metric"><div class="ico">📍</div><div><b id="dashDestinos">0</b><span id="dashDestinosLabel">Destinos totais</span></div></div><div class="metric"><div class="ico">🕒</div><div><b id="dashUltimo">--</b><span>Último registro</span></div></div></section>
 <nav class="tabs" aria-label="Abas do romaneio"><button id="tabTotal" class="tab-button active" type="button" onclick="abrirAba('total')">ROMANEIO TOTAL</button><button id="tabCaminhao" class="tab-button" type="button" onclick="abrirAba('caminhao')">ROMANEIO POR CAMINHÃO</button></nav>
 <main class="layout" id="abaTotal">
 <section class="card flow-card" id="escolhaFluxo"><div class="card-header"><h2>Adicionar palete</h2><span class="badge">Nova entrada</span></div><p>Leia a etiqueta do palete ou utilize o preenchimento manual.</p><div class="initial-pallet-setting"><label for="campoPaleteInicial">PALETE INICIAL</label><input id="campoPaleteInicial" type="number" min="1" step="1" inputmode="numeric" placeholder="Vazio = próximo palete ou palete 1" onchange="salvarPaleteInicial()"><small>Informe qualquer número para iniciar por ele; depois o app segue pelos próximos números livres.</small></div><div class="flow-actions"><button class="btn-primary" type="button" onclick="abrirLeitorQr()">📷 LER CÓDIGO</button><button class="btn-secondary" type="button" onclick="usarInsercaoManual()">INSERÇÃO MANUAL</button><button id="btnExcelInicial" type="button" onclick="gerarExcel()">GERAR E SALVAR EXCEL TOTAL</button><button id="btnReiniciarInicial" class="btn-danger" type="button" onclick="reiniciarEntradas()">APAGAR TODO O ROMANEIO</button></div></section>
-<section class="card form-card hidden" id="formEntrada"><div class="card-header"><h2 id="tituloEntrada">Romaneio Paletes</h2><span class="badge" id="badgeEntrada">Entrada</span></div>
+<section class="card form-card hidden" id="formEntrada"><div class="card-header"><h2 id="tituloEntrada">Romaneio de Paletes 2.0</h2><span class="badge" id="badgeEntrada">Entrada</span></div>
 <div class="palete-andamento" id="paleteAndamento"><span>PALETE <b id="numeroPaleteAtual">1</b></span><span>Itens: <b id="itensPaleteAtual">0</b></span><span>Total de caixas: <b id="caixasPaleteAtual">0</b></span></div>
 <div class="qr-panel hidden" id="qrPanel"><video id="qrVideo" class="qr-video" playsinline muted></video><canvas id="qrCanvas" class="hidden"></canvas><p class="qr-status" id="qrStatus" aria-live="polite">Aponte a câmera para o Data Matrix ou QR Code.</p><div class="camera-actions"><button class="btn-secondary" type="button" onclick="cancelarLeitorQr()">Cancelar leitura</button><button class="btn-blue" type="button" onclick="usarInsercaoManual()">Usar inserção manual</button></div></div>
 <div class="qr-summary hidden" id="qrResumo"><div><strong>SKU</strong><span id="qrResumoSku"></span></div><div><strong>Lote</strong><span id="qrResumoLote"></span></div><div><strong>Data de Postura</strong><span id="qrResumoPostura"></span></div><div><strong>Lote Completo</strong><span id="qrResumoCompleto"></span></div></div>
@@ -56,7 +56,7 @@
 <section class="card"><div class="card-header"><h2>Selecionar paletes</h2><span class="badge" id="badgePaletesCaminhao">0 paletes</span></div><div class="truck-select-actions"><button class="btn-primary" type="button" onclick="selecionarTodosPaletes()">SELECIONAR TODOS</button><button class="btn-secondary" type="button" onclick="limparSelecaoPaletes()">LIMPAR SELEÇÃO</button></div><div id="listaPaletesCaminhao" class="truck-pallets"></div></section>
 <section class="card truck-entries"><div class="card-header"><h2>Histórico de caminhões</h2><span class="badge" id="badgeHistoricoCaminhoes">0 caminhões</span></div><div class="table-container"><table id="tabelaHistoricoCaminhoes"><thead><tr><th>PLACA</th><th>PALETES</th><th>DESTINO</th><th>CAIXAS</th><th>CARREGAMENTO</th><th>RESPONSÁVEL</th><th>FINALIZADO EM</th><th>AÇÃO</th></tr></thead><tbody></tbody></table><div class="truck-empty" id="historicoCaminhoesVazio">Nenhum caminhão finalizado neste romaneio.</div></div></section>
 </main>
-<footer class="footer">🛡️ <strong>Romaneio Paletes</strong> &nbsp;•&nbsp; Dados salvos localmente no aparelho<span class="footer-credit">Criado por: Marina Martins Costa</span><div class="app-version">Versão <span id="appVersion">1.8.3</span></div></footer></div><button class="fab" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+<footer class="footer">🛡️ <strong>Romaneio de Paletes 2.0</strong> &nbsp;•&nbsp; Dados salvos localmente no aparelho<span class="footer-credit">Criado por: Marina Martins Costa</span><div class="app-version">Versão <span id="appVersion">1.8.3</span></div></footer></div><button class="fab" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <div id="updateBanner" class="update-banner" aria-live="polite">
   <div><strong>🚀 Nova versão disponível</strong><span>Toque para atualizar o app.</span></div>
