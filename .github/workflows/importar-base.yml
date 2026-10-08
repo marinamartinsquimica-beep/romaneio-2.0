@@ -1,0 +1,40 @@
+name: Copiar base original para Romaneio 2.0
+
+on:
+  push:
+    paths:
+      - '.github/workflows/importar-base.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  importar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do novo repositorio
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Clonar base original somente para leitura
+        run: |
+          git clone --depth 1 https://github.com/marinamartinsquimica-beep/romaneio-data-matrix-caminhao.git /tmp/romaneio-original
+
+      - name: Copiar todos os arquivos do aplicativo
+        run: |
+          rsync -a --exclude='.git/' --exclude='README.md' --exclude='.github/workflows/' /tmp/romaneio-original/ ./
+          mkdir -p .github/workflows
+          cp /tmp/romaneio-original/.github/workflows/pages.yml .github/workflows/pages.yml
+          git status --short
+
+      - name: Registrar importacao sem alterar o original
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: copiar base integral do romaneio original"
+            git push
+          fi
