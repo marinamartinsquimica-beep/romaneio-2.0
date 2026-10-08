@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/importar-base.yml'
+      - 'README.md'
   workflow_dispatch:
 
 permissions:
