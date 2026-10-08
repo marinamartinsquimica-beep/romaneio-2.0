@@ -65,3 +65,10 @@
 - Contagens sem divergência não devem alterar saldos; itens fora do escopo da contagem não devem ser modificados.
 - Tratar reservas ativas e baixas pendentes, definindo um momento de corte/congelamento lógico e conciliação, para evitar diferenças falsas e alterações concorrentes durante inventário.
 - Preservar as regras existentes do ajuste no aplicativo de referência após análise do código, além de trilha de auditoria e permissões.
+
+## Requisito crítico: romaneio para lançamento de vendas em sistema externo
+- Preservar integralmente o download/exportação do romaneio em Excel e o compartilhamento do arquivo; são etapas essenciais do processo comercial, usadas para registrar vendas em outro sistema.
+- Manter romaneio total, por destino e por caminhão, com dados, colunas e estrutura compatíveis com o fluxo atual. Não remover nem alterar o formato sem validação explícita da operação.
+- Permitir reexportar e compartilhar romaneios já finalizados, inclusive depois da confirmação da baixa de estoque.
+- Exportar, baixar ou compartilhar não pode, isoladamente, reservar, dar baixa ou modificar o estoque oficial.
+- Incluir testes de regressão de exportação/compartilhamento em todas as etapas de integração de estoque e antes de cada publicação.
