@@ -49,3 +49,12 @@
 - Teste local exibiu 37 caixas reservadas e 1.473 disponíveis.
 - **Próxima etapa:** testar edição de quantidade, exclusão de entrada, exclusão por destino, lote inexistente e saldo insuficiente; verificar recálculo de reservas e funcionamento sem Excel. Corrigir defeitos sem modificar recursos aprovados.
 - **Depois:** persistência central, integração SharePoint, tela de confirmação de baixas e módulo Ajuste Estoque conforme código de referência.
+
+## Regra obrigatória: substituição do estoque oficial após ajuste
+- Após confirmação autorizada de um AJUSTE ESTOQUE, obter a versão vigente do Excel oficial no SharePoint, aplicar o ajuste com as mesmas regras do sistema de referência e **substituir o conteúdo do arquivo oficial** no mesmo local, preservando sua identidade/link sempre que a API permitir.
+- Preservar abas, fórmulas, estrutura e histórico; registrar responsável, data/hora, motivo, SKU/lote, saldo anterior, variação e saldo final.
+- A operação deve verificar versão/ETag e tratar conflitos concorrentes sem sobrescrever atualizações de terceiros; confirmar sucesso da gravação e conferir o resultado antes de marcar como concluída.
+- Manter recuperação/versionamento do SharePoint e tratamento de falhas; nunca anunciar sucesso quando a atualização falhar.
+- O operador não deverá apagar manualmente o arquivo antigo nem copiar a planilha atualizada.
+- A mesma política de gravação segura vale para baixas efetivas de expedição.
+- **Ainda não implementado**: depende da integração autenticada com o SharePoint e testes com cópia, nunca diretamente no arquivo oficial durante desenvolvimento.
