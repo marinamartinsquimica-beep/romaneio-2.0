@@ -1,6 +1,6 @@
 {
-  "name": "Romaneio Paletes",
-  "short_name": "Romaneio",
+  "name": "Romaneio de Paletes 2.0",
+  "short_name": "Romaneio 2.0",
   "start_url": "./inicio.html",
   "scope": "./",
   "display": "standalone",
