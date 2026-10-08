@@ -1805,7 +1805,7 @@ async function importarEstoqueTeste(event) {
     const nomeAba = wb.SheetNames.find(nome => String(nome).trim().toLowerCase() === "estoque");
     if (!nomeAba) throw new Error("Aba Estoque não encontrada.");
     const linhas = XLSX.utils.sheet_to_json(wb.Sheets[nomeAba], {header:1, defval:"", raw:true});
-    const normalizar = v => String(v ?? "").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").trim().toUpperCase();
+    const normalizar = v => String(v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toUpperCase();
     const cab = linhas.findIndex(l => l.some(v => normalizar(v)==="SKU") && l.some(v => normalizar(v)==="LOTE COMPLETO") && l.some(v => normalizar(v)==="SALDO"));
     if (cab < 0) throw new Error("Colunas SKU, Lote Completo e Saldo não encontradas. Cabeçalhos identificados: "+linhas.slice(0,5).map(l=>l.filter(v=>String(v).trim()).slice(0,14).join(" | ")).join(" / "));
     const h = linhas[cab].map(normalizar), iSku=h.indexOf("SKU"), iLote=h.indexOf("LOTE COMPLETO"), iSaldo=h.indexOf("SALDO");
