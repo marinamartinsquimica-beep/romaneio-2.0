@@ -72,3 +72,10 @@
 - Permitir reexportar e compartilhar romaneios já finalizados, inclusive depois da confirmação da baixa de estoque.
 - Exportar, baixar ou compartilhar não pode, isoladamente, reservar, dar baixa ou modificar o estoque oficial.
 - Incluir testes de regressão de exportação/compartilhamento em todas as etapas de integração de estoque e antes de cada publicação.
+
+## Regra aprovada: divergência de estoque não bloqueia expedição
+- Saldo insuficiente ou SKU/lote ausente no estoque deve gerar aviso, nunca impedir inclusão de caixas no romaneio.
+- Registrar ocorrência para conferência pelo operador do estoque, com dados do lançamento e diferença; falhas de lançamento no Excel podem explicar divergências.
+- Manter download e compartilhamento para vendas independentemente de divergências.
+- Na confirmação da baixa, exigir tratamento/conciliação de divergências sem atualização incorreta do estoque oficial.
+- Protótipo local v2.0.8: aviso e registro local no navegador; visualização central pelo operador do estoque ainda depende da integração futura. Recalcular divergências dinamicamente após edição/importação é melhoria pendente.
