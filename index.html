@@ -23,14 +23,27 @@
 .recovery-overlay{position:fixed;z-index:30;inset:0;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(3,10,18,.72)}.recovery-overlay.show{display:flex}.recovery-dialog{width:min(94vw,520px);padding:22px;border-radius:18px;background:#fff;color:#0f172a;box-shadow:0 24px 70px rgba(0,0,0,.45)}.recovery-dialog h2{margin-bottom:10px}.recovery-dialog p{margin:0 0 16px;color:#334155;line-height:1.5}.recovery-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}.recovery-metrics div{padding:11px;border-radius:11px;background:#eef6ff;text-align:center}.recovery-metrics strong,.recovery-metrics span{display:block}.recovery-metrics strong{font-size:12px;color:#475569}.recovery-metrics span{margin-top:4px;font-size:20px;font-weight:900;color:#075db1}.recovery-actions{display:grid;gap:9px}.recovery-actions .finish-open-pallet{background:linear-gradient(180deg,var(--success),var(--success2))}@media(max-width:620px){.recovery-dialog{padding:17px}.recovery-metrics{grid-template-columns:1fr}.recovery-metrics div{display:flex;align-items:center;justify-content:space-between}.recovery-metrics span{margin:0;font-size:18px}}
 .truck-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.truck-stat{padding:10px;border-radius:10px;background:#f1f5f9}.truck-stat strong,.truck-stat span{display:block}.truck-stat strong{font-size:20px;color:#075db1}.truck-stat span{margin-top:3px;font-size:11px;font-weight:800;color:#475569}.truck-select-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.truck-pallet.selected{background:#e0f2fe;border-color:#3b82f6}.truck-pallet.available{background:#f0fdf4;border-color:#86efac}.truck-pallet.open{background:#fff7ed;border-color:#fb923c}.truck-pallet.open .truck-current{color:#c2410c}.btn-finish-truck{background:linear-gradient(180deg,var(--success),var(--success2));box-shadow:0 10px 20px rgba(34,164,71,.24)}.search-romaneio{margin-bottom:12px}.history-actions{display:grid;gap:8px;min-width:170px}.history-actions button,.history-actions .btn-blue,.history-actions .btn-danger{display:block;width:100%;min-height:45px;margin:0;padding:11px 12px;border-radius:10px;font-size:14px;box-shadow:0 8px 16px rgba(15,23,42,.14)}.destination-panel{grid-column:1/-1}.destination-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}.destination-card{padding:14px;border:1px solid #bfdbfe;border-radius:14px;background:#f8fbff}.destination-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}.destination-card-header strong{font-size:18px;overflow-wrap:anywhere}.destination-card-header span{color:#475569;font-size:12px;font-weight:800;text-align:right}.destination-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}.destination-actions button{font-size:13px;padding:10px}.destination-pallets{display:grid;gap:7px}.destination-pallet{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;padding:9px;border-radius:10px;background:#fff;border:1px solid #dbeafe}.destination-pallet strong,.destination-pallet span{display:block}.destination-pallet span{margin-top:3px;color:#64748b;font-size:12px}.destination-pallet button{width:auto;min-width:120px;padding:9px;font-size:12px}@media(max-width:620px){.truck-stats{grid-template-columns:1fr 1fr}.truck-select-actions,.destination-actions{grid-template-columns:1fr}.destination-grid{grid-template-columns:1fr}.destination-pallet{grid-template-columns:1fr}.destination-pallet button{width:100%}#tabelaHistoricoCaminhoes,#tabelaHistoricoCaminhoes tbody,#tabelaHistoricoCaminhoes tr,#tabelaHistoricoCaminhoes td{display:block;width:100%}#tabelaHistoricoCaminhoes{min-width:0}#tabelaHistoricoCaminhoes thead{display:none}#tabelaHistoricoCaminhoes tr{margin:10px 0;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}#tabelaHistoricoCaminhoes td{display:flex;justify-content:space-between;gap:12px;text-align:right;padding:8px;border-bottom:1px solid #edf2f7;white-space:normal}#tabelaHistoricoCaminhoes td:before{content:attr(data-label);font-weight:900;color:#475569;text-align:left}#tabelaHistoricoCaminhoes td:last-child{display:block;text-align:center;border-bottom:0}.history-actions:before{display:block;margin-bottom:8px}.history-actions button{min-height:48px;font-size:15px}}
 .destination-panel{grid-column:2}#abaTotal>.card:last-child{grid-column:1/-1}.dashboard{grid-template-columns:repeat(5,1fr)}select{width:100%;height:45px;padding:10px 14px;border-radius:11px;border:1px solid #cfd8e3;background:#fbfdff;color:#111827;font-size:15px;outline:none}select:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(8,117,209,.12)}.footer-credit{display:block;margin-top:7px;color:#fff;font-weight:800}.destination-actions{grid-template-columns:repeat(3,1fr)}@media(max-width:980px){.destination-panel{grid-column:1}.dashboard{grid-template-columns:repeat(2,1fr)}}@media(max-width:620px){.dashboard{grid-template-columns:1fr}.destination-actions{grid-template-columns:1fr}}
+
+/* Notificação discreta de divergência: aviso local, não é push do sistema operacional. */
+.eme-aviso-overlay{position:fixed;inset:0;background:rgba(9,19,34,.48);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px}
+.eme-aviso-card{background:#fff;color:#142235;border-radius:18px;box-shadow:0 22px 65px rgba(0,0,0,.28);width:min(440px,100%);padding:24px;font-family:inherit;border-top:5px solid #e58a2d}
+.eme-aviso-topo{font-weight:800;font-size:19px;margin:0 0 8px}
+.eme-aviso-sub{color:#566477;font-size:13px;line-height:1.5;margin:0 0 16px}
+.eme-aviso-dados{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.eme-aviso-dado{background:#f3f6fa;padding:10px;border-radius:10px}
+.eme-aviso-dado span{display:block;font-size:12px;color:#566477}
+.eme-aviso-dado strong{display:block;font-size:16px;margin-top:3px}
+.eme-aviso-diferenca{background:#fff0e4;color:#9a3412;padding:12px;border-radius:10px;font-weight:700;margin:12px 0}
+.eme-aviso-ok{width:100%;border:0;background:#1764b4;color:white;border-radius:10px;padding:13px;font-weight:800;font-size:15px;cursor:pointer}
+.eme-aviso-ok:focus-visible{outline:3px solid #f59e0b;outline-offset:3px}
 </style>
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.13</strong></p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.14</strong></p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
 
 <section class="card" id="painelEstoqueTeste" style="margin:14px 0;padding:20px">
-  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.13</small></h2><span class="badge">Reserva local de teste</span></div>
+  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.14</small></h2><span class="badge">Reserva local de teste</span></div>
   <p style="margin:8px 0;color:#475569">Importe uma CÓPIA do Excel. A importação é opcional. Sem Excel, o Romaneio funciona normalmente. Com Excel, novas entradas passam por reserva local. O arquivo não é modificado.</p>
   <label for="arquivoEstoqueTeste" style="display:block;margin:10px 0">Selecionar planilha de estoque (.xlsx)</label>
   <input id="arquivoEstoqueTeste" type="file" accept=".xlsx,.xls" onchange="importarEstoqueTeste(event)" style="max-width:100%;margin-bottom:10px">
@@ -84,7 +97,7 @@
 </div>
 
 <script>
-const APP_VERSION = "2.0.13";
+const APP_VERSION = "2.0.14";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -1849,6 +1862,48 @@ function conferirEntradasExistentesTeste() {
   salvarLocalStorage();
   atualizarResumoReservaTeste();
 }
+
+function mostrarNotificacaoDivergenciaTeste({chave,posturas,qtd,saldo}) {
+  const overlay=document.createElement("div");
+  overlay.className="eme-aviso-overlay";
+  const card=document.createElement("section");
+  card.className="eme-aviso-card";
+  card.setAttribute("role","alertdialog");
+  card.setAttribute("aria-modal","true");
+  card.setAttribute("aria-label","Divergência de estoque");
+  const titulo=document.createElement("h2");
+  titulo.className="eme-aviso-topo";
+  titulo.textContent="Atenção: divergência de estoque";
+  const subtitulo=document.createElement("p");
+  subtitulo.className="eme-aviso-sub";
+  subtitulo.textContent="A entrada foi mantida. O estoque deverá conferir esta diferença.";
+  const identificacao=document.createElement("p");
+  identificacao.className="eme-aviso-sub";
+  identificacao.textContent="SKU / Lote: "+chave.replace("|"," / ")+" | Postura: "+(posturas||"não informada");
+  const dados=document.createElement("div");
+  dados.className="eme-aviso-dados";
+  const adicionarDado=(rotulo,valor)=>{
+    const box=document.createElement("div");box.className="eme-aviso-dado";
+    const label=document.createElement("span");label.textContent=rotulo;
+    const numero=document.createElement("strong");numero.textContent=valor;
+    box.append(label,numero);dados.appendChild(box);
+  };
+  adicionarDado("No romaneio",qtd+" CX");
+  adicionarDado("No estoque",saldo===undefined?"Não encontrado":saldo+" CX");
+  const diferenca=document.createElement("div");
+  diferenca.className="eme-aviso-diferenca";
+  diferenca.textContent="Diferença: "+(saldo===undefined?"a conferir":(qtd-saldo)+" CX");
+  const nota=document.createElement("p");
+  nota.className="eme-aviso-sub";
+  nota.textContent="Clicar OK apenas confirma a leitura. A divergência continua pendente.";
+  const ok=document.createElement("button");
+  ok.type="button";ok.className="eme-aviso-ok";ok.textContent="OK, entendi";
+  ok.addEventListener("click",()=>overlay.remove());
+  card.append(titulo,subtitulo,identificacao,dados,diferenca,nota,ok);
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+  ok.focus();
+}
 function atualizarResumoReservaTeste() {
   const alvo = document.getElementById("resumoReservaTeste");
   const detalhes = document.getElementById("divergenciasEstoqueTeste");
@@ -1878,7 +1933,7 @@ function atualizarResumoReservaTeste() {
     const posturas = [...new Set(Array.from(document.querySelectorAll("#tabela tbody tr"))
       .filter(l => l.dataset.reservaTeste === "1" && chaveReservaTeste(l.cells[1].textContent,l.cells[4].textContent) === chave)
       .map(l => l.cells[6].textContent.trim()).filter(Boolean))].join(", ");
-    alert("ATENÇÃO — DIVERGÊNCIA DE ESTOQUE\nSKU / Lote: "+chave.replace("|"," / ")+"\nPostura: "+(posturas||"não informada")+"\nRomaneio: "+qtd+" CX\nEstoque: "+(saldo===undefined?"não encontrado":saldo+" CX")+"\nDiferença: "+(saldo===undefined?"a conferir":(qtd-saldo)+" CX")+"\n\nClique OK para continuar. A divergência permanece pendente para o estoque.");
+    mostrarNotificacaoDivergenciaTeste({chave,posturas,qtd,saldo});
   }
 }
 // Etapa 2A: leitura isolada do estoque. Não modifica registros, reservas ou arquivos.
