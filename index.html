@@ -68,10 +68,11 @@ button{border-radius:13px;font-family:inherit}.btn-primary{background:#254D69;bo
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.16</strong></p></div></div><div class="status-pill">💾 Dados salvos no aparelho</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.17</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
+<div style="max-width:1220px;margin:0 auto 12px;text-align:right"><button type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button></div>
 <section class="card" id="painelEstoqueTeste" style="margin:14px 0;padding:20px">
-  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.16</small></h2><span class="badge">Reserva local de teste</span></div>
+  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.17</small></h2><span class="badge">Reserva local de teste</span></div>
   <p style="margin:8px 0;color:#475569">Importe uma CÓPIA do Excel. A importação é opcional. Sem Excel, o Romaneio funciona normalmente. Com Excel, novas entradas passam por reserva local. O arquivo não é modificado.</p>
   <label for="arquivoEstoqueTeste" style="display:block;margin:10px 0">Selecionar planilha de estoque (.xlsx)</label>
   <input id="arquivoEstoqueTeste" type="file" accept=".xlsx,.xls" onchange="importarEstoqueTeste(event)" style="max-width:100%;margin-bottom:10px">
@@ -125,7 +126,7 @@ button{border-radius:13px;font-family:inherit}.btn-primary{background:#254D69;bo
 </div>
 
 <script>
-const APP_VERSION = "2.0.16";
+const APP_VERSION = "2.0.17";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -1300,6 +1301,66 @@ function adicionarEntradaPaleteFechado(botao) {
     prepararEntradaPaleteDestino(linha.cells[3].textContent, linha.cells[2].textContent);
 }
 
+
+/* Etapa offline 1: espelho de segurança local; não envia nem baixa estoque oficial. */
+let filaBackupOffline = Promise.resolve();
+function abrirBancoBackupOffline() {
+  return new Promise((resolve,reject)=>{
+    if (!window.indexedDB) { reject(new Error("IndexedDB indisponível")); return; }
+    const pedido=indexedDB.open("romaneio-2-backup-local",1);
+    pedido.onupgradeneeded=()=>{ const db=pedido.result; if (!db.objectStoreNames.contains("copias")) db.createObjectStore("copias"); };
+    pedido.onsuccess=()=>resolve(pedido.result);
+    pedido.onerror=()=>reject(pedido.error);
+  });
+}
+function registrarCopiaSegurancaOffline(dados) {
+  const copia=JSON.parse(JSON.stringify(dados));
+  filaBackupOffline=filaBackupOffline.catch(()=>{}).then(async()=>{
+    const db=await abrirBancoBackupOffline();
+    try {
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction("copias","readwrite");
+        tx.objectStore("copias").put({dados:copia,gravadoEm:new Date().toISOString()},"ultimo-romaneio");
+        tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+      });
+    } finally {db.close();}
+  }).catch(e=>{console.warn("Backup local indisponível",e);});
+}
+async function consultarCopiaSegurancaOffline() {
+  try {
+    const db=await abrirBancoBackupOffline();
+    try {
+      return await new Promise((resolve,reject)=>{
+        const tx=db.transaction("copias","readonly");
+        const req=tx.objectStore("copias").get("ultimo-romaneio");
+        req.onsuccess=()=>resolve(req.result||null);
+        req.onerror=()=>reject(req.error);
+      });
+    } finally {db.close();}
+  } catch(e) { alert("Cópia de segurança indisponível neste navegador.");return null; }
+}
+async function verificarBackupOffline() {
+  await filaBackupOffline;
+  const copia=await consultarCopiaSegurancaOffline();
+  if (!copia) return;
+  alert("Cópia local disponível: "+copia.dados.length+" entradas. Última gravação: "+new Date(copia.gravadoEm).toLocaleString("pt-BR")+". Os dados atuais não foram alterados.");
+}
+function atualizarStatusConexaoOffline() {
+  const elemento=document.getElementById("estadoConexaoOffline");
+  if (!elemento) return;
+  const online=navigator.onLine;
+  elemento.textContent=online?"Conexão disponível · dados locais":"Sem conexão · dados locais preservados";
+  elemento.style.background=online?"#dff8fd":"#FFD043";
+  elemento.style.color="#254D69";
+}
+window.addEventListener("online",atualizarStatusConexaoOffline);
+window.addEventListener("offline",atualizarStatusConexaoOffline);
+window.addEventListener("load",()=>{
+  atualizarStatusConexaoOffline();
+  const dados=lerJsonLocalStorage("entradas",[]);
+  if (Array.isArray(dados) && dados.length) registrarCopiaSegurancaOffline(dados);
+});
+
 function salvarLocalStorage() {
     let tbody = document.querySelector("#tabela tbody");
     let dados = [];
@@ -1321,6 +1382,7 @@ function salvarLocalStorage() {
     }
 
     localStorage.setItem("entradas", JSON.stringify(dados));
+    registrarCopiaSegurancaOffline(dados);
     const paletesAtuais = new Set(dados.map(item => String(item.palete)));
     const caminhoes = lerCaminhoes();
     Object.keys(caminhoes).forEach(palete => {
