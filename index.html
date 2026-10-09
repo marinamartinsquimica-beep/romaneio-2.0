@@ -68,11 +68,11 @@ button{border-radius:13px;font-family:inherit}.btn-primary{background:#254D69;bo
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.22</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.23</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
 <div style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Conferir pendências</button><button type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button></div>
 <section class="card" id="painelEstoqueTeste" style="margin:14px 0;padding:20px">
-  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.22</small></h2><span class="badge">Reserva local de teste</span></div>
+  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.23</small></h2><span class="badge">Reserva local de teste</span></div>
   <p style="margin:8px 0;color:#475569">Importe uma CÓPIA do Excel. A importação é opcional. Sem Excel, o Romaneio funciona normalmente. Com Excel, novas entradas passam por reserva local. O arquivo não é modificado.</p>
   <label for="arquivoEstoqueTeste" style="display:block;margin:10px 0">Selecionar planilha de estoque (.xlsx)</label>
   <input id="arquivoEstoqueTeste" type="file" accept=".xlsx,.xls" onchange="importarEstoqueTeste(event)" style="max-width:100%;margin-bottom:10px">
@@ -126,7 +126,7 @@ button{border-radius:13px;font-family:inherit}.btn-primary{background:#254D69;bo
 </div>
 
 <script>
-const APP_VERSION = "2.0.22";
+const APP_VERSION = "2.0.23";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -1365,6 +1365,31 @@ window.addEventListener("load",()=>{
 /* Fila local de movimentações: não executa baixa nem sincroniza com SharePoint. */
 const FILA_MOVIMENTOS_KEY="romaneio2_movimentos_pendentes_v1";
 const BASE_MOVIMENTOS_KEY="romaneio2_ultimo_estado_movimentos_v1";
+const DISPOSITIVO_MOVIMENTOS_KEY="romaneio2_dispositivo_v1";
+function criarIdentificadorMovimento(){
+  if(window.crypto && typeof crypto.randomUUID==="function")return crypto.randomUUID();
+  if(window.crypto && typeof crypto.getRandomValues==="function"){
+    const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);
+    return [...bytes].map(x=>x.toString(16).padStart(2,"0")).join("");
+  }
+  throw new Error("Identificador seguro indisponível neste navegador.");
+}
+function identificarDispositivoLocal(){
+  let id=localStorage.getItem(DISPOSITIVO_MOVIMENTOS_KEY);
+  if(!id){id=criarIdentificadorMovimento();localStorage.setItem(DISPOSITIVO_MOVIMENTOS_KEY,id);}
+  return id;
+}
+function prepararFilaParaSincronizacao(){
+  const fila=lerFilaMovimentos();
+  const vistos=new Set(),validos=[],duplicados=[];
+  for(const mov of fila){
+    if(!mov || typeof mov!=="object" || !mov.id){duplicados.push(mov);continue;}
+    if(vistos.has(mov.id)){duplicados.push(mov);continue;}
+    vistos.add(mov.id);
+    validos.push(mov);
+  }
+  return {validos,duplicados};
+}
 function lerFilaMovimentos() {
   const fila=lerJsonLocalStorage(FILA_MOVIMENTOS_KEY,[]);
   return Array.isArray(fila)?fila:[];
@@ -1387,7 +1412,7 @@ function registrarMovimentosLocais(atuais) {
   for(const [k,grupo] of novos){const diff=grupo.length-(antigos.get(k)?.length||0);if(diff>0)adicionados.push(...grupo.slice(0,diff));}
   if(!removidos.length&&!adicionados.length)return;
   const fila=lerFilaMovimentos();
-  const criar=(tipo,item)=>({id:(crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random().toString(36).slice(2)),tipo,item,criadoEm:new Date().toISOString(),estado:"pendente"});
+  const criar=(tipo,item)=>({id:criarIdentificadorMovimento(),dispositivoId:identificarDispositivoLocal(),tipo,item,criadoEm:new Date().toISOString(),estado:"pendente"});
   // Pareia somente mudanças inequívocas no mesmo palete/SKU/lote; demais mudanças são exclusões e inclusões.
   for(let i=removidos.length-1;i>=0;i--){
     const antigo=removidos[i];
@@ -1487,6 +1512,11 @@ function consultarFilaMovimentos(){
   }
   if(consolidados.length>30){const aviso=document.createElement("p");aviso.textContent="Exibindo os 30 primeiros saldos consolidados.";aviso.style.cssText="font-size:12px";secao.appendChild(aviso);}
   painel.appendChild(secao);
+  const verificacao=prepararFilaParaSincronizacao();
+  const auditoria=document.createElement("p");
+  auditoria.style.cssText="font-size:12px;margin:12px 0;color:#254D69;font-weight:700";
+  auditoria.textContent="IDs únicos na fila: "+verificacao.validos.length+" · Registros sem ID ou duplicados: "+verificacao.duplicados.length;
+  secao.appendChild(auditoria);
   const nota=document.createElement("p");
   nota.textContent="Nenhuma movimentação foi enviada ao SharePoint ou baixada do estoque.";
   nota.style.cssText="margin:18px 0;color:#456578;font-size:13px;line-height:1.5";
