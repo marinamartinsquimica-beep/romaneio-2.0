@@ -68,11 +68,11 @@ button{border-radius:13px;font-family:inherit}.btn-primary{background:#254D69;bo
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.23</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.24</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
 <div style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Conferir pendências</button><button type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button></div>
 <section class="card" id="painelEstoqueTeste" style="margin:14px 0;padding:20px">
-  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.23</small></h2><span class="badge">Reserva local de teste</span></div>
+  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.24</small></h2><span class="badge">Reserva local de teste</span></div>
   <p style="margin:8px 0;color:#475569">Importe uma CÓPIA do Excel. A importação é opcional. Sem Excel, o Romaneio funciona normalmente. Com Excel, novas entradas passam por reserva local. O arquivo não é modificado.</p>
   <label for="arquivoEstoqueTeste" style="display:block;margin:10px 0">Selecionar planilha de estoque (.xlsx)</label>
   <input id="arquivoEstoqueTeste" type="file" accept=".xlsx,.xls" onchange="importarEstoqueTeste(event)" style="max-width:100%;margin-bottom:10px">
@@ -126,7 +126,7 @@ button{border-radius:13px;font-family:inherit}.btn-primary{background:#254D69;bo
 </div>
 
 <script>
-const APP_VERSION = "2.0.23";
+const APP_VERSION = "2.0.24";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -1390,6 +1390,31 @@ function prepararFilaParaSincronizacao(){
   }
   return {validos,duplicados};
 }
+/* Validação pré-envio somente leitura. Não confirma recebimento nem altera a fila. */
+function validarFilaAntesSincronizar(){
+  const fila=lerFilaMovimentos(), ids=new Set(),prontas=[],revisao=[];
+  for(const mov of fila){
+    const motivos=[];
+    if(!mov||typeof mov!=="object"){revisao.push({mov,motivos:["Registro inválido"]});continue;}
+    if(typeof mov.id!=="string"||!mov.id.trim())motivos.push("ID ausente");
+    else if(ids.has(mov.id))motivos.push("ID repetido");
+    else ids.add(mov.id);
+    if(!["inclusao","edicao","exclusao"].includes(mov.tipo))motivos.push("Operação desconhecida");
+    const validarItem=(item,rotulo)=>{
+      if(!item||typeof item!=="object"){motivos.push(rotulo+" ausente");return;}
+      if(!String(item.sku??"").trim())motivos.push(rotulo+": SKU ausente");
+      if(!String(item.loteCompleto??"").trim())motivos.push(rotulo+": lote ausente");
+      if(!String(item.postura??"").trim())motivos.push(rotulo+": postura ausente");
+      const qtd=Number(item.caixas);
+      if(!Number.isFinite(qtd)||!Number.isInteger(qtd)||qtd<=0)motivos.push(rotulo+": caixas inválidas");
+    };
+    validarItem(mov.item,"Registro");
+    if(mov.tipo==="edicao")validarItem(mov.antes,"Antes da edição");
+    if(motivos.length)revisao.push({mov,motivos});
+    else prontas.push(mov);
+  }
+  return {prontas,revisao};
+}
 function lerFilaMovimentos() {
   const fila=lerJsonLocalStorage(FILA_MOVIMENTOS_KEY,[]);
   return Array.isArray(fila)?fila:[];
@@ -1517,6 +1542,28 @@ function consultarFilaMovimentos(){
   auditoria.style.cssText="font-size:12px;margin:12px 0;color:#254D69;font-weight:700";
   auditoria.textContent="IDs únicos na fila: "+verificacao.validos.length+" · Registros sem ID ou duplicados: "+verificacao.duplicados.length;
   secao.appendChild(auditoria);
+  const checagem=validarFilaAntesSincronizar();
+  const resultado=document.createElement("div");
+  resultado.style.cssText="background:#edf8fb;border-radius:12px;padding:12px;margin-top:12px;font-size:13px;line-height:1.6";
+  const tituloValidacao=document.createElement("strong");
+  tituloValidacao.textContent="Validação pré-sincronização (sem envio)";
+  resultado.appendChild(tituloValidacao);
+  const numeros=document.createElement("p");
+  numeros.textContent="Prontas para revisão de envio: "+checagem.prontas.length+" · Necessitam conferência: "+checagem.revisao.length;
+  numeros.style.margin="8px 0 4px";
+  resultado.appendChild(numeros);
+  for(const entrada of checagem.revisao.slice(0,10)){
+    const aviso=document.createElement("p");
+    aviso.textContent="ID "+String(entrada.mov?.id||"ausente").slice(0,16)+" · "+entrada.motivos.join("; ");
+    aviso.style.cssText="margin:6px 0;color:#8a422b;font-size:12px";
+    resultado.appendChild(aviso);
+  }
+  if(checagem.revisao.length>10){
+    const aviso=document.createElement("p");
+    aviso.textContent="Mostrando as 10 primeiras pendências de conferência.";
+    resultado.appendChild(aviso);
+  }
+  secao.appendChild(resultado);
   const nota=document.createElement("p");
   nota.textContent="Nenhuma movimentação foi enviada ao SharePoint ou baixada do estoque.";
   nota.style.cssText="margin:18px 0;color:#456578;font-size:13px;line-height:1.5";
