@@ -68,11 +68,11 @@ button{border-radius:13px;font-family:inherit}.btn-primary{background:#254D69;bo
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.17</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.18</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
-<div style="max-width:1220px;margin:0 auto 12px;text-align:right"><button type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button></div>
+<div style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Conferir pendências</button><button type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button></div>
 <section class="card" id="painelEstoqueTeste" style="margin:14px 0;padding:20px">
-  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.17</small></h2><span class="badge">Reserva local de teste</span></div>
+  <div class="card-header"><h2>Estoque para testes <small style="font-size:13px;color:#64748b">v2.0.18</small></h2><span class="badge">Reserva local de teste</span></div>
   <p style="margin:8px 0;color:#475569">Importe uma CÓPIA do Excel. A importação é opcional. Sem Excel, o Romaneio funciona normalmente. Com Excel, novas entradas passam por reserva local. O arquivo não é modificado.</p>
   <label for="arquivoEstoqueTeste" style="display:block;margin:10px 0">Selecionar planilha de estoque (.xlsx)</label>
   <input id="arquivoEstoqueTeste" type="file" accept=".xlsx,.xls" onchange="importarEstoqueTeste(event)" style="max-width:100%;margin-bottom:10px">
@@ -126,7 +126,7 @@ button{border-radius:13px;font-family:inherit}.btn-primary{background:#254D69;bo
 </div>
 
 <script>
-const APP_VERSION = "2.0.17";
+const APP_VERSION = "2.0.18";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -1361,6 +1361,64 @@ window.addEventListener("load",()=>{
   if (Array.isArray(dados) && dados.length) registrarCopiaSegurancaOffline(dados);
 });
 
+
+/* Fila local de movimentações: não executa baixa nem sincroniza com SharePoint. */
+const FILA_MOVIMENTOS_KEY="romaneio2_movimentos_pendentes_v1";
+const BASE_MOVIMENTOS_KEY="romaneio2_ultimo_estado_movimentos_v1";
+function lerFilaMovimentos() {
+  const fila=lerJsonLocalStorage(FILA_MOVIMENTOS_KEY,[]);
+  return Array.isArray(fila)?fila:[];
+}
+function chaveMovimento(item) {
+  return JSON.stringify([item.data,item.sku,item.destino,item.palete,item.loteCompleto,item.lote,item.postura,item.caixas,item.observacoes]);
+}
+function registrarMovimentosLocais(atuais) {
+  const anterior=lerJsonLocalStorage(BASE_MOVIMENTOS_KEY,null);
+  if (!Array.isArray(anterior)) {
+    localStorage.setItem(BASE_MOVIMENTOS_KEY,JSON.stringify(atuais));
+    atualizarIndicadorFilaMovimentos();
+    return;
+  }
+  const antigos=new Map(),novos=new Map();
+  for (const item of anterior) {const k=chaveMovimento(item);const grupo=antigos.get(k)||[];grupo.push(item);antigos.set(k,grupo);}
+  for (const item of atuais) {const k=chaveMovimento(item);const grupo=novos.get(k)||[];grupo.push(item);novos.set(k,grupo);}
+  const removidos=[],adicionados=[];
+  for(const [k,grupo] of antigos){const diff=grupo.length-(novos.get(k)?.length||0);if(diff>0)removidos.push(...grupo.slice(0,diff));}
+  for(const [k,grupo] of novos){const diff=grupo.length-(antigos.get(k)?.length||0);if(diff>0)adicionados.push(...grupo.slice(0,diff));}
+  if(!removidos.length&&!adicionados.length)return;
+  const fila=lerFilaMovimentos();
+  const criar=(tipo,item)=>({id:(crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random().toString(36).slice(2)),tipo,item,criadoEm:new Date().toISOString(),estado:"pendente"});
+  // Pareia somente mudanças inequívocas no mesmo palete/SKU/lote; demais mudanças são exclusões e inclusões.
+  for(let i=removidos.length-1;i>=0;i--){
+    const antigo=removidos[i];
+    const j=adicionados.findIndex(novo=>String(novo.palete)===String(antigo.palete)&&String(novo.sku)===String(antigo.sku)&&String(novo.loteCompleto)===String(antigo.loteCompleto));
+    if(j>=0){const novo=adicionados.splice(j,1)[0];removidos.splice(i,1);fila.push({...criar("edicao",novo),antes:antigo});}
+  }
+  for(const item of removidos)fila.push(criar("exclusao",item));
+  for(const item of adicionados)fila.push(criar("inclusao",item));
+  // Persiste a fila antes de avançar o estado-base, evitando perda de eventos.
+  localStorage.setItem(FILA_MOVIMENTOS_KEY,JSON.stringify(fila));
+  localStorage.setItem(BASE_MOVIMENTOS_KEY,JSON.stringify(atuais));
+  atualizarIndicadorFilaMovimentos();
+}
+function atualizarIndicadorFilaMovimentos(){
+  const el=document.getElementById("indicadorFilaMovimentos");
+  if(el)el.textContent="Movimentações pendentes: "+lerFilaMovimentos().length+" · aguardando integração";
+}
+function consultarFilaMovimentos(){
+  const fila=lerFilaMovimentos();
+  const tipos={inclusao:0,edicao:0,exclusao:0};
+  for(const m of fila)if(Object.hasOwn(tipos,m.tipo))tipos[m.tipo]++;
+  alert("Movimentações locais pendentes: "+fila.length+"\\nInclusões: "+tipos.inclusao+"\\nEdições: "+tipos.edicao+"\\nExclusões: "+tipos.exclusao+"\\n\\nNenhuma movimentação foi enviada ao SharePoint ou baixada do estoque.");
+}
+window.addEventListener("load",()=>{
+  if(localStorage.getItem(BASE_MOVIMENTOS_KEY)===null){
+    const dados=lerJsonLocalStorage("entradas",[]);
+    localStorage.setItem(BASE_MOVIMENTOS_KEY,JSON.stringify(Array.isArray(dados)?dados:[]));
+  }
+  atualizarIndicadorFilaMovimentos();
+});
+
 function salvarLocalStorage() {
     let tbody = document.querySelector("#tabela tbody");
     let dados = [];
@@ -1383,6 +1441,7 @@ function salvarLocalStorage() {
 
     localStorage.setItem("entradas", JSON.stringify(dados));
     registrarCopiaSegurancaOffline(dados);
+    registrarMovimentosLocais(dados);
     const paletesAtuais = new Set(dados.map(item => String(item.palete)));
     const caminhoes = lerCaminhoes();
     Object.keys(caminhoes).forEach(palete => {
