@@ -3188,38 +3188,29 @@ document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async(
    throw Error('Selecione e prepare uma expedição pendente antes de confirmar.');
   if(!atual.exportado){
    const faltam=atual.resultado.pendencias.reduce((t,x)=>t+Number(x.caixas||0),0);
-   await confirmarRaiar('DOWNLOAD OBRIGATÓRIO\\n\\nCaixas não baixadas / ausentes: '+faltam+'\\n\\nClique primeiro em BAIXAR EXCEL DO RESULTADO e confira o arquivo atualizado. Sem gerar o Excel, a baixa não pode ser registrada.');
+   await confirmarRaiar('DOWNLOAD OBRIGATÓRIO\n\nCaixas não baixadas / ausentes: '+faltam+'\n\nClique primeiro em BAIXAR EXCEL DO RESULTADO e confira o arquivo atualizado. Sem gerar o Excel, a baixa não pode ser registrada.');
    return;
   }
   if(!atual.resultado.aplicados.length)
    throw Error('Nenhuma caixa pôde ser baixada. Confira o estoque antes de registrar.');
   if(document.getElementById('etapa4DestinoBaixa').value!==atual.destino)
    throw Error('O destino mudou. Prepare novamente a conferência.');
-  const novaVersao=window.__etapa4Versoes?.embalado||'';
-  if(!novaVersao||novaVersao===atual.versaoInicial){
-   const faltam=atual.resultado.pendencias.reduce((t,x)=>t+Number(x.caixas||0),0);
-   await confirmarRaiar('PUBLICAÇÃO PENDENTE\\n\\nCaixas não baixadas / ausentes: '+faltam+'\\n\\nO Excel atualizado já foi gerado, mas o Estoque Embalado ainda não foi publicado no Firebase. Publique a planilha e tente novamente.');
-   return;
-  }
-  const chave=x=>JSON.stringify([String(x.sku??'').trim().toUpperCase(),String(x.lote??'').trim().toUpperCase()]);
-  const esperado=new Map(atual.resultado.itens.map(x=>[chave(x),Number(x.saldo)]));
-  const atualCloud=window.__etapa4?.embalado||[];
-  const mapa=new Map(atualCloud.map(x=>[chave(x),Number(x.saldo)]));
-  for(const mov of atual.resultado.aplicados){
-   const k=chave(mov);
-   if(!esperado.has(k)||Number(mapa.get(k)??0)!==esperado.get(k))
-    throw Error('O saldo publicado ainda não corresponde à baixa preparada para SKU '+mov.sku+' / lote '+mov.lote+'. Confira a planilha e publique o estoque correto.');
-  }
   const destino=atual.destino.slice('arquivo:'.length);
   const baixados=lerExpedicoesPendentes().filter(x=>x.destino===destino&&x.estado!=='BAIXA_CONCLUIDA');
   if(!baixados.length)throw Error('Expedição já concluída ou não localizada.');
   const soma=xs=>xs.reduce((n,x)=>n+Number(x.caixas||0),0);
   const totalBaixado=soma(atual.resultado.aplicados),totalNaoBaixado=soma(atual.resultado.pendencias);
   if(totalNaoBaixado>0){
-   const aceitou=await confirmarRaiar('ATENÇÃO — BAIXA PARCIAL\\n\\nDestino: '+destino+'\\nCaixas baixadas: '+totalBaixado+'\\nCaixas NÃO baixadas: '+totalNaoBaixado+'\\n\\nAo concordar, a expedição será marcada como concluída e desaparecerá das pendências. O saldo não baixado permanecerá registrado no histórico. O estoque não será descontado novamente. Deseja continuar?');
+   const aceitou=await confirmarRaiar('ATENÇÃO — BAIXA PARCIAL\n\nDestino: '+destino+'\nCaixas baixadas: '+totalBaixado+'\nCaixas NÃO baixadas: '+totalNaoBaixado+'\n\nAo concordar, a expedição será marcada como concluída e desaparecerá das pendências. O saldo não baixado permanecerá registrado no histórico. O estoque não será descontado novamente. Deseja continuar?');
    if(!aceitou)return;
   }
-  const confirmado=await confirmarBaixaExpedicao(destino,{baixadas:totalBaixado,naoBaixadas:totalNaoBaixado,parcial:totalNaoBaixado>0});
+  if(!await confirmarRaiar('REGISTRAR BAIXA NO FIREBASE\n\nDestino: '+destino+'\nCaixas a baixar: '+totalBaixado+'\nCaixas sem baixa: '+totalNaoBaixado+'\n\nO sistema atualizará os saldos das caixas disponíveis e encerrará esta pendência. Confirmar?'))return;
+  const executado=await window.registrarBaixaConferida({resultado:{...atual.resultado,origem:atual.origem},versaoInicial:atual.versaoInicial,destino,registros:baixados});
+  // Atualizar o arquivo local apenas após a transação remota completa.
+  const lista=lerExpedicoesPendentes(),agora=new Date().toISOString();
+  for(const x of lista)if(x.destino===destino&&x.estado!=='BAIXA_CONCLUIDA'){x.estado='BAIXA_CONCLUIDA';x.baixaConfirmadaEm=agora;x.resumoBaixa={baixadas:totalBaixado,naoBaixadas:totalNaoBaixado,parcial:totalNaoBaixado>0};}
+  localStorage.setItem(CHAVE_EXPEDICOES_PENDENTES,JSON.stringify(lista));operadorAtualizarPainel();
+  const confirmado=Boolean(executado);
   if(!confirmado)return;
   status.textContent='Baixa registrada para '+destino+'. '+totalBaixado+' caixa(s) baixadas e '+totalNaoBaixado+' não baixadas. Pendência arquivada; estoque oficial não foi alterado por esta confirmação.';
   resultadoEtapa4=null;
