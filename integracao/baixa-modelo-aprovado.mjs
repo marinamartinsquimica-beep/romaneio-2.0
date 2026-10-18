@@ -212,5 +212,9 @@ export async function gerarSubstituicaoModeloAprovado({arquivo,resultado,origem}
  }
  await sx.forceRecalc();
  return {blob:await sx.blob(),operacao:'substituicao-total',registros:registros.length,
-  estoqueAntes:resultado.estoqueAnterior,estoqueDepois:caixasGeradas};
+  estoqueAntes:resultado.estoqueAnterior,estoqueDepois:caixasGeradas,
+  itens:resultado.itens.map((item,i)=>({
+   ...item,
+   ovosPorCaixa:registros[i].ovosCx,ovos:registros[i].ovosCx*Number(item.saldo)
+  }))};
 }
