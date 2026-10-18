@@ -3305,6 +3305,7 @@ window.addEventListener('romaneio:preparar-baixa-destino',event=>{
 });
 
 document.getElementById('etapa4Preparar')?.addEventListener('click',()=>{
+ if(!document.getElementById('etapa4DestinoBaixa')?.value)atualizarDestinosBaixa();
  const status=document.getElementById('etapa4OperacoesStatus'),saida=document.getElementById('etapa4OperacoesResultado');saida.replaceChildren();resultadoEtapa4=null;document.getElementById('etapa4Exportar').disabled=true;const confirmar=document.getElementById('etapa4ConfirmarBaixa');confirmar.hidden=modoEtapa4.value!=='baixa';confirmar.disabled=modoEtapa4.value!=='baixa';document.getElementById('etapa4OrientacaoConfirmacao').hidden=modoEtapa4.value!=='baixa';
  try{
   const e=window.__etapa4?.embalado;if(!e?.length)throw Error('Carregue primeiro o estoque compartilhado do Firebase.');
