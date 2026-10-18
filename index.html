@@ -2221,11 +2221,20 @@ function renderizarHistoricoFechamentos(){
 async function reiniciarEntradas() {
     if (!await confirmarRaiar("APAGAR TODO O ROMANEIO?\n\nEsta ação apagará todas as entradas, paletes, placas e o histórico dos caminhões. Não será possível desfazer.")) return;
 
+    // Não perder movimentações pendentes ao encerrar no computador.
+    const dispositivoCelular=Boolean(navigator.userAgentData?.mobile)||/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if(!dispositivoCelular&&lerFilaMovimentos().length){
+      alert('Existem movimentos pendentes. Sincronize antes de apagar no computador.');
+      return;
+    }
     // Guardar snapshot recuperável antes de qualquer exclusão local.
     try{salvarHistoricoFechamento();}catch(e){alert(e.message);return;}
 
-    // Registrar exclusões pendentes antes de apagar o romaneio. A fila permanece intacta.
-    registrarMovimentosLocais([]);
+    // Exclusão no celular gera aviso de baixa. No computador, somente limpeza local.
+    if(dispositivoCelular) registrarMovimentosLocais([]);
+    else localStorage.setItem(BASE_MOVIMENTOS_KEY,'[]');
+    // Marca o início do próximo romaneio apenas neste dispositivo.
+    localStorage.setItem('romaneio2_ultimo_reinicio_local_v1',new Date().toISOString());
     // Preservar a última cópia de segurança em vez de substituí-la por uma lista vazia.
     localStorage.removeItem("entradas");
     localStorage.removeItem(ESTADO_OPERACIONAL_KEY);
