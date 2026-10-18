@@ -75,12 +75,12 @@ async function installPanelFormulas(xlsx){
  const put=(ref,formula,type="number")=>{const m=ref.match(/^([A-Z]+)(\d+)$/),rn=Number(m[2]),row=rowByNumber(xlsx,painel.doc,rn);if(!row)return;const col=m[1],cell=xlsx.ensureCell(row,col,rn),cached=xlsx.value(cell);if(type==="string")xlsx.setString(cell,cached??"",formula);else xlsx.setNumber(cell,Number(cached)||0,formula)};
  put("B5",'SUM(Estoque!$J$4:$J$2075)');
  put("F5",'SUM(Estoque!$K$4:$K$2075)');
- put("J5",'COUNTIF(Prioridade!$E$2:$E$100,">0")');
+ // J5 mantém a contagem calculada dos SKUs presentes no estoque; Prioridade pode estar incompleta.
  for(let rn=11;rn<=14;rn++)put("C"+rn,`SUMIF(Estoque!$C$4:$C$2075,B${rn},Estoque!$K$4:$K$2075)`);
  for(let rn=11;rn<=99;rn++){
-  const g=`IFERROR(INDEX(Prioridade!$A$2:$A$100,MATCH(ROW()-10,Prioridade!$F$2:$F$100,0)),"")`,h=`IF(G${rn}="","",IFERROR(INDEX(Prioridade!$B$2:$B$100,MATCH(G${rn},Prioridade!$A$2:$A$100,0)),""))`,i=`IF(G${rn}="","",IFERROR(INDEX(Cadastro!$C$2:$C$1000,MATCH(G${rn},Cadastro!$A$2:$A$1000,0)),""))`,j=`IF(G${rn}="","",SUMIF(Estoque!$A$4:$A$2075,G${rn},Estoque!$J$4:$J$2075))`,k=`IF(G${rn}="","",SUMIF(Estoque!$A$4:$A$2075,G${rn},Estoque!$K$4:$K$2075))`;
+  const j=`IF(G${rn}="","",SUMIF(Estoque!$A$4:$A$2075,G${rn},Estoque!$J$4:$J$2075))`,k=`IF(G${rn}="","",SUMIF(Estoque!$A$4:$A$2075,G${rn},Estoque!$K$4:$K$2075))`;
   const row=rowByNumber(xlsx,painel.doc,rn),hasSku=row&&normSku(xlsx.value(xlsx.findCell(row,"G")));
-  put("G"+rn,g,hasSku?"number":"string");put("H"+rn,h,"string");put("I"+rn,i,"string");put("J"+rn,j,hasSku?"number":"string");put("K"+rn,k,hasSku?"number":"string")
+  // As colunas G/H/I são preenchidas por SKUs do saldo real, sem dependência do cadastro Prioridade.\n  put("J"+rn,j,hasSku?"number":"string");put("K"+rn,k,hasSku?"number":"string")
  }
  await xlsx.saveSheet(painel)
 }
