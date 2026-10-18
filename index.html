@@ -180,9 +180,9 @@ tbody tr:hover,.operator-table tbody tr:hover{background:#EAF6FA}
 #painelOperadorDesktop .operator-toolbar-side button{width:100%;min-width:0;max-width:none;padding:10px 8px;min-height:42px;font-size:12px;border-radius:6px;white-space:normal}
 #painelOperadorDesktop>.operator-section-tabs button{overflow-wrap:break-word}
 /* Manter as cores dos botões de ação; recuperar contraste de texto de botões genéricos sem estilo explícito. */
-#etapa4Publicar,#etapa4AtivarNotificacoes,#etapa4Preparar,#etapa4Exportar{background:#254D69!important;color:#fff!important;text-shadow:none!important;border:1px solid #254D69!important;opacity:1!important;filter:none!important}
+#etapa4Publicar,#etapa4AtivarNotificacoes,#etapa4Preparar,#etapa4Exportar,#etapa4ConfirmarBaixa{background:#254D69!important;color:#fff!important;text-shadow:none!important;border:1px solid #254D69!important;opacity:1!important;filter:none!important}
 #etapa4Exportar:disabled{background:#52687a!important;color:#fff!important;cursor:not-allowed}
-#etapa4Publicar,#etapa4AtivarNotificacoes,#etapa4Preparar,#etapa4Exportar{margin:10px 0;min-height:44px;font-weight:700;border-radius:6px}
+#etapa4Publicar,#etapa4AtivarNotificacoes,#etapa4Preparar,#etapa4Exportar,#etapa4ConfirmarBaixa{margin:10px 0;min-height:44px;font-weight:700;border-radius:6px}
 #painelOperadorDesktop .operator-side-actions button{font-weight:700}
 #painelOperadorDesktop #opAbaParipassu #etapa4Aviso{margin:12px 0!important;background:#fff2e8;color:#8d3216;padding:14px 18px;border-radius:6px}
 #painelOperadorDesktop #opAbaParipassu #etapa4Pendencias li{margin:0;padding:9px 0;border-bottom:1px solid #DDE3E8}
@@ -289,7 +289,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 <div id="etapa4DestinoBloco"><label for="etapa4DestinoBaixa">Destino da expedição</label><select id="etapa4DestinoBaixa"><option value="">Todos os destinos — baixa total</option></select><p style="font-size:12px;color:#48647a">A baixa considera somente os paletes do destino escolhido; nenhum destino é apagado.</p></div>
 <p id="etapa4Orientacao">Baixa automática das caixas existentes no romaneio. Nenhuma digitação necessária.</p><label for="etapa4Movimentos" id="etapa4MovimentosLabel" hidden>Contagem física: SKU;LOTE;CAIXAS (uma linha por registro)</label>
 <textarea id="etapa4Movimentos" rows="5" hidden style="width:100%;padding:10px;border-radius:8px" placeholder="SKU;LOTE;CAIXAS"></textarea>
-<button type="button" id="etapa4Preparar">PREPARAR CONFERÊNCIA</button><button type="button" id="etapa4Exportar" disabled>BAIXAR EXCEL DO RESULTADO</button>
+<button type="button" id="etapa4Preparar">PREPARAR CONFERÊNCIA</button><button type="button" id="etapa4Exportar" disabled>BAIXAR EXCEL DO RESULTADO</button><button type="button" id="etapa4ConfirmarBaixa" hidden disabled>CONFIRMAR BAIXA NO SISTEMA</button><p id="etapa4OrientacaoConfirmacao" hidden style="font-size:12px;color:#48647a">Conclua e publique o estoque atualizado no Firebase antes de confirmar a baixa. Nenhum saldo será modificado por este botão.</p>
 <p id="etapa4OperacoesStatus" role="status"></p><div id="etapa4OperacoesResultado" style="max-height:250px;overflow:auto"></div>
 </section></section></div><div id="opAbaEstoque" role="tabpanel" class="hidden"><section class="card" id="painelEstoqueTeste" style="margin:14px 0;padding:20px">
   <div class="card-header"><h2>Estoque completo <small style="font-size:13px;color:#64748b">v2.0.50</small></h2><span class="badge">Consulta de estoque</span></div>
