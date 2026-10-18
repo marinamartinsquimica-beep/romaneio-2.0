@@ -3235,7 +3235,7 @@ document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async(
   const executado=await window.registrarBaixaConferida({resultado:{...atual.resultado,origem:atual.origem},versaoInicial:atual.versaoInicial,destino,registros:baixados});
   // Atualizar o arquivo local apenas após a transação remota completa.
   const lista=lerExpedicoesPendentes(),agora=new Date().toISOString();
-  for(const x of lista)if(x.destino===destino&&x.estado!=='BAIXA_CONCLUIDA'){x.estado='BAIXA_CONCLUIDA';x.baixaConfirmadaEm=agora;x.resumoBaixa={baixadas:totalBaixado,naoBaixadas:totalNaoBaixado,parcial:totalNaoBaixado>0};}
+  for(const x of lista)if((totalGeral||x.destino===destino)&&x.estado!=='BAIXA_CONCLUIDA'){x.estado='BAIXA_CONCLUIDA';x.baixaConfirmadaEm=agora;x.resumoBaixa={baixadas:totalBaixado,naoBaixadas:totalNaoBaixado,parcial:totalNaoBaixado>0};}
   localStorage.setItem(CHAVE_EXPEDICOES_PENDENTES,JSON.stringify(lista));operadorAtualizarPainel();
   const confirmado=Boolean(executado);
   if(!confirmado)return;
