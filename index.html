@@ -3362,7 +3362,7 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
   if(res.operacao==='substituicao-total'){
    if(resultadoEtapa4.assinatura!== (await import('./integracao/substituicao-estoque-total.mjs')).assinaturaInventario(lerJsonLocalStorage('entradas',[])))
     throw Error('O romaneio ESTOQUE mudou desde a conferência. Prepare novamente.');
-   if(!await confirmarRaiar('EXCEL DO INVENTÁRIO TOTAL\\n\\nTodo o Estoque Embalado será substituído pelos lotes do destino ESTOQUE.\\nEstoque atual: '+res.estoqueAntes+' caixas.\\nNovo estoque: '+res.estoqueDepois+' caixas.\\n\\nBaixe e confira o Excel antes de confirmar a substituição no Firebase.'))return;
+   if(!await confirmarRaiar('EXCEL DO INVENTÁRIO TOTAL\n\nTodo o Estoque Embalado será substituído pelos lotes do destino ESTOQUE.\nEstoque atual: '+res.estoqueAntes+' caixas.\nNovo estoque: '+res.estoqueDepois+' caixas.\n\nBaixe e confira o Excel antes de confirmar a substituição no Firebase.'))return;
   }
   if(res.operacao==='baixa'){
    const n=Number(res.naoBaixadas||0),b=Number(res.baixadas||0);
@@ -3383,6 +3383,7 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
    painel.replaceChildren();if(cards)painel.append(cards);painel.append(table);
   }
   if(resultadoEtapa4&&res.operacao==='substituicao-total'){
+   resultadoEtapa4.resultado.itens=res.itens;
    resultadoEtapa4.exportado=true;
    resultadoEtapa4.excelAtualizado={blob:res.blob,nome:'ESTOQUE_EMBALADO_SUBSTITUICAO_'+new Date().toISOString().slice(0,10)+'.xlsx'};
    const btn=document.getElementById('etapa4ConfirmarSubstituicao');
@@ -3417,11 +3418,11 @@ document.getElementById('etapa4ConfirmarSubstituicao')?.addEventListener('click'
    throw Error('O estoque no Firebase mudou. Prepare novamente o inventário antes de substituir.');
   if(typeof window.substituirEstoqueEmbaladoPeloInventario!=='function')
    throw Error('A integração de estoque Firebase ainda não está disponível.');
-  const aviso='SUBSTITUIÇÃO INTEGRAL DO ESTOQUE EMBALADO\\n\\n'+
-   'Esta operação NÃO É UMA BAIXA. Todos os '+atual.origem.length+' lotes anteriores serão substituídos pelos '+atual.resultado.totalLotes+' lotes do romaneio com destino ESTOQUE.\\n\\n'+
-   'Estoque ANTERIOR: '+atual.resultado.estoqueAnterior+' caixas.\\n'+
-   'Estoque NOVO: '+atual.resultado.estoqueDepois+' caixas.\\n'+
-   'Lotes retirados: '+atual.resultado.retirados.length+'.\\n\\n'+
+  const aviso='SUBSTITUIÇÃO INTEGRAL DO ESTOQUE EMBALADO\n\n'+
+   'Esta operação NÃO É UMA BAIXA. Todos os '+atual.origem.length+' lotes anteriores serão substituídos pelos '+atual.resultado.totalLotes+' lotes do romaneio com destino ESTOQUE.\n\n'+
+   'Estoque ANTERIOR: '+atual.resultado.estoqueAnterior+' caixas.\n'+
+   'Estoque NOVO: '+atual.resultado.estoqueDepois+' caixas.\n'+
+   'Lotes retirados: '+atual.resultado.retirados.length+'.\n\n'+
    'Você já conferiu e salvou o Excel gerado? CONFIRMAR substitui todos os saldos no Firebase.';
   if(!await confirmarRaiar(aviso))return;
   // O usuário pode alterar o romaneio durante a confirmação; repetir guarda.
