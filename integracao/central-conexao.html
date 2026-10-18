@@ -28,7 +28,7 @@ a{color:#156e9b;font-weight:700}
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {initializeApp,getApps,getApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,setPersistence,browserLocalPersistence} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getFirestore,doc,runTransaction,collection,query,orderBy,limit,startAfter,getDocs,onSnapshot,updateDoc} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {getFirestore,doc,getDoc,runTransaction,collection,query,orderBy,limit,startAfter,getDocs,onSnapshot,updateDoc} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 const config={apiKey:'AIzaSyCCy5uY1eAFQE9Vhykr7xNNayDtk_B-Hy4',authDomain:'romaneio-2-0-homologacao.firebaseapp.com',projectId:'romaneio-2-0-homologacao',storageBucket:'romaneio-2-0-homologacao.firebasestorage.app',messagingSenderId:'357381847782',appId:'1:357381847782:web:59ad8365c033bba8e79927'};
 exigirFirebaseHomologacao(config);
 const app=getApps().length?getApp():initializeApp(config),auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
@@ -860,6 +860,21 @@ async function sincronizarExpedicoesCompartilhadas(){
  const hash=x=>{let h=2166136261;for(const c of x)h=Math.imul(h^c.charCodeAt(0),16777619)>>>0;return h.toString(16)};
  for(const x of locais){
   if(!x.destino)continue;
+  // Baixa realizada antes da limpeza no celular: a exclusão posterior não recria uma pendência.
+  if(x.movimentoExclusaoId&&x.registroId&&x.estado!=='BAIXA_CONCLUIDA'){
+   const origemAtiva='ativo_'+String(x.registroId).trim();
+   const idAtivo='exp_'+hash(origemAtiva)+'_'+origemAtiva.length;
+   const ativo=docs.get(idAtivo)||((await getDoc(doc(db,...raiz,'expedicoes',idAtivo))).data()||null);
+   if(ativo?.estado==='BAIXA_CONCLUIDA'&&
+      String(ativo.sku||'')===String(x.sku||'')&&
+      String(ativo.loteCompleto||ativo.lote||'')===String(x.loteCompleto||x.lote||'')&&
+      Number(ativo.caixas)===Number(x.caixas)){
+    x.estado='BAIXA_CONCLUIDA';
+    x.baixaConfirmadaEm=ativo.baixaConfirmadaEm||'';
+    x.confirmadoPor=ativo.confirmadoPor||'';
+    continue;
+   }
+  }
   const k=identificador(x)||'legado_'+hash(base(x)),id='exp_'+hash(k)+'_'+k.length;
   if(docs.has(id)){
    const remoto=docs.get(id);
