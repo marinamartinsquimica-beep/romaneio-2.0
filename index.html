@@ -3171,7 +3171,7 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
   }
   if(resultadoEtapa4&&res.operacao==='baixa'){
    resultadoEtapa4.exportado=true;
-   const completa=resultadoEtapa4.destino.startsWith('arquivo:')&&!resultadoEtapa4.resultado.pendencias.length&&resultadoEtapa4.resultado.aplicados.length>0;
+   const completa=resultadoEtapa4.destino.startsWith('arquivo:')&&resultadoEtapa4.resultado.aplicados.length>0;
    const botao=document.getElementById('etapa4ConfirmarBaixa');
    botao.hidden=!resultadoEtapa4.destino.startsWith('arquivo:');botao.disabled=!completa;
    document.getElementById('etapa4OrientacaoConfirmacao').hidden=!resultadoEtapa4.destino.startsWith('arquivo:');
@@ -3186,8 +3186,8 @@ document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async(
   const atual=resultadoEtapa4;
   if(!atual||atual.modo!=='baixa'||!atual.exportado||!atual.destino.startsWith('arquivo:'))
    throw Error('Prepare e exporte a baixa da expedição pendente antes de confirmar.');
-  if(atual.resultado.pendencias.length||!atual.resultado.aplicados.length)
-   throw Error('Baixa parcial ou com pendência de estoque: não é possível concluir a expedição.');
+  if(!atual.resultado.aplicados.length)
+   throw Error('Nenhuma caixa pôde ser baixada. Confira o estoque antes de registrar.');
   if(document.getElementById('etapa4DestinoBaixa').value!==atual.destino)
    throw Error('O destino mudou. Prepare novamente a conferência.');
   const novaVersao=window.__etapa4Versoes?.embalado||'';
@@ -3205,9 +3205,15 @@ document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async(
   const destino=atual.destino.slice('arquivo:'.length);
   const baixados=lerExpedicoesPendentes().filter(x=>x.destino===destino&&x.estado!=='BAIXA_CONCLUIDA');
   if(!baixados.length)throw Error('Expedição já concluída ou não localizada.');
+  const soma=xs=>xs.reduce((n,x)=>n+Number(x.caixas||0),0);
+  const totalBaixado=soma(atual.resultado.aplicados),totalNaoBaixado=soma(atual.resultado.pendencias);
+  if(totalNaoBaixado>0){
+   const aceitou=await confirmarRaiar('ATENÇÃO — BAIXA PARCIAL\\n\\nDestino: '+destino+'\\nCaixas baixadas: '+totalBaixado+'\\nCaixas NÃO baixadas: '+totalNaoBaixado+'\\n\\nAo concordar, a expedição será marcada como concluída e desaparecerá das pendências. O saldo não baixado permanecerá registrado no histórico. O estoque não será descontado novamente. Deseja continuar?');
+   if(!aceitou)return;
+  }
   const confirmado=await confirmarBaixaExpedicao(destino);
   if(!confirmado)return;
-  status.textContent='Baixa concluída para '+destino+'. Pendência arquivada; estoque oficial previamente publicado permanece inalterado por esta confirmação.';
+  status.textContent='Baixa registrada para '+destino+'. '+totalBaixado+' caixa(s) baixadas e '+totalNaoBaixado+' não baixadas. Pendência arquivada; estoque oficial não foi alterado por esta confirmação.';
   resultadoEtapa4=null;
   const btn=document.getElementById('etapa4ConfirmarBaixa');btn.hidden=true;btn.disabled=true;
   document.getElementById('etapa4OrientacaoConfirmacao').hidden=true;
@@ -3262,7 +3268,7 @@ document.getElementById('etapa4Preparar')?.addEventListener('click',()=>{
    const botao=document.getElementById('etapa4ConfirmarBaixa'),aviso=document.getElementById('etapa4OrientacaoConfirmacao');
    botao.hidden=false;botao.disabled=true;aviso.hidden=false;
    const faltam=resultado.pendencias.reduce((s,x)=>s+Number(x.caixas||0),0);
-   aviso.textContent=faltam?'Baixa incompleta: '+faltam+' caixa(s) sem saldo disponível. Regularize antes de confirmar.':'Gere o Excel, confira, publique o estoque atualizado no Firebase e confirme a conclusão.';
+   aviso.textContent=faltam?'BAIXA PARCIAL: '+faltam+' caixa(s) sem saldo. Após gerar o Excel e publicar o estoque atualizado, o operador poderá confirmar mediante aviso.':'Gere o Excel, confira, publique o estoque atualizado no Firebase e confirme a conclusão.';
   }
   status.textContent='Conferência concluída: '+ocorrencias.length+' registros. Excel baseado no arquivo original disponível para geração; conferência do resultado obrigatória. Nenhum saldo compartilhado foi alterado.';
  }catch(e){status.textContent='Operação não preparada: '+e.message;}
