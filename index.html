@@ -3384,6 +3384,7 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
   }
   if(resultadoEtapa4&&res.operacao==='substituicao-total'){
    resultadoEtapa4.exportado=true;
+   resultadoEtapa4.excelAtualizado={blob:res.blob,nome:'ESTOQUE_EMBALADO_SUBSTITUICAO_'+new Date().toISOString().slice(0,10)+'.xlsx'};
    const btn=document.getElementById('etapa4ConfirmarSubstituicao');
    btn.hidden=false;btn.disabled=false;
   }
@@ -3470,15 +3471,11 @@ window.addEventListener('romaneio:preparar-baixa-destino',event=>{
 
 document.getElementById('etapa4Preparar')?.addEventListener('click',async()=>{
  if(!document.getElementById('etapa4DestinoBaixa')?.value)atualizarDestinosBaixa();
- const status=document.getElementById('etapa4OperacoesStatus'),saida=document.getElementById('etapa4OperacoesResultado');saida.replaceChildren();resultadoEtapa4=null;document.getElementById('etapa4Exportar').disabled=true;const confirmar=document.getElementById('etapa4ConfirmarBaixa');confirmar.hidden=modoEtapa4.value!=='baixa';confirmar.disabled=modoEtapa4.value!=='baixa';document.getElementById('etapa4OrientacaoConfirmacao').hidden=modoEtapa4.value!=='baixa';
+ const status=document.getElementById('etapa4OperacoesStatus'),saida=document.getElementById('etapa4OperacoesResultado');saida.replaceChildren();resultadoEtapa4=null;document.getElementById('etapa4Exportar').disabled=true;const confirmar=document.getElementById('etapa4ConfirmarBaixa');confirmar.hidden=modoEtapa4.value!=='baixa';confirmar.disabled=modoEtapa4.value!=='baixa';document.getElementById('etapa4OrientacaoConfirmacao').hidden=modoEtapa4.value!=='baixa';const substituir=document.getElementById('etapa4ConfirmarSubstituicao');substituir.disabled=true;substituir.hidden=modoEtapa4.value!=='ajuste';
  try{
   const modo=modoEtapa4.value;
   let registrosParaBaixa=null,romaneiosJaBaixados=0;
-  let registros=modo==='baixa'?movimentosDoRomaneio():document.getElementById('etapa4Movimentos').value.trim().split(/\r?\n/).filter(Boolean).map((linha,i)=>{
-   const a=linha.split(';').map(x=>x.trim());if(a.length!==3)throw Error('Linha '+(i+1)+' deve ter SKU;LOTE;CAIXAS.');
-   const caixas=Number(a[2]);if(!Number.isSafeInteger(caixas)||caixas<0)throw Error('Contagem inválida na linha '+(i+1));
-   return {sku:a[0],lote:a[1],caixas};
-  });
+  let registros=modo==='baixa'?movimentosDoRomaneio():[];let assinaturaAjuste='';
   if(modo==='baixa'){
    const selecao=document.getElementById('etapa4DestinoBaixa')?.value||'ativo:__TODOS__';
    const arquivo=selecao.startsWith('arquivo:');
@@ -3501,9 +3498,13 @@ document.getElementById('etapa4Preparar')?.addEventListener('click',async()=>{
    registros=registrosParaBaixa.map((x,i)=>({id:'romaneio-'+(i+1),sku:x.sku,lote:String(x.loteCompleto||x.lote||''),caixas:Number(x.caixas)}));
   }
   const e=window.__etapa4?.embalado;if(!e?.length)throw Error('Carregue primeiro o estoque compartilhado do Firebase.');
-  if(!registros.length)throw Error('Nenhuma contagem informada.');
-  const resultado=modo==='baixa'?prepararBaixa(e,registros):prepararAjuste(e,registros);
-  const ocorrencias=modo==='baixa'?[...resultado.aplicados.map(x=>({...x,situacao:'Preparada'})),...resultado.pendencias.map(x=>({...x,situacao:x.motivo}))]:resultado.alteracoes.map(x=>({...x,situacao:'Ajuste preparado',caixas:x.fisico}));
+  let resultado;
+  if(modo==='baixa'){if(!registros.length)throw Error('Nenhum romaneio encontrado.');resultado=prepararBaixa(e,registros);}
+  else{const {prepararSubstituicaoTotal,assinaturaInventario}=await import('./integracao/substituicao-estoque-total.mjs');
+   const inventario=lerJsonLocalStorage('entradas',[]);assinaturaAjuste=assinaturaInventario(inventario);resultado=prepararSubstituicaoTotal(e,inventario);}
+  const ocorrencias=modo==='baixa'
+   ?[...resultado.aplicados.map(x=>({...x,situacao:'Preparada'})),...resultado.pendencias.map(x=>({...x,situacao:x.motivo}))]
+   :[...resultado.alteracoes.map(x=>({...x,caixas:x.saldo,situacao:x.acao+' (antes: '+x.anterior+')'})),...resultado.retirados.map(x=>({...x,caixas:0,situacao:'RETIRAR (antes: '+x.saldo+')'}))];
   const tab=document.createElement('table'),body=tab.createTBody();
   for(const x of ocorrencias){const tr=body.insertRow();[x.sku,x.lote,x.caixas,x.situacao].forEach(v=>{const td=tr.insertCell();td.textContent=String(v??'')})}
   saida.appendChild(tab);
@@ -3512,11 +3513,13 @@ document.getElementById('etapa4Preparar')?.addEventListener('click',async()=>{
   const estoqueAntes=e.reduce((a,x)=>a+Number(x.saldo||0),0);
   const estoqueDepois=resultado.itens.reduce((a,x)=>a+Number(x.saldo||0),0);
   const resumo=document.createElement('div');resumo.className='etapa4-resumo-baixa';
-  const dados=modo==='baixa'?[['Caixas solicitadas',solicitadas],['Caixas preparadas',efetivadas],['Não baixadas',solicitadas-efetivadas],['Estoque anterior',estoqueAntes],['Estoque após baixa',estoqueDepois]]:[['Lotes ajustados',resultado.alteracoes.length],['Estoque anterior',estoqueAntes],['Estoque após ajuste',estoqueDepois]];
+  const dados=modo==='baixa'?[['Caixas solicitadas',solicitadas],['Caixas preparadas',efetivadas],['Não baixadas',solicitadas-efetivadas],['Estoque anterior',estoqueAntes],['Estoque após baixa',estoqueDepois]]:[['Registros ESTOQUE',resultado.totalRegistros],['Lotes no novo estoque',resultado.totalLotes],['Lotes retirados',resultado.retirados.length],['Estoque anterior',estoqueAntes],['Novo estoque',estoqueDepois]];
   for(const [nome,valor] of dados){const card=document.createElement('div');card.className='etapa4-resumo-card';const title=document.createElement('span'),number=document.createElement('strong');title.textContent=nome;number.textContent=Number(valor).toLocaleString('pt-BR');card.append(title,number);resumo.appendChild(card)}
   saida.prepend(resumo);
-  resultadoEtapa4={modo,resultado,origem:e.map(x=>({...x})),destino:document.getElementById('etapa4DestinoBaixa')?.value||'ativo:__TODOS__',versaoInicial:window.__etapa4Versoes?.embalado||'',registrosBaixa:registrosParaBaixa,jaBaixadosIgnorados:romaneiosJaBaixados,exportado:false};document.getElementById('etapa4Exportar').disabled=modo==='baixa'&&!resultado.aplicados.length;
-  if(resultadoEtapa4.destino.startsWith('arquivo:')||resultadoEtapa4.destino==='ativo:__TODOS__'){
+  resultadoEtapa4={modo,resultado,origem:e.map(x=>({...x})),destino:modo==='ajuste'?'ESTOQUE':document.getElementById('etapa4DestinoBaixa')?.value||'ativo:__TODOS__',versaoInicial:window.__etapa4Versoes?.embalado||'',registrosBaixa:registrosParaBaixa,jaBaixadosIgnorados:romaneiosJaBaixados,assinatura:assinaturaAjuste,exportado:false};
+  document.getElementById('etapa4Exportar').disabled=modo==='baixa'&&!resultado.aplicados.length;
+  if(modo==='ajuste'){const substituir=document.getElementById('etapa4ConfirmarSubstituicao');substituir.hidden=false;substituir.disabled=true;}
+  if(modo==='baixa'&&(resultadoEtapa4.destino.startsWith('arquivo:')||resultadoEtapa4.destino==='ativo:__TODOS__')){
    const botao=document.getElementById('etapa4ConfirmarBaixa'),aviso=document.getElementById('etapa4OrientacaoConfirmacao');
    const podeBaixar=resultado.aplicados.length>0;
    botao.hidden=!podeBaixar;botao.disabled=!podeBaixar;aviso.hidden=!podeBaixar;
@@ -3524,7 +3527,7 @@ document.getElementById('etapa4Preparar')?.addEventListener('click',async()=>{
    if(podeBaixar)aviso.textContent=faltam?'BAIXA PARCIAL: '+faltam+' caixa(s) sem saldo. Gere e baixe o Excel atualizado; confirme com o aviso Raiar.':'Gere e baixe o Excel atualizado, confira e confirme a baixa no sistema.';
   }
   const disponiveis=modo==='baixa'?resultado.aplicados.length:resultado.alteracoes.length;
-  status.textContent=modo==='baixa'&&!disponiveis?'Nenhuma caixa disponível para uma nova baixa. As pendências sem confirmação continuam preservadas. Confira a baixa anterior e a correspondência dos lotes no Firebase; um saldo zerado não comprova que já foram baixadas. Não há novo Excel de baixa para gerar.':'Conferência concluída: '+ocorrencias.length+' registros. '+(romaneiosJaBaixados?romaneiosJaBaixados+' romaneio(s) já baixado(s) no Firebase foram ignorados. ':'')+'Excel disponível para geração e conferência obrigatória. Nenhum saldo compartilhado foi alterado.';
+  status.textContent=modo==='ajuste'?'Inventário ESTOQUE preparado: '+resultado.totalLotes+' lotes e '+resultado.estoqueDepois+' caixas substituirão o estoque atual de '+resultado.estoqueAnterior+' caixas; '+resultado.retirados.length+' lote(s) serão retirados. Nenhum saldo alterado. Gere o Excel e confirme.':modo==='baixa'&&!disponiveis?'Nenhuma caixa disponível para uma nova baixa. As pendências sem confirmação continuam preservadas. Confira a baixa anterior e a correspondência dos lotes no Firebase; um saldo zerado não comprova que já foram baixadas. Não há novo Excel de baixa para gerar.':'Conferência concluída: '+ocorrencias.length+' registros. '+(romaneiosJaBaixados?romaneiosJaBaixados+' romaneio(s) já baixado(s) no Firebase foram ignorados. ':'')+'Excel disponível para geração e conferência obrigatória. Nenhum saldo compartilhado foi alterado.';
  }catch(e){status.textContent='Operação não preparada: '+e.message;}
 });
 </script>
