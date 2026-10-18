@@ -3125,10 +3125,10 @@ function atualizarDestinosBaixa(){
  const campo=document.getElementById('etapa4DestinoBaixa'),anterior=campo.value;
  const nomes=[...new Set([...document.querySelectorAll('#tabela tbody tr')].map(tr=>String(tr.cells[2]?.textContent||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
  campo.replaceChildren();const todos=new Option('Todos os destinos — baixa total','');campo.append(todos);
- for(const nome of nomes)campo.append(new Option(nome,nome));
  const arquivos=[...new Set(lerExpedicoesPendentes().filter(x=>x.estado!=='BAIXA_CONCLUIDA').map(x=>x.destino))];
+ for(const nome of nomes.filter(n=>!arquivos.includes(n)))campo.append(new Option(nome,nome));
  for(const nome of arquivos)campo.append(new Option(nome+' — excluído no celular / baixa pendente','arquivo:'+nome));
- campo.value=nomes.includes(anterior)||arquivos.some(n=>'arquivo:'+n===anterior)?anterior:'';
+ campo.value=arquivos.includes(anterior)?'arquivo:'+anterior:(nomes.includes(anterior)&&!arquivos.includes(anterior)||arquivos.some(n=>'arquivo:'+n===anterior)?anterior:'');
 }
 function movimentosDoRomaneio(){
  const selecionado=document.getElementById('etapa4DestinoBaixa')?.value||'';
@@ -3158,6 +3158,10 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
   const res=resultadoEtapa4.modo==='baixa'
     ?await (await import('./integracao/baixa-modelo-aprovado.mjs')).gerarBaixaModeloAprovado({arquivo,resultado:resultadoEtapa4.resultado,origem:resultadoEtapa4.origem})
     :await (await import('./integracao/excel-modelo-etapa4.mjs')).gerarExcelModeloEstoque({arquivo,operacao:resultadoEtapa4.modo,estoqueOriginal:resultadoEtapa4.origem,resultado:resultadoEtapa4.resultado});
+  if(resultadoEtapa4.modo==='baixa'){
+   const totalBase=resultadoEtapa4.origem.reduce((a,x)=>a+Number(x.saldo||0),0);
+   if(res.estoqueAntes!==totalBase)throw Error('O modelo Excel salvo neste navegador tem '+res.estoqueAntes+' caixas, mas o Firebase tinha '+totalBase+' na conferência (diferença '+Math.abs(res.estoqueAntes-totalBase)+'). Importe o modelo de estoque atualizado antes de gerar a baixa. Nenhum arquivo ou saldo foi modificado.');
+  }
   const url=URL.createObjectURL(res.blob),a=document.createElement('a');a.href=url;
   a.download='ESTOQUE_EMBALADO_'+res.operacao.toUpperCase()+'_'+new Date().toISOString().slice(0,10)+'.xlsx';a.click();
   setTimeout(()=>URL.revokeObjectURL(url),120000);
