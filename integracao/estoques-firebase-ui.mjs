@@ -120,7 +120,7 @@ $('etapa4Publicar')?.addEventListener('click',async()=>{
   if(tipo==='embalado')window.__etapa4ArquivoEmbalado=file;
   if(!navigator.onLine)throw Error('Sem conexão. Arquivo não publicado.');
   if(new TextEncoder().encode(JSON.stringify(itens)).length>750000)throw Error('Estoque excede tamanho seguro para um documento Firebase; publicação cancelada sem perda de dados.');
-  if(!confirm('Publicar '+itens.length+' lotes de '+tipo+' para os aparelhos autenticados? A planilha oficial não será modificada.'))return;
+  if(!await window.confirmarRaiar('Publicar '+itens.length+' lotes de '+tipo+' para os aparelhos autenticados? A planilha oficial não será modificada.'))return;
   const versao=crypto.randomUUID();
   if(ambienteAtual&&!ambienteAtual.permissoes.publicarExcel)throw Error('Usuário sem permissão para publicar Excel.');
   const r=await publicarEstoqueOficial({db,uid:u.uid,tipo,dados:{tipo,nome:file.name,versao,itens},versaoEsperada:versoes[tipo],doc,runTransaction,autorizado:true,ambienteId:ambienteAtual?.ambienteId||null});
