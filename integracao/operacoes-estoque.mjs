@@ -10,8 +10,13 @@ export function prepararBaixa(estoque,movimentos){
   const id=String(m.id??'').trim();if(!id)throw Error('ID de movimento obrigatório.');
   if(vistos.has(id))throw Error('Movimento repetido na solicitação: '+id);vistos.add(id);
   const caixas=numero(m.caixas,'Caixas'),k=chave(m),x=saldos.get(k);if(!String(m.sku??'').trim()||!String(m.lote??'').trim())throw Error('SKU/lote obrigatório na baixa.');
-  if(!x||x.saldo<caixas){pendencias.push({id,sku:m.sku,lote:m.lote,caixas,disponivel:x?.saldo??null,motivo:x?'Saldo insuficiente':'Lote ausente'});continue;}
-  x.saldo-=caixas;aplicados.push({id,sku:m.sku,lote:m.lote,caixas});
+  // Baixa parcial: utilizar as caixas existentes sem gerar saldo negativo.
+  const disponivel=x?.saldo??0,baixar=Math.min(caixas,disponivel),faltam=caixas-baixar;
+  if(baixar>0){x.saldo-=baixar;aplicados.push({id,sku:m.sku,lote:m.lote,caixas:baixar});}
+  if(faltam>0)pendencias.push({
+   id,sku:m.sku,lote:m.lote,caixas:faltam,solicitado:caixas,baixado:baixar,
+   disponivel:x?disponivel:null,motivo:x?'Saldo insuficiente':'Lote ausente'
+  });
  }
  return {aplicados,pendencias,itens:[...saldos.values()],confirmada:false};
 }
