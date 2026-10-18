@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v277-sincronizacao-unidirecional";
+const CACHE_NAME = "romaneio-2-0-cache-v278-historico-recolhivel";
 
 const FILES_TO_CACHE = [
   "./inicio.html",
