@@ -138,39 +138,15 @@ window.filtrarExpedicoesParaBaixa=async ({destino,registros})=>{
  if(!usuario||!ambienteAtual?.ambienteId||!ambienteAtual?.permissoes?.prepararBaixa)
   throw Error('Conecte um operador autorizado ao Firebase antes de preparar a baixa.');
  if(!navigator.onLine)throw Error('A baixa exige consulta online ao Firebase.');
- if(!Array.isArray(registros)||!registros.length)throw Error('Nenhum romaneio selecionado.');
- const {identidadeExpedicaoBaixa}=await import('./baixa-transacional.mjs');
+ const {filtrarExpedicoesJaBaixadas}=await import('./filtro-expedicoes-baixadas.mjs');
  const raiz=['romaneio_ambientes',ambienteAtual.ambienteId,'expedicoes'];
- const ativos=destino==='TODOS OS DESTINOS'&&registros.every(x=>!x.movimentoExclusaoId);
- const pendentes=[],concluidos=[];
- for(let inicio=0;inicio<registros.length;inicio+=15){
-  const lote=registros.slice(inicio,inicio+15);
-  const estados=await Promise.all(lote.map(async registro=>{
-   const principal=identidadeExpedicaoBaixa(registro,ativos);
-   const documento=await getDocFromServer(doc(db,...raiz,principal.id));
-   let encontrado=documento.exists()?documento.data():null;
-   // Quando um palete baixado é excluído posteriormente, seu ID da baixa
-   // permanece ativo_<registroId>, não o ID da exclusão.
-   if(registro.movimentoExclusaoId&&registro.registroId&&!encontrado){
-    const anterior=identidadeExpedicaoBaixa({...registro,movimentoExclusaoId:''},true);
-    const anteriorSnap=await getDocFromServer(doc(db,...raiz,anterior.id));
-    if(anteriorSnap.exists()&&anteriorSnap.data().estado==='BAIXA_CONCLUIDA')
-     encontrado=anteriorSnap.data();
-   }
-   if(encontrado?.estado==='BAIXA_CONCLUIDA'){
-    if(String(encontrado.sku||'')!==String(registro.sku||'')||
-       String(encontrado.loteCompleto||encontrado.lote||'')!==String(registro.loteCompleto||registro.lote||'')||
-       Number(encontrado.caixas)!==Number(registro.caixas))
-      throw Error('Registro já baixado com dados divergentes. Confira o histórico antes de continuar.');
-    return {registro,concluido:true};
-   }
-   if(encontrado&&encontrado.estado!=='PENDENTE_BAIXA')
-    throw Error('Expedição com estado desconhecido no Firebase. Conferência bloqueada.');
-   return {registro,concluido:false};
-  }));
-  for(const item of estados)(item.concluido?concluidos:pendentes).push(item.registro);
- }
- return {pendentes,concluidos};
+ return filtrarExpedicoesJaBaixadas({
+  registros,destino,
+  buscar:async id=>{
+   const snap=await getDocFromServer(doc(db,...raiz,id));
+   return snap.exists()?snap.data():null;
+  }
+ });
 };
 
 window.registrarBaixaConferida=async ({resultado,versaoInicial,destino,registros})=>{
