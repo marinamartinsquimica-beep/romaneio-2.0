@@ -7,6 +7,12 @@ const hash=x=>{let h=2166136261;for(const c of x)h=Math.imul(h^c.charCodeAt(0),1
 const base=x=>[x.destino,x.palete,x.sku,x.loteCompleto,x.lote,x.postura].map(N).join('|');
 const inteiro=n=>Number.isSafeInteger(Number(n))&&Number(n)>=0;
 
+// Identificador único compatível entre a conferência e a gravação no Firestore.
+export function identidadeExpedicaoBaixa(x,ativos){
+ const origemId=String(x.movimentoExclusaoId||'').trim()||(ativos?'ativo_'+String(x.registroId||'').trim():'legado_'+hash(base(x)));
+ return {origemId,id:'exp_'+hash(origemId)+'_'+origemId.length};
+}
+
 export async function registrarBaixaTransacional({db,doc,runTransaction,uid,ambienteId,resultado,versaoInicial,destino,registros}){
  if(!uid||!ambienteId)throw Error('Autenticação ou ambiente compartilhado indisponível.');
  if(typeof runTransaction!=='function'||typeof doc!=='function')throw Error('Serviço Firestore indisponível.');
@@ -15,15 +21,15 @@ export async function registrarBaixaTransacional({db,doc,runTransaction,uid,ambi
  const aplicados=resultado?.aplicados, pendencias=resultado?.pendencias;
  if(!Array.isArray(aplicados)||!aplicados.length||!Array.isArray(pendencias))throw Error('Nenhuma baixa válida preparada.');
  const ativos=destino==='TODOS OS DESTINOS'&&registros.every(x=>!x.movimentoExclusaoId);
- const ident=x=>String(x.movimentoExclusaoId||'').trim()||(ativos?'ativo_'+String(x.registroId||'').trim():'legado_'+hash(base(x)));
+
  const raiz=['romaneio_ambientes',ambienteId];
  const estoqueRef=doc(db,...raiz,'estoques_oficiais','embalado');
  const movimentacoes=registros.map(x=>{
    if(!x||!x.destino||!x.sku||!(x.loteCompleto||x.lote)||!inteiro(x.caixas)||Number(x.caixas)<=0)
      throw Error('Romaneio incompleto. Confira destino, SKU, lote e caixas.');
    if(ativos&&!String(x.registroId||'').trim())throw Error('Palete sem identificador único. Sincronize o romaneio antes da baixa.');
-   const origemId=ident(x);
-   return {registro:x,origemId,ref:doc(db,...raiz,'expedicoes','exp_'+hash(origemId)+'_'+origemId.length)};
+   const {origemId,id}=identidadeExpedicaoBaixa(x,ativos);
+   return {registro:x,origemId,ref:doc(db,...raiz,'expedicoes',id)};
  });
  if(new Set(movimentacoes.map(x=>x.ref.path||String(x.ref))).size!==movimentacoes.length)
    throw Error('Expedições com identificadores repetidos. Nenhum saldo alterado.');

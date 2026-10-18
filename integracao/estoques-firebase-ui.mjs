@@ -3,7 +3,7 @@ import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
 import {guardarModeloEmbalado} from './modelo-estoque-persistente.mjs';
 import {initializeApp,getApp,getApps} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getFirestore,doc,collection,query,orderBy,limit,onSnapshot,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {getFirestore,doc,getDocFromServer,collection,query,orderBy,limit,onSnapshot,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {publicarEstoqueOficial} from './publicacao-estoques.mjs';
 import {conferirEstoques} from './conferencia-estoques.mjs';
 const config={apiKey:'AIzaSyCCy5uY1eAFQE9Vhykr7xNNayDtk_B-Hy4',authDomain:'romaneio-2-0-homologacao.firebaseapp.com',projectId:'romaneio-2-0-homologacao',storageBucket:'romaneio-2-0-homologacao.firebasestorage.app',messagingSenderId:'357381847782',appId:'1:357381847782:web:59ad8365c033bba8e79927'};
@@ -129,6 +129,25 @@ $('etapa4Publicar')?.addEventListener('click',async()=>{
  }catch(e){mostrar('Publicação não concluída: '+e.message)}finally{b.disabled=false}
 });
 
+
+// Busca remota obrigatória: registros já concluídos não entram na prévia,
+// no Excel, nem em uma segunda transação, mesmo na opção BAIXA TOTAL.
+window.filtrarExpedicoesParaBaixa=async ({destino,registros})=>{
+ await auth.authStateReady();
+ const usuario=auth.currentUser;
+ if(!usuario||!ambienteAtual?.ambienteId||!ambienteAtual?.permissoes?.prepararBaixa)
+  throw Error('Conecte um operador autorizado ao Firebase antes de preparar a baixa.');
+ if(!navigator.onLine)throw Error('A baixa exige consulta online ao Firebase.');
+ const {filtrarExpedicoesJaBaixadas}=await import('./filtro-expedicoes-baixadas.mjs');
+ const raiz=['romaneio_ambientes',ambienteAtual.ambienteId,'expedicoes'];
+ return filtrarExpedicoesJaBaixadas({
+  registros,destino,
+  buscar:async id=>{
+   const snap=await getDocFromServer(doc(db,...raiz,id));
+   return snap.exists()?snap.data():null;
+  }
+ });
+};
 
 window.registrarBaixaConferida=async ({resultado,versaoInicial,destino,registros})=>{
  await auth.authStateReady();

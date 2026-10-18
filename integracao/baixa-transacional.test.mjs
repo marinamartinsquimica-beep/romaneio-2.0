@@ -114,3 +114,27 @@ test('as regras oficiais impedem criação concluída e permitem a transição a
  assert.match(s,/allow create: if operadorAutorizado\(ambiente\)[\s\S]*?request.resource.data.estado == 'PENDENTE_BAIXA'/);
  assert.match(s,/resource.data.estado == 'PENDENTE_BAIXA'[\s\S]*?request.resource.data.estado == 'BAIXA_CONCLUIDA'/);
 });
+
+test('baixa parcial transacional desconta apenas saldos disponíveis e preserva faltantes',async()=>{
+ const m=memoria({estoque:[
+  {sku:'3938',lote:'L21.15.13.10.26',saldo:8},
+  {sku:'5008',lote:'L25.03.14.10.26',saldo:26},
+  {sku:'3826',lote:'L32.18.13.10.26',saldo:0},
+  {sku:'OUTRO',lote:'L',saldo:1496}
+ ]});
+ const registros=[
+  {registroId:'parcial1',destino:'A',palete:'1',sku:'3938',loteCompleto:'L21.15.13.10.26',caixas:10},
+  {registroId:'parcial2',destino:'B',palete:'2',sku:'5008',loteCompleto:'L25.03.14.10.26',caixas:50},
+  {registroId:'parcial3',destino:'C',palete:'3',sku:'3826',loteCompleto:'L32.18.13.10.26',caixas:16}
+ ];
+ const resultado={
+  aplicados:[{id:'p1',sku:'3938',lote:'L21.15.13.10.26',caixas:8},{id:'p2',sku:'5008',lote:'L25.03.14.10.26',caixas:26}],
+  pendencias:[{id:'p1',sku:'3938',lote:'L21.15.13.10.26',caixas:2},{id:'p2',sku:'5008',lote:'L25.03.14.10.26',caixas:24},{id:'p3',sku:'3826',lote:'L32.18.13.10.26',caixas:16}]
+ };
+ const r=await registrarBaixaTransacional(args(m,registros,resultado));
+ assert.equal(r.baixadas,34);
+ assert.equal(r.naoBaixadas,42);
+ assert.equal(m.estoqueAtual().itens.reduce((sum,x)=>sum+x.saldo,0),1496);
+ assert.deepEqual(m.estoqueAtual().itens.slice(0,3).map(x=>x.saldo),[0,0,0]);
+ assert.ok(m.expedicoes().every(x=>x.estado==='BAIXA_CONCLUIDA'));
+});
