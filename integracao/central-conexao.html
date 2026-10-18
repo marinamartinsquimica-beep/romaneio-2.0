@@ -29,7 +29,7 @@ import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {permiteReceberPaletes} from './direcao-sincronizacao.mjs';
 import {initializeApp,getApps,getApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,setPersistence,browserLocalPersistence} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getFirestore,doc,getDoc,getDocFromServer,runTransaction,collection,query,orderBy,limit,startAfter,getDocs,onSnapshot,updateDoc} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {getFirestore,doc,getDoc,getDocFromServer,runTransaction,collection,query,orderBy,limit,startAfter,getDocs,getDocsFromServer,onSnapshot,updateDoc} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 const config={apiKey:'AIzaSyCCy5uY1eAFQE9Vhykr7xNNayDtk_B-Hy4',authDomain:'romaneio-2-0-homologacao.firebaseapp.com',projectId:'romaneio-2-0-homologacao',storageBucket:'romaneio-2-0-homologacao.firebasestorage.app',messagingSenderId:'357381847782',appId:'1:357381847782:web:59ad8365c033bba8e79927'};
 exigirFirebaseHomologacao(config);
 const app=getApps().length?getApp():initializeApp(config),auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
@@ -839,7 +839,7 @@ async function consolidarBaseLegada(){
  baseConsolidadaNestaSessao=true;
  if(criados)$('resultadoAplicarUniao').textContent='Base compartilhada: '+criados+' registros legados consolidados, sem duplicar histórico ou baixar estoque.';
 }
-let cicloEmAndamento=false;
+let cicloEmAndamento=false,ultimaConsultaExpedicoes=0;
 async function cicloAutomatico(){
  if(cicloEmAndamento||!escopoOperacionalPronto||!navigator.onLine||!auth.currentUser)return;
  cicloEmAndamento=true;
@@ -848,7 +848,13 @@ async function cicloAutomatico(){
   if(!lerOperacional().length){
    try{await consolidarBaseLegada();}catch(e){$('resultadoAplicarUniao').textContent='Consolidação inicial pendente: '+(e.message||e);}
    if(receberEntradasNoAparelho())await receberAutomaticamente();
-   try{await sincronizarExpedicoesCompartilhadas();}catch(e){$('resultadoAplicarUniao').textContent='Arquivo de expedições: '+(e.code||e.message||e);}
+  }
+  // A fila de movimentos pendentes NUNCA pode bloquear a conciliação de baixas.
+  // Limitador apenas de leitura: novas exclusões também disparam consulta pelo listener.
+  if(Date.now()-ultimaConsultaExpedicoes>=30000){
+   ultimaConsultaExpedicoes=Date.now();
+   try{await sincronizarExpedicoesCompartilhadas();}
+   catch(e){$('resultadoAplicarUniao').textContent='Arquivo de expedições: '+(e.code||e.message||e);}
   }
  }finally{cicloEmAndamento=false;}
 }
@@ -857,21 +863,52 @@ window.addEventListener('storage',e=>{if(e.key===CHAVE_OPERACIONAL||e.key==='rom
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)void cicloAutomatico();});
 // Recebimento acionado por eventos Firestore, sem exigir mudança de tela.
 let cancelarMudancasRemotas=null,contaObservada=null,ultimaAssinaturaRemota=null;
+let sincronizacaoExpedicoesEmAndamento=null;
 async function sincronizarExpedicoesCompartilhadas(){
+ if(sincronizacaoExpedicoesEmAndamento)return sincronizacaoExpedicoesEmAndamento;
+ sincronizacaoExpedicoesEmAndamento=sincronizarExpedicoesCompartilhadasInterno();
+ try{return await sincronizacaoExpedicoesEmAndamento;}
+ finally{sincronizacaoExpedicoesEmAndamento=null;}
+}
+async function sincronizarExpedicoesCompartilhadasInterno(){
  if(!auth.currentUser||!escopoOperacionalPronto||!navigator.onLine)return;
  const chave='romaneio2_expedicoes_excluidas_pendentes_v1';
  const bruto=localStorage.getItem(chave),locais=JSON.parse(bruto||'[]');
  if(!Array.isArray(locais))return;
  const raiz=raizOperacional(auth.currentUser.uid);
  const ref=collection(db,...raiz,'expedicoes');
- const snap=await getDocs(query(ref,limit(50)));
- if(snap.metadata.fromCache)return;
- const docs=new Map(snap.docs.map(d=>[d.id,d.data()]));
+ // Firestore getDocs(limit(50)) ignorava documentos mais antigos. Ler todas as
+ // páginas diretamente do servidor, com cursor ordenado e limite por página.
+ const docs=new Map();
+ let cursor=null;
+ for(let pagina=0;pagina<100;pagina++){
+  const consulta=cursor
+   ?query(ref,orderBy('__name__'),startAfter(cursor),limit(100))
+   :query(ref,orderBy('__name__'),limit(100));
+  const snap=await getDocsFromServer(consulta);
+  for(const registro of snap.docs)docs.set(registro.id,registro.data());
+  if(snap.size<100)break;
+  if(pagina===99)throw Error('Limite de leitura atingido. Nenhum arquivo local foi alterado.');
+  cursor=snap.docs[snap.docs.length-1];
+ }
+ // Aplicar prova de baixa ANTES de considerar cadastrar pendência nova.
+ const {reconciliarPendenciasJaBaixadas}=await import('./reconciliar-pendencias-baixadas.mjs');
+ const buscarBaixa=async id=>{
+  if(docs.has(id))return docs.get(id);
+  const snap=await getDocFromServer(doc(db,...raiz,'expedicoes',id));
+  const dado=snap.exists()?snap.data():null;
+  if(dado)docs.set(id,dado);
+  return dado;
+ };
+ const verificadas=await reconciliarPendenciasJaBaixadas(locais,buscarBaixa);
  const identificador=x=>String(x.movimentoExclusaoId||'');
  const base=x=>[x.destino,x.palete,x.sku,x.loteCompleto,x.lote,x.postura].map(v=>String(v??'').trim().toUpperCase()).join('|');
  const hash=x=>{let h=2166136261;for(const c of x)h=Math.imul(h^c.charCodeAt(0),16777619)>>>0;return h.toString(16)};
- for(const x of locais){
+ for(const x of verificadas.registros){
   if(!x.destino)continue;
+  // Um arquivo já conciliado, ou encerrado manualmente com rastreabilidade,
+  // jamais pode criar outra pendência de baixa no Firebase.
+  if(x.estado==='BAIXA_CONCLUIDA'||x.estado==='ARQUIVADA_APOS_CONFERENCIA')continue;
   // Baixa realizada antes da limpeza no celular: a exclusão posterior não recria uma pendência.
   if(x.movimentoExclusaoId&&x.registroId&&x.estado!=='BAIXA_CONCLUIDA'){
    const origemAtiva='ativo_'+String(x.registroId).trim();
@@ -888,38 +925,24 @@ async function sincronizarExpedicoesCompartilhadas(){
    }
   }
   const k=identificador(x)||'legado_'+hash(base(x)),id='exp_'+hash(k)+'_'+k.length;
-  if(docs.has(id)){
-   const remoto=docs.get(id);
-   if(x.estado==='BAIXA_CONCLUIDA'&&remoto.estado==='PENDENTE_BAIXA'){
-    await runTransaction(db,async tx=>{
-     const d=doc(db,...raiz,'expedicoes',id),snap=await tx.get(d);
-     if(snap.exists()&&snap.data().estado==='PENDENTE_BAIXA')tx.update(d,{estado:'BAIXA_CONCLUIDA',baixaConfirmadaEm:x.baixaConfirmadaEm||new Date().toISOString(),confirmadoPor:auth.currentUser.uid});
-    });
-    docs.set(id,{...remoto,estado:'BAIXA_CONCLUIDA'});
-   }
-   continue;
-  }
+  if(docs.has(id))continue; // Estado remoto não é sobrescrito por histórico local.
   if(x.estado==='BAIXA_CONCLUIDA')continue; // nunca publicar como pendente uma baixa já concluída
   if(!ambienteOperacional?.permissoes?.usuarios)continue;
   const data={...x,origemId:k,estado:'PENDENTE_BAIXA',criadoEm:x.excluidoEm||new Date().toISOString(),autorUid:auth.currentUser.uid};
   await runTransaction(db,async tx=>{const d=doc(db,...raiz,'expedicoes',id);if(!(await tx.get(d)).exists())tx.set(d,data)});
   docs.set(id,data);
  }
- const unidas=new Map(locais.map(x=>[identificador(x)||'legado_'+hash(base(x)),x]));
+ const unidas=new Map(verificadas.registros.map(x=>[identificador(x)||'legado_'+hash(base(x)),x]));
  for(const x of docs.values()){
   const k=String(x.origemId||identificador(x)||'legado_'+hash(base(x))),ant=unidas.get(k);
   const recebido={...x,estado:x.estado==='BAIXA_CONCLUIDA'?'BAIXA_CONCLUIDA':'EXCLUIDO_NO_CELULAR_AGUARDANDO_BAIXA'};
-  if(!ant||x.estado==='BAIXA_CONCLUIDA')unidas.set(k,recebido);
+  if(!ant||(x.estado==='BAIXA_CONCLUIDA'&&ant.estado!=='ARQUIVADA_APOS_CONFERENCIA'))unidas.set(k,recebido);
  }
  const final=[...unidas.values()];
  // O histórico de exclusões pode incluir registros já baixados antes de a
  // limpeza do celular chegar ao computador. Só encerrar após evidência no
  // próprio Firestore; falta de saldo NÃO comprova baixa anterior.
- const {reconciliarPendenciasJaBaixadas}=await import('./reconciliar-pendencias-baixadas.mjs');
- const comprovadas=await reconciliarPendenciasJaBaixadas(final,async id=>{
-  const snap=await getDocFromServer(doc(db,...raiz,'expedicoes',id));
-  return snap.exists()?snap.data():null;
- });
+ const comprovadas=await reconciliarPendenciasJaBaixadas(final,buscarBaixa);
  if(localStorage.getItem(chave)===bruto&&JSON.stringify(comprovadas.registros)!==JSON.stringify(locais))
   localStorage.setItem(chave,JSON.stringify(comprovadas.registros));
 }

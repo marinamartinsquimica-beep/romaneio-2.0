@@ -30,7 +30,7 @@ export async function reconciliarPendenciasJaBaixadas(registros,buscar){
  for(let inicio=0;inicio<atualizado.length;inicio+=12){
   const lote=atualizado.slice(inicio,inicio+12);
   await Promise.all(lote.map(async x=>{
-   if(!x||x.estado==='BAIXA_CONCLUIDA'||!x.sku||!(x.loteCompleto||x.lote))return;
+   if(!x||x.estado==='BAIXA_CONCLUIDA'||x.estado==='ARQUIVADA_APOS_CONFERENCIA'||!x.sku||!(x.loteCompleto||x.lote))return;
    const referencias=[];
    if(x.movimentoExclusaoId)
     referencias.push(identidadeExpedicaoBaixa(x,false));
@@ -50,5 +50,5 @@ export async function reconciliarPendenciasJaBaixadas(registros,buscar){
    }
   }));
  }
- return {registros:atualizado,concluidas,pendentes:atualizado.filter(x=>x?.estado!=='BAIXA_CONCLUIDA').length};
+ return {registros:atualizado,concluidas,pendentes:atualizado.filter(x=>x?.estado!=='BAIXA_CONCLUIDA'&&x?.estado!=='ARQUIVADA_APOS_CONFERENCIA').length};
 }
