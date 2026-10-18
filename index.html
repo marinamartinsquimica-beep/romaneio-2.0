@@ -3149,7 +3149,8 @@ function atualizarDestinosBaixa(){
 function lerRegistrosAtivosParaBaixa(){
  const registros=lerJsonLocalStorage('entradas',[]);
  if(!Array.isArray(registros)||!registros.length)throw Error('Nenhum romaneio ativo para baixa total.');
- return registros.map((x,i)=>({...x,loteCompleto:String(x.loteCompleto||x.lote||''),caixas:Number(x.caixas),registroId:String(x.registroId||'')||'sem-id-'+i}));
+ if(registros.some(x=>!String(x.registroId||'').trim()))throw Error('Existe palete sem identificador de sincronização. Sincronize antes da baixa para evitar descontos repetidos.');
+ return registros.map(x=>({...x,loteCompleto:String(x.loteCompleto||x.lote||''),caixas:Number(x.caixas)}));
 }
 function movimentosDoRomaneio(){
  const selecionado=document.getElementById('etapa4DestinoBaixa')?.value||'';
@@ -3234,7 +3235,7 @@ document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async(
   const executado=await window.registrarBaixaConferida({resultado:{...atual.resultado,origem:atual.origem},versaoInicial:atual.versaoInicial,destino,registros:baixados});
   // Atualizar o arquivo local apenas após a transação remota completa.
   const lista=lerExpedicoesPendentes(),agora=new Date().toISOString();
-  for(const x of lista)if((totalGeral||x.destino===destino)&&x.estado!=='BAIXA_CONCLUIDA'){x.estado='BAIXA_CONCLUIDA';x.baixaConfirmadaEm=agora;x.resumoBaixa={baixadas:totalBaixado,naoBaixadas:totalNaoBaixado,parcial:totalNaoBaixado>0};}
+  for(const x of lista)if(!ativos&&(totalGeral||x.destino===destino)&&x.estado!=='BAIXA_CONCLUIDA'){x.estado='BAIXA_CONCLUIDA';x.baixaConfirmadaEm=agora;x.resumoBaixa={baixadas:totalBaixado,naoBaixadas:totalNaoBaixado,parcial:totalNaoBaixado>0};}
   localStorage.setItem(CHAVE_EXPEDICOES_PENDENTES,JSON.stringify(lista));operadorAtualizarPainel();
   const confirmado=Boolean(executado);
   if(!confirmado)return;
