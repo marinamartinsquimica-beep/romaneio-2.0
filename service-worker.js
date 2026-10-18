@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v276-sem-regressao";
+const CACHE_NAME = "romaneio-2-0-cache-v277-sincronizacao-unidirecional";
 
 const FILES_TO_CACHE = [
   "./inicio.html",
@@ -12,6 +12,7 @@ const FILES_TO_CACHE = [
   "./integracao/estoques-firebase-ui.mjs",
   "./integracao/baixa-transacional.mjs",
   "./integracao/filtro-expedicoes-baixadas.mjs",
+  "./integracao/direcao-sincronizacao.mjs",
   "./vendor/LICENSE-zxing.txt",
   "./qr-parser.js",
   "./manifest.json",
