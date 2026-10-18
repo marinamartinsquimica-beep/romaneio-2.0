@@ -2737,8 +2737,20 @@ function renderizarPendenciasConferenciaEstoque(){
   const titulo=document.createElement("strong");titulo.textContent="SKU "+p.sku+" · Lote "+p.lote;
   const detalhe=document.createElement("p");detalhe.textContent="Postura: "+([...p.posturas].join(", ")||"não informada")+" | Romaneio: "+p.caixas+" CX | Estoque: "+(saldos.has(p.chave)?saldos.get(p.chave)+" CX":"NÃO ENCONTRADO")+" | "+(!saldos.has(p.chave)?"SKU/lote ausente":"Quantidade superior ao saldo");
   const referencia=document.createElement("p");referencia.textContent="Palete(s): "+[...new Set(p.linhas.map(l=>l.cells[3]?.textContent))].join(", ")+" | Destino(s): "+[...new Set(p.linhas.map(l=>l.cells[2]?.textContent))].join(", ");
-  const botao=document.createElement("button");botao.type="button";botao.textContent="CONFERIR ROMANEIO";botao.addEventListener("click",()=>destacarLinhasPendenciaRomaneio(p.chave));
-  card.append(titulo,detalhe,referencia,botao);lista.appendChild(card);
+  const concluidos=lerExpedicoesPendentes().filter(x=>x.estado==='BAIXA_CONCLUIDA');
+  const baixados=p.linhas.every(linha=>concluidos.some(x=>
+   String(x.destino||'').trim()===String(linha.cells[2]?.textContent||'').trim()&&
+   String(x.palete||'').trim()===String(linha.cells[3]?.textContent||'').trim()&&
+   chaveReservaTeste(x.sku,x.loteCompleto||x.lote)===p.chave));
+  if(baixados){
+   card.style.borderLeft='5px solid #bf4747';
+   const etiqueta=document.createElement('strong');etiqueta.textContent='ROMANEIO BAIXADO ESTOQUE';etiqueta.style.color='#a83232';
+   card.append(titulo,etiqueta,detalhe,referencia);
+  }else{
+   const botao=document.createElement("button");botao.type="button";botao.textContent="CONFERIR ROMANEIO";botao.addEventListener("click",()=>destacarLinhasPendenciaRomaneio(p.chave));
+   card.append(titulo,detalhe,referencia,botao);
+  }
+  lista.appendChild(card);
  }
 }
 function atualizarResumoReservaTeste() {
@@ -3177,7 +3189,7 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
    resultadoEtapa4.exportado=true; // geração concluída e download iniciado
    const completa=resultadoEtapa4.destino.startsWith('arquivo:')&&resultadoEtapa4.resultado.aplicados.length>0;
    const botao=document.getElementById('etapa4ConfirmarBaixa');
-   botao.hidden=!resultadoEtapa4.destino.startsWith('arquivo:');botao.disabled=false;
+   botao.hidden=false;botao.disabled=false;
    document.getElementById('etapa4OrientacaoConfirmacao').hidden=!resultadoEtapa4.destino.startsWith('arquivo:');
   }
   status.textContent=res.operacao==='baixa'?'Excel gerado: '+res.baixadas+' caixa(s) baixadas; '+res.removidas+' linha(s) zeradas removidas; '+res.naoBaixadas+' caixa(s) não baixadas. Estoque: '+res.estoqueAntes+' → '+res.estoqueDepois+' caixas. Confira o Excel antes de publicar no Firebase.':'Excel de ajuste gerado com '+res.registros+' registros no histórico. Confira antes de publicar no Firebase.';
@@ -3188,8 +3200,11 @@ document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async(
  const status=document.getElementById('etapa4OperacoesStatus');
  try{
   const atual=resultadoEtapa4;
-  if(!atual||atual.modo!=='baixa'||!atual.destino.startsWith('arquivo:'))
-   throw Error('Selecione e prepare uma expedição pendente antes de confirmar.');
+  if(!atual||atual.modo!=='baixa')throw Error('Prepare a conferência antes de registrar a baixa.');
+  if(!atual.destino.startsWith('arquivo:')){
+   await confirmarRaiar('Este destino ainda está ativo neste computador. A conclusão da pendência é permitida somente depois da exclusão confirmada no celular. Confira a sincronização do destino.');
+   return;
+  }
   if(!atual.exportado){
    const faltam=atual.resultado.pendencias.reduce((t,x)=>t+Number(x.caixas||0),0);
    await confirmarRaiar('DOWNLOAD OBRIGATÓRIO\n\nCaixas não baixadas / ausentes: '+faltam+'\n\nClique primeiro em BAIXAR EXCEL DO RESULTADO e confira o arquivo atualizado. Sem gerar o Excel, a baixa não pode ser registrada.');
@@ -3243,7 +3258,7 @@ window.addEventListener('romaneio:preparar-baixa-destino',event=>{
 });
 
 document.getElementById('etapa4Preparar')?.addEventListener('click',()=>{
- const status=document.getElementById('etapa4OperacoesStatus'),saida=document.getElementById('etapa4OperacoesResultado');saida.replaceChildren();resultadoEtapa4=null;document.getElementById('etapa4Exportar').disabled=true;const confirmar=document.getElementById('etapa4ConfirmarBaixa');confirmar.hidden=true;confirmar.disabled=true;document.getElementById('etapa4OrientacaoConfirmacao').hidden=true;
+ const status=document.getElementById('etapa4OperacoesStatus'),saida=document.getElementById('etapa4OperacoesResultado');saida.replaceChildren();resultadoEtapa4=null;document.getElementById('etapa4Exportar').disabled=true;const confirmar=document.getElementById('etapa4ConfirmarBaixa');confirmar.hidden=false;confirmar.disabled=false;document.getElementById('etapa4OrientacaoConfirmacao').hidden=true;
  try{
   const e=window.__etapa4?.embalado;if(!e?.length)throw Error('Carregue primeiro o estoque compartilhado do Firebase.');
   const modo=modoEtapa4.value;
