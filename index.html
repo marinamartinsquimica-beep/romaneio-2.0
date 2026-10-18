@@ -3175,8 +3175,9 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
     :await (await import('./integracao/excel-modelo-etapa4.mjs')).gerarExcelModeloEstoque({arquivo,operacao:resultadoEtapa4.modo,estoqueOriginal:resultadoEtapa4.origem,resultado:resultadoEtapa4.resultado});
   if(resultadoEtapa4.modo==='baixa'){
    const totalBase=resultadoEtapa4.origem.reduce((a,x)=>a+Number(x.saldo||0),0);
-   if(res.estoqueAntes!==totalBase)throw Error('O modelo Excel salvo neste navegador tem '+res.estoqueAntes+' caixas, mas o Firebase tinha '+totalBase+' na conferência (diferença '+Math.abs(res.estoqueAntes-totalBase)+'). Importe o modelo de estoque atualizado antes de gerar a baixa. Nenhum arquivo ou saldo foi modificado.');
+   if(res.estoqueAntes!==totalBase)throw Error('O modelo não pôde ser conciliado integralmente com o Firebase. Importe uma cópia atualizada antes de baixar. Nenhum saldo foi alterado.');
   }
+  if(res.conciliacoes?.length){const detalhes=res.conciliacoes.map(x=>x.sku+' / '+x.lote+': '+x.anterior+' → '+x.oficial+' CX').join('; ');status.textContent='Modelo Excel conciliado com o Firebase antes da baixa: '+detalhes+'. A cópia original não foi modificada.';}
   const url=URL.createObjectURL(res.blob),a=document.createElement('a');a.href=url;
   a.download='ESTOQUE_EMBALADO_'+res.operacao.toUpperCase()+'_'+new Date().toISOString().slice(0,10)+'.xlsx';a.click();
   setTimeout(()=>URL.revokeObjectURL(url),120000);
@@ -3195,7 +3196,7 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
    botao.hidden=false;botao.disabled=false;
    document.getElementById('etapa4OrientacaoConfirmacao').hidden=!resultadoEtapa4.destino.startsWith('arquivo:');
   }
-  status.textContent=res.operacao==='baixa'?'Excel gerado: '+res.baixadas+' caixa(s) baixadas; '+res.removidas+' linha(s) zeradas removidas; '+res.naoBaixadas+' caixa(s) não baixadas. Estoque: '+res.estoqueAntes+' → '+res.estoqueDepois+' caixas. Confira o Excel antes de publicar no Firebase.':'Excel de ajuste gerado com '+res.registros+' registros no histórico. Confira antes de publicar no Firebase.';
+  status.textContent=(res.conciliacoes?.length?'Modelo alinhado ao Firebase: '+res.conciliacoes.length+' lote(s) corrigido(s) na cópia exportada. ':'')+(res.operacao==='baixa'?'Excel gerado: '+res.baixadas+' caixa(s) baixadas; '+res.removidas+' linha(s) zeradas removidas; '+res.naoBaixadas+' caixa(s) não baixadas. Estoque: '+res.estoqueAntes+' → '+res.estoqueDepois+' caixas. Confira o Excel antes de publicar no Firebase.':'Excel de ajuste gerado com '+res.registros+' registros no histórico. Confira antes de publicar no Firebase.');
  }catch(e){status.textContent='Excel não gerado: '+e.message;}
  finally{button.disabled=false;}
 });
