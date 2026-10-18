@@ -821,6 +821,7 @@ async function cicloAutomatico(){
  try{
   await enviarFilaAutomaticamente();
   if(!lerOperacional().length){
+   try{await recuperarExclusoesHistoricas(auth.currentUser.uid)}catch(e){$('resultadoAplicarUniao').textContent='Histórico de exclusões pendente: '+(e.code||e.message||e);}
    try{await consolidarBaseLegada();}catch(e){$('resultadoAplicarUniao').textContent='Consolidação inicial pendente: '+(e.message||e);}
    await receberAutomaticamente();
    try{await sincronizarExpedicoesCompartilhadas();}catch(e){$('resultadoAplicarUniao').textContent='Arquivo de expedições: '+(e.code||e.message||e);}
@@ -874,6 +875,13 @@ async function sincronizarExpedicoesCompartilhadas(){
  const final=[...unidas.values()];
  if(localStorage.getItem(chave)===bruto&&JSON.stringify(final)!==JSON.stringify(locais))localStorage.setItem(chave,JSON.stringify(final));
 }
+let exclusoesHistoricasConsultadas=false;
+async function recuperarExclusoesHistoricas(uid){
+ if(exclusoesHistoricasConsultadas||!navigator.onLine||!uid)return;
+ const historico=await lerHistoricoMovimentosCompleto(uid);
+ registrarExclusoesRecebidas(historico);
+ exclusoesHistoricasConsultadas=true;
+}
 function registrarExclusoesRecebidas(snap){
  const chaveArquivo='romaneio2_expedicoes_excluidas_pendentes_v1';
  const arquivo=JSON.parse(localStorage.getItem(chaveArquivo)||'[]');
@@ -898,7 +906,7 @@ function registrarExclusoesRecebidas(snap){
 function observarMovimentosAutomaticos(u){
  if(contaObservada===u?.uid)return;
  if(cancelarMudancasRemotas){cancelarMudancasRemotas();cancelarMudancasRemotas=null;}
- contaObservada=u?.uid||null;ultimaAssinaturaRemota=null;
+ contaObservada=u?.uid||null;ultimaAssinaturaRemota=null;exclusoesHistoricasConsultadas=false;
  if(!u)return;
  const q=query(collection(db,...raizOperacional(u.uid),'movimentos'),orderBy('criadoEm','desc'),limit(500));
  cancelarMudancasRemotas=onSnapshot(q,snap=>{
