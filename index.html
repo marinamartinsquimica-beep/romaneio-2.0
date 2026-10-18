@@ -3173,8 +3173,8 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
    resultadoEtapa4.exportado=true;
    const completa=resultadoEtapa4.destino.startsWith('arquivo:')&&!resultadoEtapa4.resultado.pendencias.length&&resultadoEtapa4.resultado.aplicados.length>0;
    const botao=document.getElementById('etapa4ConfirmarBaixa');
-   botao.hidden=!completa;botao.disabled=!completa;
-   document.getElementById('etapa4OrientacaoConfirmacao').hidden=!completa;
+   botao.hidden=!resultadoEtapa4.destino.startsWith('arquivo:');botao.disabled=!completa;
+   document.getElementById('etapa4OrientacaoConfirmacao').hidden=!resultadoEtapa4.destino.startsWith('arquivo:');
   }
   status.textContent=res.operacao==='baixa'?'Excel gerado: '+res.baixadas+' caixa(s) baixadas; '+res.removidas+' linha(s) zeradas removidas; '+res.naoBaixadas+' caixa(s) não baixadas. Estoque: '+res.estoqueAntes+' → '+res.estoqueDepois+' caixas. Confira o Excel antes de publicar no Firebase.':'Excel de ajuste gerado com '+res.registros+' registros no histórico. Confira antes de publicar no Firebase.';
  }catch(e){status.textContent='Excel não gerado: '+e.message;}
@@ -3257,7 +3257,14 @@ document.getElementById('etapa4Preparar')?.addEventListener('click',()=>{
   const dados=modo==='baixa'?[['Caixas solicitadas',solicitadas],['Caixas preparadas',efetivadas],['Não baixadas',solicitadas-efetivadas],['Estoque anterior',estoqueAntes],['Estoque após baixa',estoqueDepois]]:[['Lotes ajustados',resultado.alteracoes.length],['Estoque anterior',estoqueAntes],['Estoque após ajuste',estoqueDepois]];
   for(const [nome,valor] of dados){const card=document.createElement('div');card.className='etapa4-resumo-card';const title=document.createElement('span'),number=document.createElement('strong');title.textContent=nome;number.textContent=Number(valor).toLocaleString('pt-BR');card.append(title,number);resumo.appendChild(card)}
   saida.prepend(resumo);
-  resultadoEtapa4={modo,resultado,origem:e.map(x=>({...x})),destino:document.getElementById('etapa4DestinoBaixa')?.value||'TODOS',versaoInicial:window.__etapa4Versoes?.embalado||'',exportado:false};document.getElementById('etapa4Exportar').disabled=false;status.textContent='Conferência concluída: '+ocorrencias.length+' registros. Excel baseado no arquivo original disponível para geração; conferência do resultado obrigatória. Nenhum saldo compartilhado foi alterado.';
+  resultadoEtapa4={modo,resultado,origem:e.map(x=>({...x})),destino:document.getElementById('etapa4DestinoBaixa')?.value||'TODOS',versaoInicial:window.__etapa4Versoes?.embalado||'',exportado:false};document.getElementById('etapa4Exportar').disabled=false;
+  if(resultadoEtapa4.destino.startsWith('arquivo:')){
+   const botao=document.getElementById('etapa4ConfirmarBaixa'),aviso=document.getElementById('etapa4OrientacaoConfirmacao');
+   botao.hidden=false;botao.disabled=true;aviso.hidden=false;
+   const faltam=resultado.pendencias.reduce((s,x)=>s+Number(x.caixas||0),0);
+   aviso.textContent=faltam?'Baixa incompleta: '+faltam+' caixa(s) sem saldo disponível. Regularize antes de confirmar.':'Gere o Excel, confira, publique o estoque atualizado no Firebase e confirme a conclusão.';
+  }
+  status.textContent='Conferência concluída: '+ocorrencias.length+' registros. Excel baseado no arquivo original disponível para geração; conferência do resultado obrigatória. Nenhum saldo compartilhado foi alterado.';
  }catch(e){status.textContent='Operação não preparada: '+e.message;}
 });
 </script>
