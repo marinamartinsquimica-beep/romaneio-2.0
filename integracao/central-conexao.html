@@ -29,7 +29,7 @@ import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {permiteReceberPaletes} from './direcao-sincronizacao.mjs';
 import {initializeApp,getApps,getApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,setPersistence,browserLocalPersistence} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getFirestore,doc,getDoc,runTransaction,collection,query,orderBy,limit,startAfter,getDocs,onSnapshot,updateDoc} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {getFirestore,doc,getDoc,getDocFromServer,runTransaction,collection,query,orderBy,limit,startAfter,getDocs,onSnapshot,updateDoc} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 const config={apiKey:'AIzaSyCCy5uY1eAFQE9Vhykr7xNNayDtk_B-Hy4',authDomain:'romaneio-2-0-homologacao.firebaseapp.com',projectId:'romaneio-2-0-homologacao',storageBucket:'romaneio-2-0-homologacao.firebasestorage.app',messagingSenderId:'357381847782',appId:'1:357381847782:web:59ad8365c033bba8e79927'};
 exigirFirebaseHomologacao(config);
 const app=getApps().length?getApp():initializeApp(config),auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
@@ -876,7 +876,7 @@ async function sincronizarExpedicoesCompartilhadas(){
   if(x.movimentoExclusaoId&&x.registroId&&x.estado!=='BAIXA_CONCLUIDA'){
    const origemAtiva='ativo_'+String(x.registroId).trim();
    const idAtivo='exp_'+hash(origemAtiva)+'_'+origemAtiva.length;
-   const ativo=docs.get(idAtivo)||((await getDoc(doc(db,...raiz,'expedicoes',idAtivo))).data()||null);
+   const ativo=docs.get(idAtivo)||((await getDocFromServer(doc(db,...raiz,'expedicoes',idAtivo))).data()||null);
    if(ativo?.estado==='BAIXA_CONCLUIDA'&&
       String(ativo.sku||'')===String(x.sku||'')&&
       String(ativo.loteCompleto||ativo.lote||'')===String(x.loteCompleto||x.lote||'')&&
@@ -912,7 +912,16 @@ async function sincronizarExpedicoesCompartilhadas(){
   if(!ant||x.estado==='BAIXA_CONCLUIDA')unidas.set(k,recebido);
  }
  const final=[...unidas.values()];
- if(localStorage.getItem(chave)===bruto&&JSON.stringify(final)!==JSON.stringify(locais))localStorage.setItem(chave,JSON.stringify(final));
+ // O histórico de exclusões pode incluir registros já baixados antes de a
+ // limpeza do celular chegar ao computador. Só encerrar após evidência no
+ // próprio Firestore; falta de saldo NÃO comprova baixa anterior.
+ const {reconciliarPendenciasJaBaixadas}=await import('./reconciliar-pendencias-baixadas.mjs');
+ const comprovadas=await reconciliarPendenciasJaBaixadas(final,async id=>{
+  const snap=await getDocFromServer(doc(db,...raiz,'expedicoes',id));
+  return snap.exists()?snap.data():null;
+ });
+ if(localStorage.getItem(chave)===bruto&&JSON.stringify(comprovadas.registros)!==JSON.stringify(locais))
+  localStorage.setItem(chave,JSON.stringify(comprovadas.registros));
 }
 function registrarExclusoesRecebidas(snap){
  if(!receberEntradasNoAparelho())return; // Não importar histórico de outros dispositivos no celular.
