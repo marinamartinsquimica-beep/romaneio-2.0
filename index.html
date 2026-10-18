@@ -3139,19 +3139,19 @@ modoEtapa4?.addEventListener('change',()=>{
 function atualizarDestinosBaixa(){
  const campo=document.getElementById('etapa4DestinoBaixa'),anterior=campo.value;
  const nomes=[...new Set([...document.querySelectorAll('#tabela tbody tr')].map(tr=>String(tr.cells[2]?.textContent||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
- campo.replaceChildren();const todos=new Option('Todos os destinos — baixa total','');campo.append(todos);
+ campo.replaceChildren();const todos=new Option('Destinos ainda ativos no computador — somente conferência','');campo.append(todos);
  const arquivos=[...new Set(lerExpedicoesPendentes().filter(x=>x.estado!=='BAIXA_CONCLUIDA').map(x=>x.destino))];
  if(arquivos.length)campo.append(new Option('TODAS AS PENDÊNCIAS EXCLUÍDAS — BAIXA TOTAL','arquivo:__TODOS__'));
  for(const nome of nomes.filter(n=>!arquivos.includes(n)))campo.append(new Option(nome+' — no computador / conferir exclusão no celular',nome));
  for(const nome of arquivos)campo.append(new Option(nome+' — excluído no celular / baixa pendente','arquivo:'+nome));
- campo.value=arquivos.includes(anterior)?'arquivo:'+anterior:((nomes.includes(anterior)&&!arquivos.includes(anterior))||arquivos.some(n=>'arquivo:'+n===anterior)?anterior:'');
+ campo.value=arquivos.includes(anterior)?'arquivo:'+anterior:((nomes.includes(anterior)&&!arquivos.includes(anterior))||arquivos.some(n=>'arquivo:'+n===anterior)?anterior:(arquivos.length?'arquivo:__TODOS__':''));
 }
 function movimentosDoRomaneio(){
  const selecionado=document.getElementById('etapa4DestinoBaixa')?.value||'';
  if(selecionado.startsWith('arquivo:')){
   const total=selecionado==='arquivo:__TODOS__';
   const itens=lerExpedicoesPendentes().filter(x=>x.estado!=='BAIXA_CONCLUIDA'&&(total||x.destino===selecionado.slice(8)));
-  if(!itens.length)throw Error('Não há caixas pendentes neste destino.');
+  if(!itens.length)throw Error('Não há caixas pendentes registradas neste destino.');
   return itens.map((x,i)=>({id:'arquivo-'+i,sku:x.sku,lote:x.loteCompleto,caixas:Number(x.caixas)}));
  }
 
