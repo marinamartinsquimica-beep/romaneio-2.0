@@ -272,7 +272,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.79</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.80</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
 <div class="romaneio-backup-actions" style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button class="desktop-backup-action" type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Pendências de sincronização</button><button class="desktop-backup-action" type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button><button class="mobile-sync-action" type="button" onclick="sincronizarRomaneioCelular()" style="width:auto;background:#5CDCF2;color:#254D69;font-weight:800;font-size:13px;padding:10px 18px;border-radius:12px;border:2px solid #254D69">SINCRONIZAR</button></div>
 <section class="dashboard"><div class="metric"><div class="ico">📋</div><div><b id="dashRegistros">0</b><span id="dashRegistrosLabel">Registros totais</span></div></div><div class="metric"><div class="ico">📦</div><div><b id="dashCaixas">0</b><span id="dashCaixasLabel">Caixas totais</span></div></div><div class="metric"><div class="ico">🧱</div><div><b id="dashPaletes">0</b><span id="dashPaletesLabel">Paletes totais</span></div></div><div class="metric"><div class="ico">📍</div><div><b id="dashDestinos">0</b><span id="dashDestinosLabel">Destinos totais</span></div></div><div class="metric"><div class="ico">🕒</div><div><b id="dashUltimo">--</b><span>Último registro</span></div></div></section>
@@ -391,7 +391,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.79";
+const APP_VERSION = "2.0.80";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -3398,6 +3398,52 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
   status.textContent=(res.conciliacoes?.length?'Modelo alinhado ao Firebase: '+res.conciliacoes.length+' lote(s) corrigido(s) na cópia exportada. ':'')+(res.operacao==='baixa'?'Excel gerado: '+res.baixadas+' caixa(s) baixadas; '+res.removidas+' linha(s) zeradas removidas; '+res.naoBaixadas+' caixa(s) não baixadas. Estoque: '+res.estoqueAntes+' → '+res.estoqueDepois+' caixas. Confira o Excel antes de publicar no Firebase.':'Excel do INVENTÁRIO ESTOQUE gerado: '+res.registros+' lotes, '+res.estoqueAntes+' → '+res.estoqueDepois+' caixas. Confira o arquivo antes de confirmar a substituição integral no Firebase.');
  }catch(e){status.textContent='Excel não gerado: '+e.message;}
  finally{button.disabled=false;}
+});
+document.getElementById('etapa4ConfirmarSubstituicao')?.addEventListener('click',async()=>{
+ const botao=document.getElementById('etapa4ConfirmarSubstituicao'),status=document.getElementById('etapa4OperacoesStatus');
+ if(botao.disabled)return;
+ botao.disabled=true;
+ try{
+  const atual=resultadoEtapa4;
+  if(!atual||atual.modo!=='ajuste'||atual.resultado?.tipo!=='substituicao-total')
+   throw Error('Prepare novamente o inventário ESTOQUE.');
+  if(atual.confirmada)throw Error('Esta substituição já foi concluída.');
+  if(!atual.exportado||!atual.excelAtualizado?.blob)
+   throw Error('Primeiro gere e baixe o Excel do Estoque Embalado atualizado.');
+  const {assinaturaInventario}=await import('./integracao/substituicao-estoque-total.mjs');
+  if(atual.assinatura!==assinaturaInventario(lerJsonLocalStorage('entradas',[])))
+   throw Error('Os paletes de destino ESTOQUE foram alterados. Prepare e baixe novamente.');
+  if(atual.versaoInicial!==window.__etapa4Versoes?.embalado)
+   throw Error('O estoque no Firebase mudou. Prepare novamente o inventário antes de substituir.');
+  if(typeof window.substituirEstoqueEmbaladoPeloInventario!=='function')
+   throw Error('A integração de estoque Firebase ainda não está disponível.');
+  const aviso='SUBSTITUIÇÃO INTEGRAL DO ESTOQUE EMBALADO\\n\\n'+
+   'Esta operação NÃO É UMA BAIXA. Todos os '+atual.origem.length+' lotes anteriores serão substituídos pelos '+atual.resultado.totalLotes+' lotes do romaneio com destino ESTOQUE.\\n\\n'+
+   'Estoque ANTERIOR: '+atual.resultado.estoqueAnterior+' caixas.\\n'+
+   'Estoque NOVO: '+atual.resultado.estoqueDepois+' caixas.\\n'+
+   'Lotes retirados: '+atual.resultado.retirados.length+'.\\n\\n'+
+   'Você já conferiu e salvou o Excel gerado? CONFIRMAR substitui todos os saldos no Firebase.';
+  if(!await confirmarRaiar(aviso))return;
+  // O usuário pode alterar o romaneio durante a confirmação; repetir guarda.
+  if(atual.assinatura!==assinaturaInventario(lerJsonLocalStorage('entradas',[])))
+   throw Error('O romaneio ESTOQUE mudou enquanto a confirmação estava aberta.');
+  const r=await window.substituirEstoqueEmbaladoPeloInventario({
+   resultado:atual.resultado,versaoInicial:atual.versaoInicial
+  });
+  atual.confirmada=true;
+  let alerta='';
+  try{
+   const {guardarModeloEmbalado}=await import('./integracao/modelo-estoque-persistente.mjs');
+   const novoArquivo=new File([atual.excelAtualizado.blob],atual.excelAtualizado.nome,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+   await guardarModeloEmbalado(novoArquivo);
+   window.__etapa4ArquivoEmbalado=novoArquivo;
+  }catch(e){alerta=' O Firebase foi atualizado, porém não foi possível salvar o novo modelo Excel neste navegador: '+e.message+'. Guarde o arquivo já baixado.';}
+  status.textContent='ESTOQUE EMBALADO SUBSTITUÍDO: '+r.quantidadeLotes+' lotes, '+atual.resultado.estoqueDepois+' caixas. Nenhum romaneio, expedição ou estoque PariPassu foi alterado.'+alerta;
+  botao.hidden=true;
+ }catch(e){
+  status.textContent='Substituição não concluída: '+(e.code?e.code+' — ':'')+e.message;
+  botao.disabled=Boolean(resultadoEtapa4?.confirmada);
+ }
 });
 document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async()=>{
  const status=document.getElementById('etapa4OperacoesStatus');
