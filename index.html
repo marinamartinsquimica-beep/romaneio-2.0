@@ -3157,7 +3157,7 @@ function movimentosDoRomaneio(){
 
  const destino=document.getElementById('etapa4DestinoBaixa')?.value||'';
  const linhas=[...document.querySelectorAll('#tabela tbody tr')].filter(tr=>!destino||String(tr.cells[2]?.textContent||'').trim()===destino);
- if(!linhas.length)throw Error('Não há caixas no romaneio atual para baixar.');
+ if(!linhas.length)throw Error('Não há paletes ativos no computador. Para baixar os paletes excluídos do celular, selecione TODAS AS PENDÊNCIAS EXCLUÍDAS ou um destino marcado como baixa pendente. Se essas opções não aparecem, aguarde a sincronização do Firebase.');
  return linhas.map((tr,i)=>{
   const c=tr.cells,sku=String(c[1]?.textContent??'').trim(),lote=String(c[4]?.textContent??'').trim(),caixas=Number(String(c[7]?.textContent??'').trim());
   if(!sku||!lote||!Number.isSafeInteger(caixas)||caixas<=0)throw Error('Entrada '+(i+1)+' do romaneio incompleta: SKU, lote completo ou caixas inválidos.');
@@ -3248,6 +3248,7 @@ document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async(
  }catch(e){status.textContent='Baixa não confirmada: '+e.message;}
 });
 document.getElementById('etapa4DestinoBaixa')?.addEventListener('focus',atualizarDestinosBaixa);
+document.getElementById('etapa4DestinoBaixa')?.addEventListener('change',()=>{resultadoEtapa4=null;document.getElementById('etapa4Exportar').disabled=true;const btn=document.getElementById('etapa4ConfirmarBaixa');btn.hidden=true;btn.disabled=true;document.getElementById('etapa4OrientacaoConfirmacao').hidden=true;const campo=document.getElementById('etapa4DestinoBaixa'),pendente=campo.value.startsWith('arquivo:');document.getElementById('etapa4OperacoesStatus').textContent=pendente?'Pendência selecionada. Clique em PREPARAR CONFERÊNCIA.':'Destino ativo ou sem pendências neste dispositivo. Apenas expedições excluídas no celular podem ter baixa confirmada.';});
 window.addEventListener('romaneio:preparar-baixa-destino',event=>{
  const destino=String(event.detail?.destino||'').trim();
  if(!destino)return;
