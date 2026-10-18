@@ -1,9 +1,7 @@
-const CACHE_NAME = "romaneio-2-0-cache-v263-atualizacao-controlada";
+const CACHE_NAME = "romaneio-2-0-cache-v263-root-navigation-fix";
 
 const FILES_TO_CACHE = [
-  "./",
   "./inicio.html",
-  "./index.html",
   "./export-utils.js",
   "./jsQR.js",
   "./vendor/zxing.min.js",
@@ -15,7 +13,6 @@ const FILES_TO_CACHE = [
   "./vendor/LICENSE-zxing.txt",
   "./qr-parser.js",
   "./manifest.json",
-  "./version.json",
   "./icon-192.png",
   "./icon-512.png"
 ];
