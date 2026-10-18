@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v266-correcao-baixa";
+const CACHE_NAME = "romaneio-2-0-cache-v267-update-banner";
 
 const FILES_TO_CACHE = [
   "./inicio.html",
