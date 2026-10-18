@@ -3,7 +3,7 @@ import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
 import {guardarModeloEmbalado} from './modelo-estoque-persistente.mjs';
 import {initializeApp,getApp,getApps} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getFirestore,doc,collection,query,orderBy,limit,onSnapshot,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {getFirestore,doc,getDocFromServer,collection,query,orderBy,limit,onSnapshot,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {publicarEstoqueOficial} from './publicacao-estoques.mjs';
 import {conferirEstoques} from './conferencia-estoques.mjs';
 const config={apiKey:'AIzaSyCCy5uY1eAFQE9Vhykr7xNNayDtk_B-Hy4',authDomain:'romaneio-2-0-homologacao.firebaseapp.com',projectId:'romaneio-2-0-homologacao',storageBucket:'romaneio-2-0-homologacao.firebasestorage.app',messagingSenderId:'357381847782',appId:'1:357381847782:web:59ad8365c033bba8e79927'};
@@ -129,6 +129,49 @@ $('etapa4Publicar')?.addEventListener('click',async()=>{
  }catch(e){mostrar('Publicação não concluída: '+e.message)}finally{b.disabled=false}
 });
 
+
+// Busca remota obrigatória: registros já concluídos não entram na prévia,
+// no Excel, nem em uma segunda transação, mesmo na opção BAIXA TOTAL.
+window.filtrarExpedicoesParaBaixa=async ({destino,registros})=>{
+ await auth.authStateReady();
+ const usuario=auth.currentUser;
+ if(!usuario||!ambienteAtual?.ambienteId||!ambienteAtual?.permissoes?.prepararBaixa)
+  throw Error('Conecte um operador autorizado ao Firebase antes de preparar a baixa.');
+ if(!navigator.onLine)throw Error('A baixa exige consulta online ao Firebase.');
+ if(!Array.isArray(registros)||!registros.length)throw Error('Nenhum romaneio selecionado.');
+ const {identidadeExpedicaoBaixa}=await import('./baixa-transacional.mjs');
+ const raiz=['romaneio_ambientes',ambienteAtual.ambienteId,'expedicoes'];
+ const ativos=destino==='TODOS OS DESTINOS'&&registros.every(x=>!x.movimentoExclusaoId);
+ const pendentes=[],concluidos=[];
+ for(let inicio=0;inicio<registros.length;inicio+=15){
+  const lote=registros.slice(inicio,inicio+15);
+  const estados=await Promise.all(lote.map(async registro=>{
+   const principal=identidadeExpedicaoBaixa(registro,ativos);
+   const documento=await getDocFromServer(doc(db,...raiz,principal.id));
+   let encontrado=documento.exists()?documento.data():null;
+   // Quando um palete baixado é excluído posteriormente, seu ID da baixa
+   // permanece ativo_<registroId>, não o ID da exclusão.
+   if(registro.movimentoExclusaoId&&registro.registroId&&!encontrado){
+    const anterior=identidadeExpedicaoBaixa({...registro,movimentoExclusaoId:''},true);
+    const anteriorSnap=await getDocFromServer(doc(db,...raiz,anterior.id));
+    if(anteriorSnap.exists()&&anteriorSnap.data().estado==='BAIXA_CONCLUIDA')
+     encontrado=anteriorSnap.data();
+   }
+   if(encontrado?.estado==='BAIXA_CONCLUIDA'){
+    if(String(encontrado.sku||'')!==String(registro.sku||'')||
+       String(encontrado.loteCompleto||encontrado.lote||'')!==String(registro.loteCompleto||registro.lote||'')||
+       Number(encontrado.caixas)!==Number(registro.caixas))
+      throw Error('Registro já baixado com dados divergentes. Confira o histórico antes de continuar.');
+    return {registro,concluido:true};
+   }
+   if(encontrado&&encontrado.estado!=='PENDENTE_BAIXA')
+    throw Error('Expedição com estado desconhecido no Firebase. Conferência bloqueada.');
+   return {registro,concluido:false};
+  }));
+  for(const item of estados)(item.concluido?concluidos:pendentes).push(item.registro);
+ }
+ return {pendentes,concluidos};
+};
 
 window.registrarBaixaConferida=async ({resultado,versaoInicial,destino,registros})=>{
  await auth.authStateReady();
