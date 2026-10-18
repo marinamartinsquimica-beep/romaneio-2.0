@@ -2185,21 +2185,38 @@ function lerHistoricoFechamentos(){
  const lista=lerJsonLocalStorage(CHAVE_HISTORICO_FECHAMENTOS,[]);
  return Array.isArray(lista)?lista:[];
 }
-function salvarHistoricoFechamento(){
+async function salvarHistoricoFechamento(){
  const entradas=lerJsonLocalStorage('entradas',[]);
  const pendencias=lerJsonLocalStorage('romaneio2_expedicoes_excluidas_pendentes_v1',[]);
- const arquivo=lerHistoricoFechamentos();
  const registro={id:criarIdentificadorMovimento(),data:new Date().toISOString(),
     entradas:Array.isArray(entradas)?entradas:[],pendencias:Array.isArray(pendencias)?pendencias:[],
     caminhoes:lerCaminhoes(),historicoCaminhoes:lerHistoricoCaminhoes()};
- arquivo.unshift(registro);
- try{localStorage.setItem(CHAVE_HISTORICO_FECHAMENTOS,JSON.stringify(arquivo));}
- catch(e){throw Error('Não foi possível preservar o histórico do encerramento. Nenhum palete foi apagado. '+(e.message||e));}
+ // Preservar a cópia completa em IndexedDB para suportar encerramentos diários.
+ const db=await abrirBancoBackupOffline();
+ try{
+  await new Promise((resolve,reject)=>{
+   const tx=db.transaction('copias','readwrite');
+   tx.objectStore('copias').put(registro,'fechamento-'+registro.id);
+   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+  });
+ }finally{db.close();}
+ const indice=lerHistoricoFechamentos();
+ indice.unshift({id:registro.id,data:registro.data,registros:registro.entradas.length});
+ localStorage.setItem(CHAVE_HISTORICO_FECHAMENTOS,JSON.stringify(indice));
  return registro;
 }
-function exportarHistoricoFechamento(id){
- const item=lerHistoricoFechamentos().find(x=>x.id===id);
- if(!item)return;
+async function exportarHistoricoFechamento(id){
+ const db=await abrirBancoBackupOffline();
+ let item;
+ try{
+  item=await new Promise((resolve,reject)=>{
+   const tx=db.transaction('copias','readonly');
+   const req=tx.objectStore('copias').get('fechamento-'+id);
+   req.onsuccess=()=>resolve(req.result);
+   req.onerror=()=>reject(req.error);
+  });
+ }finally{db.close();}
+ if(!item){alert('Cópia do histórico não localizada neste dispositivo.');return;}
  const blob=new Blob([JSON.stringify(item,null,2)],{type:'application/json'});
  const url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download='romaneio_historico_'+item.data.slice(0,10)+'.json';a.click();
@@ -2213,7 +2230,7 @@ function renderizarHistoricoFechamentos(){
  if(!itens.length){alvo.textContent='Ainda não há romaneios encerrados neste dispositivo.';return;}
  for(const item of itens){
   const linha=document.createElement('div');linha.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:9px 0;border-bottom:1px solid #d9e2ec';
-  const descricao=document.createElement('span');descricao.textContent=new Date(item.data).toLocaleString('pt-BR')+' — '+(item.entradas?.length||0)+' registros arquivados';
+  const descricao=document.createElement('span');descricao.textContent=new Date(item.data).toLocaleString('pt-BR')+' — '+(item.registros||0)+' registros arquivados';
   const botao=document.createElement('button');botao.className='btn-secondary';botao.type='button';botao.textContent='BAIXAR HISTÓRICO';botao.onclick=()=>exportarHistoricoFechamento(item.id);
   linha.append(descricao,botao);alvo.append(linha);
  }
@@ -2228,7 +2245,7 @@ async function reiniciarEntradas() {
       return;
     }
     // Guardar snapshot recuperável antes de qualquer exclusão local.
-    try{salvarHistoricoFechamento();}catch(e){alert(e.message);return;}
+    try{await salvarHistoricoFechamento();}catch(e){alert(e.message);return;}
 
     // Exclusão no celular gera aviso de baixa. No computador, somente limpeza local.
     if(dispositivoCelular){
