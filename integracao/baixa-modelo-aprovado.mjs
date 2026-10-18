@@ -70,6 +70,24 @@ async function updateDependentCaches(xlsx,finalRecords){
  }
  const tem=await xlsx.sheetByName("Tem-Não Tem");if(tem){let totalPedido=0,totalProduzir=0;for(let rn=10;rn<=53;rn++){const row=rowByNumber(xlsx,tem.doc,rn);if(!row)continue;const sku=normSku(xlsx.value(xlsx.findCell(row,"A"))),pedidoRaw=xlsx.value(xlsx.findCell(row,"F")),ovosCx=num(xlsx.value(xlsx.findCell(row,"D")))||0,est=bySku.get(sku)?.caixas||0;setFormulaCache(xlsx,tem.doc,rn,"E",est);setFormulaCache(xlsx,tem.doc,rn,"G",est);if(pedidoRaw===""||pedidoRaw==null){setFormulaCache(xlsx,tem.doc,rn,"H","","string");setFormulaCache(xlsx,tem.doc,rn,"I","","string")}else{const pedido=Math.max(0,num(pedidoRaw)||0),produzir=Math.max(0,pedido-est);totalPedido+=pedido;totalProduzir+=produzir;setFormulaCache(xlsx,tem.doc,rn,"H",produzir);setFormulaCache(xlsx,tem.doc,rn,"I",produzir*ovosCx)}}const atendido=Math.max(0,totalPedido-totalProduzir);setFormulaCache(xlsx,tem.doc,5,"A",totalPedido);setFormulaCache(xlsx,tem.doc,5,"D",atendido);setFormulaCache(xlsx,tem.doc,5,"G",totalProduzir);setFormulaCache(xlsx,tem.doc,5,"I",totalPedido?atendido/totalPedido:0);await xlsx.saveSheet(tem)}
 }
+function alinharModeloComEstoqueOficial(stock,oficial){
+ if(!Array.isArray(oficial)||!oficial.length)throw Error('Estoque oficial indisponível para conciliação.');
+ const porChave=new Map();
+ for(const item of oficial){const k=normSku(item.sku)+'|'+normLote(item.lote);if(!k||!Number.isSafeInteger(Number(item.saldo)))throw Error('Lote oficial inválido.');porChave.set(k,Number(item.saldo));}
+ const diferencas=[];
+ for(const [k,rows] of stock.map){
+  const saldoOriginal=rows.reduce((a,r)=>a+r.saldo,0);
+  const saldoOficial=porChave.get(k)??0;
+  if(saldoOriginal===saldoOficial)continue;
+  if(rows.length!==1)throw Error('Modelo com linhas repetidas divergentes para '+k+'. Importe a cópia atualizada antes de continuar.');
+  const row=rows[0];
+  if(saldoOficial<0||saldoOficial>row.caixas)throw Error('Saldo oficial incompatível com as entradas do modelo para '+k+'. Importe a cópia atualizada.');
+  diferencas.push({sku:row.sku,lote:row.lote,anterior:saldoOriginal,oficial:saldoOficial});
+  row.saldo=saldoOficial;row.saidas=row.caixas-saldoOficial;
+ }
+ for(const [k,saldo] of porChave){if(saldo>0&&!stock.map.has(k))throw Error('O estoque do Firebase contém lote não presente no modelo Excel: '+k+'. Importe um modelo atualizado.');}
+ return diferencas;
+}
 async function installPanelFormulas(xlsx){
  const painel=await xlsx.sheetByName("Painel");if(!painel)return;
  const put=(ref,formula,type="number")=>{const m=ref.match(/^([A-Z]+)(\d+)$/),rn=Number(m[2]),row=rowByNumber(xlsx,painel.doc,rn);if(!row)return;const col=m[1],cell=xlsx.ensureCell(row,col,rn),cached=xlsx.value(cell);if(type==="string")xlsx.setString(cell,cached??"",formula);else xlsx.setNumber(cell,Number(cached)||0,formula)};
@@ -92,6 +110,7 @@ export async function gerarBaixaModeloAprovado({arquivo,resultado,origem}){
  const sx=await new XlsxXML(arquivo).load(),sheet=await sx.sheetByName('Estoque');
  if(!sheet)throw Error('Aba Estoque não encontrada.');
  const layout=detectStockLayout(sx,sheet.doc),stock=buildStock(sx,sheet.doc,layout);
+ const conciliacoes=alinharModeloComEstoqueOficial(stock,origem);
  const totals=new Map();
  for(const m of resultado.aplicados){const key=normSku(m.sku)+'|'+normLote(m.lote),p=totals.get(key)||{sku:normSku(m.sku),lote:normLote(m.lote),cx:0,lines:[]};p.cx+=Number(m.caixas);p.lines.push(m.id);totals.set(key,p)}
  const rom={agg:totals,validLines:resultado.aplicados.length,total:resultado.aplicados.reduce((n,x)=>n+Number(x.caixas),0)};
@@ -107,5 +126,5 @@ export async function gerarBaixaModeloAprovado({arquivo,resultado,origem}){
  await sx.forceRecalc();
  const historia=await sx.sheetByName('Historico');
  if(historia){const data=historia.doc.getElementsByTagNameNS(NS,'sheetData')[0];if(data){let last=Math.max(1,...sx.rows(historia.doc).map(x=>Number(x.getAttribute('r'))));const agora=new Date().toISOString();for(const d of plano.details){if(!d.baixado)continue;const row=historia.doc.createElementNS(NS,'row');row.setAttribute('r',String(++last));const vals=[agora,d.sku,'',d.lote,d.baixado,d.baixado,d.saldoAntes,d.saldoDepois,'BAIXA ROMANEIO'];for(let i=0;i<vals.length;i++){const c=historia.doc.createElementNS(NS,'c');c.setAttribute('r',String.fromCharCode(65+i)+last);if(typeof vals[i]==='number'){const v=historia.doc.createElementNS(NS,'v');v.textContent=String(vals[i]);c.appendChild(v)}else{c.setAttribute('t','inlineStr');const is=historia.doc.createElementNS(NS,'is'),t=historia.doc.createElementNS(NS,'t');t.textContent=String(vals[i]);is.appendChild(t);c.appendChild(is)}row.appendChild(c)}data.appendChild(row)}await sx.saveSheet(historia)}}
- return {blob:await sx.blob(),operacao:'baixa',registros:plano.details.length,removidas:reescrito.removed,baixadas:plano.matchedCx,naoBaixadas:(resultado.pendencias||[]).reduce((n,x)=>n+Number(x.caixas||0),0),estoqueAntes:antes,estoqueDepois:depois,detalhes:plano.details};
+ return {blob:await sx.blob(),operacao:'baixa',registros:plano.details.length,removidas:reescrito.removed,baixadas:plano.matchedCx,naoBaixadas:(resultado.pendencias||[]).reduce((n,x)=>n+Number(x.caixas||0),0),estoqueAntes:antes,estoqueDepois:depois,detalhes:plano.details,conciliacoes};
 }
