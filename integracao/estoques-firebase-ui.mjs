@@ -157,7 +157,7 @@ window.registrarBaixaConferida=async ({resultado,versaoInicial,destino,registros
   const dados=atual.data();
   if(dados.versao!==versaoInicial)throw Error('O estoque mudou desde a conferência. Prepare a baixa novamente.');
   const snaps=[];
-  for(const x of pendentes){const ref=doc(db,...raiz,'expedicoes',x.id);snaps.push({ref,snap:await tx.get(ref)});}
+  for(const x of pendentes){const ref=doc(db,...raiz,'expedicoes',x.id);snaps.push({ref,snap:await tx.get(ref),registro:x.registro});}
   if(snaps.some(x=>x.snap.exists()?x.snap.data().estado!=='PENDENTE_BAIXA':!ativos))throw Error('Expedição já baixada ou pendência remota indisponível. Atualize a conferência.');
   const saldos=new Map(dados.itens.map(x=>[chave(x),x]));
   for(const [k,qtd] of quantidades){const atual=saldos.get(k);if(!atual||Number(atual.saldo)<qtd)throw Error('Saldo alterado ou insuficiente. Prepare a conferência novamente.');}
