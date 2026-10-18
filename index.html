@@ -2881,10 +2881,10 @@ function exportarExpedicaoExcluida(destino){
  const total=itens.reduce((n,x)=>n+Number(x.caixas||0),0);
  gerarArquivoExcel([...body.rows],'romaneio_excluido_'+nomeSeguroArquivo(destino)+'_'+total+'-caixas.xlsx','Destino '+destino);
 }
-async function confirmarBaixaExpedicao(destino){
+async function confirmarBaixaExpedicao(destino,resumoBaixa=null){
  if(!await confirmarRaiar('Confirmar que a baixa do estoque do destino '+destino+' foi concluída e conferida?'))return false;
  const lista=lerExpedicoesPendentes(),agora=new Date().toISOString();
- for(const x of lista)if(x.destino===destino&&x.estado!=='BAIXA_CONCLUIDA'){x.estado='BAIXA_CONCLUIDA';x.baixaConfirmadaEm=agora;}
+ for(const x of lista)if(x.destino===destino&&x.estado!=='BAIXA_CONCLUIDA'){x.estado='BAIXA_CONCLUIDA';x.baixaConfirmadaEm=agora;if(resumoBaixa)x.resumoBaixa={...resumoBaixa};}
  localStorage.setItem(CHAVE_EXPEDICOES_PENDENTES,JSON.stringify(lista));operadorAtualizarPainel();
  return true;
 }
@@ -3211,7 +3211,7 @@ document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async(
    const aceitou=await confirmarRaiar('ATENÇÃO — BAIXA PARCIAL\\n\\nDestino: '+destino+'\\nCaixas baixadas: '+totalBaixado+'\\nCaixas NÃO baixadas: '+totalNaoBaixado+'\\n\\nAo concordar, a expedição será marcada como concluída e desaparecerá das pendências. O saldo não baixado permanecerá registrado no histórico. O estoque não será descontado novamente. Deseja continuar?');
    if(!aceitou)return;
   }
-  const confirmado=await confirmarBaixaExpedicao(destino);
+  const confirmado=await confirmarBaixaExpedicao(destino,{baixadas:totalBaixado,naoBaixadas:totalNaoBaixado,parcial:totalNaoBaixado>0});
   if(!confirmado)return;
   status.textContent='Baixa registrada para '+destino+'. '+totalBaixado+' caixa(s) baixadas e '+totalNaoBaixado+' não baixadas. Pendência arquivada; estoque oficial não foi alterado por esta confirmação.';
   resultadoEtapa4=null;
