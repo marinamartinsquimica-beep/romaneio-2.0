@@ -70,7 +70,7 @@ async function updateDependentCaches(xlsx,finalRecords){
  }
  const tem=await xlsx.sheetByName("Tem-Não Tem");if(tem){let totalPedido=0,totalProduzir=0;for(let rn=10;rn<=53;rn++){const row=rowByNumber(xlsx,tem.doc,rn);if(!row)continue;const sku=normSku(xlsx.value(xlsx.findCell(row,"A"))),pedidoRaw=xlsx.value(xlsx.findCell(row,"F")),ovosCx=num(xlsx.value(xlsx.findCell(row,"D")))||0,est=bySku.get(sku)?.caixas||0;setFormulaCache(xlsx,tem.doc,rn,"E",est);setFormulaCache(xlsx,tem.doc,rn,"G",est);if(pedidoRaw===""||pedidoRaw==null){setFormulaCache(xlsx,tem.doc,rn,"H","","string");setFormulaCache(xlsx,tem.doc,rn,"I","","string")}else{const pedido=Math.max(0,num(pedidoRaw)||0),produzir=Math.max(0,pedido-est);totalPedido+=pedido;totalProduzir+=produzir;setFormulaCache(xlsx,tem.doc,rn,"H",produzir);setFormulaCache(xlsx,tem.doc,rn,"I",produzir*ovosCx)}}const atendido=Math.max(0,totalPedido-totalProduzir);setFormulaCache(xlsx,tem.doc,5,"A",totalPedido);setFormulaCache(xlsx,tem.doc,5,"D",atendido);setFormulaCache(xlsx,tem.doc,5,"G",totalProduzir);setFormulaCache(xlsx,tem.doc,5,"I",totalPedido?atendido/totalPedido:0);await xlsx.saveSheet(tem)}
 }
-function alinharModeloComEstoqueOficial(stock,oficial){
+export function alinharModeloComEstoqueOficial(stock,oficial){
  if(!Array.isArray(oficial)||!oficial.length)throw Error('Estoque oficial indisponível para conciliação.');
  const porChave=new Map();
  for(const item of oficial){const k=normSku(item.sku)+'|'+normLote(item.lote);if(!k||!Number.isSafeInteger(Number(item.saldo)))throw Error('Lote oficial inválido.');porChave.set(k,Number(item.saldo));}
