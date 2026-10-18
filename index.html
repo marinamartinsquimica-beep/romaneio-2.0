@@ -259,7 +259,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.63</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.64</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
 <div class="romaneio-backup-actions" style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button class="desktop-backup-action" type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Pendências de sincronização</button><button class="desktop-backup-action" type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button><button class="mobile-sync-action" type="button" onclick="sincronizarRomaneioCelular()" style="width:auto;background:#5CDCF2;color:#254D69;font-weight:800;font-size:13px;padding:10px 18px;border-radius:12px;border:2px solid #254D69">SINCRONIZAR</button></div>
 <section class="dashboard"><div class="metric"><div class="ico">📋</div><div><b id="dashRegistros">0</b><span id="dashRegistrosLabel">Registros totais</span></div></div><div class="metric"><div class="ico">📦</div><div><b id="dashCaixas">0</b><span id="dashCaixasLabel">Caixas totais</span></div></div><div class="metric"><div class="ico">🧱</div><div><b id="dashPaletes">0</b><span id="dashPaletesLabel">Paletes totais</span></div></div><div class="metric"><div class="ico">📍</div><div><b id="dashDestinos">0</b><span id="dashDestinosLabel">Destinos totais</span></div></div><div class="metric"><div class="ico">🕒</div><div><b id="dashUltimo">--</b><span>Último registro</span></div></div></section>
@@ -377,7 +377,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.63";
+const APP_VERSION = "2.0.64";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -3186,6 +3186,13 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
    if(res.estoqueAntes!==totalBase)throw Error('O modelo não pôde ser conciliado integralmente com o Firebase. Importe uma cópia atualizada antes de baixar. Nenhum saldo foi alterado.');
   }
   if(res.conciliacoes?.length){const detalhes=res.conciliacoes.map(x=>x.sku+' / '+x.lote+': '+x.anterior+' → '+x.oficial+' CX').join('; ');status.textContent='Modelo Excel conciliado com o Firebase antes da baixa: '+detalhes+'. A cópia original não foi modificada.';}
+  if(res.operacao==='baixa'){
+   const n=Number(res.naoBaixadas||0),b=Number(res.baixadas||0);
+   const aviso=n>0
+     ?'ATENÇÃO — BAIXA PARCIAL\n\nCaixas a baixar: '+b+'\nCaixas NÃO baixadas: '+n+'\n\nO Excel será baixado agora. Confira o arquivo antes de confirmar a baixa no sistema.'
+     :'RESUMO DA BAIXA\n\nCaixas a baixar: '+b+'\nCaixas NÃO baixadas: 0\nEstoque resultante: '+res.estoqueDepois+' caixas.\n\nO Excel será baixado agora. Confira o arquivo antes de confirmar a baixa.';
+   if(!await confirmarRaiar(aviso))return;
+  }
   const url=URL.createObjectURL(res.blob),a=document.createElement('a');a.href=url;
   a.download='ESTOQUE_EMBALADO_'+res.operacao.toUpperCase()+'_'+new Date().toISOString().slice(0,10)+'.xlsx';a.click();
   setTimeout(()=>URL.revokeObjectURL(url),120000);
@@ -3198,7 +3205,7 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
    painel.replaceChildren();if(cards)painel.append(cards);painel.append(table);
   }
   if(resultadoEtapa4&&res.operacao==='baixa'){
-   resultadoEtapa4.exportado=true; // geração concluída e download iniciado
+   resultadoEtapa4.exportado=true; // Excel gerado e download solicitado após aviso Raiar
    const completa=(resultadoEtapa4.destino.startsWith('arquivo:')||resultadoEtapa4.destino==='ativo:__TODOS__')&&resultadoEtapa4.resultado.aplicados.length>0;
    const botao=document.getElementById('etapa4ConfirmarBaixa');
    botao.hidden=false;botao.disabled=false;
@@ -3215,7 +3222,12 @@ document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async(
   if(!atual||atual.modo!=='baixa')throw Error('Prepare a conferência antes de registrar a baixa.');
   if(atual.confirmada)throw Error('Esta baixa já foi confirmada. Baixe o Excel e depois apague o romaneio.');
   if(!atual.destino.startsWith('arquivo:')&&atual.destino!=='ativo:__TODOS__')throw Error('Selecione TODOS OS DESTINOS ou uma pendência de expedição para a baixa.');
-  // O Excel pode ser baixado antes ou depois da confirmação, sem bloquear a baixa.\n  if(!atual.resultado.aplicados.length)
+  if(!atual.exportado){
+   status.textContent='Baixa aguardando download obrigatório do Excel atualizado. Nenhum saldo foi alterado.';
+   await confirmarRaiar('DOWNLOAD OBRIGATÓRIO\n\nBaixe primeiro a planilha do estoque atualizado. Depois confira o resumo e confirme a baixa.\n\nNenhum saldo foi alterado.');
+   return;
+  }
+  if(!atual.resultado.aplicados.length)
    throw Error('Nenhuma caixa pôde ser baixada. Confira o estoque antes de registrar.');
   if(document.getElementById('etapa4DestinoBaixa').value!==atual.destino)
    throw Error('O destino mudou. Prepare novamente a conferência.');

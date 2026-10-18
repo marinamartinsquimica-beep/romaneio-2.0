@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v263-root-navigation-fix";
+const CACHE_NAME = "romaneio-2-0-cache-v264-baixa-excel";
 
 const FILES_TO_CACHE = [
   "./inicio.html",
