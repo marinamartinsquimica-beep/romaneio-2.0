@@ -2,7 +2,7 @@ import {readFileSync,writeFileSync,mkdtempSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {spawnSync} from 'node:child_process';
-const arquivos=['index.html','integracao/central-conexao.html'],folder=mkdtempSync(join(tmpdir(),'romaneio-inline-'));
+const arquivos=['index.html','integracao/central-conexao.html','integracao/backup-pre-migracao.html'],folder=mkdtempSync(join(tmpdir(),'romaneio-inline-'));
 let total=0,errors=0;
 try{
  for(const arquivo of arquivos){const html=readFileSync(arquivo,'utf8');

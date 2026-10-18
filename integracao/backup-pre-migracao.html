@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Romaneio 2.0 — Backup pré-migração</title>
+<style>body{font:16px system-ui;background:#121b25;color:#fff;max-width:760px;margin:30px auto;padding:16px}button,input{font:inherit;padding:12px;margin:6px 0}button{cursor:pointer}output{display:block;white-space:pre-wrap;margin-top:12px}small{color:#d7dce3}</style></head>
+<body><h1>Backup pré-migração — somente leitura</h1>
+<p>Exporta movimentos e estoques da conta autenticada em JSON. Não altera dados no Firebase e não substitui o Excel original guardado no OneDrive.</p>
+<p id="sessao">Verificando sessão…</p><button id="exportar" disabled>EXPORTAR BACKUP JSON</button><output id="status" role="status"></output>
+<script type="module">
+import {conferirBackupPreMigracao} from './conferir-backup.mjs';
+import {initializeApp,getApps,getApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
+import {getAuth,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+import {getFirestore,doc,getDoc,collection,query,orderBy,limit,startAfter,getDocs} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+const config={apiKey:'AIzaSyCCy5uY1eAFQE9Vhykr7xNNayDtk_B-Hy4',authDomain:'romaneio-2-0-homologacao.firebaseapp.com',projectId:'romaneio-2-0-homologacao',storageBucket:'romaneio-2-0-homologacao.firebasestorage.app',messagingSenderId:'357381847782',appId:'1:357381847782:web:8ad689db2c09447c2ded0c'};
+const app=getApps().length?getApp():initializeApp(config),auth=getAuth(app),db=getFirestore(app);
+const $=id=>document.getElementById(id);let ocupado=false;
+onAuthStateChanged(auth,u=>{$('sessao').textContent=u?'Conta: '+(u.email||u.uid):'Entre na Central de Conexão neste navegador.';$('exportar').disabled=!u||ocupado;});
+async function lerMovimentos(uid){
+ const registros=[];let ultimo=null;
+ for(let pagina=0;pagina<400;pagina++){
+  const q=query(collection(db,'rom_v250_contas',uid,'movimentos'),orderBy('criadoEm','desc'),...(ultimo?[startAfter(ultimo)]:[]),limit(50));
+  const s=await getDocs(q);if(s.metadata.fromCache)throw Error('Leitura do cache: backup cancelado.');
+  for(const d of s.docs)registros.push({id:d.id,dados:d.data()});
+  if(s.size<50)return registros;
+  ultimo=s.docs[s.docs.length-1];
+ }
+ throw Error('Limite de 20.000 movimentos atingido. Backup cancelado para evitar arquivo incompleto.');
+}
+const CHAVES_LOCAIS=['entradas','romaneio2_movimentos_pendentes_v1','romaneio2_ultimo_estado_movimentos_v1','romaneio2_destinos_excluidos_v1','romaneio2_expedicoes_excluidas_pendentes_v1'];
+function lerLocal(){
+ const dados={};for(const k of CHAVES_LOCAIS){const valor=localStorage.getItem(k);if(valor!==null){JSON.parse(valor);dados[k]=valor;}}
+ return dados;
+}
+async function lerExcelLocal(){
+ if(!('indexedDB' in window))return null;
+ return new Promise((resolve,reject)=>{
+  const req=indexedDB.open('romaneio2-arquivos-oficiais',1);
+  req.onupgradeneeded=()=>{req.transaction.abort();};
+  req.onerror=()=>reject(req.error);
+  req.onsuccess=()=>{
+   const banco=req.result;
+   if(!banco.objectStoreNames.contains('arquivos')){banco.close();resolve(null);return;}
+   const tx=banco.transaction('arquivos','readonly'),item=tx.objectStore('arquivos').get('estoque-embalado');
+   item.onerror=()=>{banco.close();reject(item.error);};
+   item.onsuccess=async()=>{
+    try{
+     if(!item.result){resolve(null);return;}
+     const f=item.result,bytes=new Uint8Array(f.bytes),partes=[];
+     for(let i=0;i<bytes.length;i+=32768)partes.push(String.fromCharCode(...bytes.subarray(i,i+32768)));
+     resolve({nome:f.name,tipo:f.type,guardadoEm:f.guardadoEm,base64:btoa(partes.join(''))});
+    }catch(e){reject(e);}finally{banco.close();}
+   };
+  };
+ });
+}
+$('exportar').onclick=async()=>{
+ const usuario=auth.currentUser;if(!usuario||ocupado)return;
+ ocupado=true;$('exportar').disabled=true;$('status').textContent='Lendo os dados oficiais…';
+ try{
+  if(!navigator.onLine)throw Error('Conecte-se à internet.');
+  const uid=usuario.uid;
+  const movimentos=await lerMovimentos(uid);
+  const estoques={};
+  for(const tipo of ['embalado','paripassu']){
+   const snap=await getDoc(doc(db,'rom_v250_contas',uid,'estoques_oficiais',tipo));
+   if(snap.metadata.fromCache)throw Error('Estoque consultado apenas no cache. Backup cancelado.');
+   estoques[tipo]=snap.exists()?snap.data():null;
+  }
+  if(auth.currentUser?.uid!==uid)throw Error('Usuário alterado durante a exportação.');
+  const dadosLocais=lerLocal(),excelLocal=await lerExcelLocal();
+  const pacote={formato:'romaneio2-backup-v2',origemUid:uid,geradoEm:new Date().toISOString(),totalMovimentos:movimentos.length,movimentos,estoques,dadosLocais,excelLocal};
+  const validacao=conferirBackupPreMigracao(pacote);
+  if(!validacao.valido)throw Error('Backup inconsistente: '+validacao.erros.join('; '));
+  const blob=new Blob([JSON.stringify(pacote,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='romaneio2_backup_'+new Date().toISOString().slice(0,10)+'.json';document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);
+  $('status').textContent='Backup exportado: '+movimentos.length+' movimentos. Inclui dados locais e Excel local, quando disponíveis. Preserve o arquivo em local seguro e mantenha também os Excels do OneDrive. Nenhum dado foi alterado.';
+ }catch(e){$('status').textContent='Backup NÃO concluído: '+e.message;}finally{ocupado=false;$('exportar').disabled=!auth.currentUser;}
+};
+</script></body></html>

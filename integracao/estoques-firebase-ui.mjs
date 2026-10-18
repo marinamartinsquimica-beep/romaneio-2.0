@@ -1,12 +1,15 @@
+import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
+import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
 import {guardarModeloEmbalado} from './modelo-estoque-persistente.mjs';
 import {initializeApp,getApp,getApps} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {getFirestore,doc,collection,query,orderBy,limit,onSnapshot,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {publicarEstoqueOficial} from './publicacao-estoques.mjs';
 import {conferirEstoques} from './conferencia-estoques.mjs';
-const config={apiKey:'AIzaSyAtlG-oys01gqgCdiANbzuzx9Mh9SiMRQo',authDomain:'romaneio-2-0-laboratorio.firebaseapp.com',projectId:'romaneio-2-0-laboratorio',storageBucket:'romaneio-2-0-laboratorio.firebasestorage.app',messagingSenderId:'343680211941',appId:'1:343680211941:web:8ad689db2c09447c2ded0c'};
+const config={apiKey:'AIzaSyCCy5uY1eAFQE9Vhykr7xNNayDtk_B-Hy4',authDomain:'romaneio-2-0-homologacao.firebaseapp.com',projectId:'romaneio-2-0-homologacao',storageBucket:'romaneio-2-0-homologacao.firebasestorage.app',messagingSenderId:'357381847782',appId:'1:357381847782:web:59ad8365c033bba8e79927'};
+exigirFirebaseHomologacao(config);
 const app=getApps().length?getApp():initializeApp(config),auth=getAuth(app),db=getFirestore(app);
-let unsub=[],versoes={embalado:'',paripassu:''};
+let unsub=[],versoes={embalado:'',paripassu:''},ambienteAtual=null,usuarioAtual=null;
 const $=id=>document.getElementById(id),mostrar=(s)=>{const el=$('etapa4FirebaseStatus');if(el)el.textContent=s};
 const N=x=>String(x??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
 function lerEmbalado(linhas){
@@ -50,10 +53,12 @@ function renderizarDestinosExcluidos(registros=[]){
  window.operadorAtualizarPainel?.();
 }
 
-function observar(uid){
+function observar(uid,ambienteId=null){
  unsub.forEach(f=>f());unsub=[];
+ if(!ambienteId)throw Error('Homologação sem ambiente compartilhado');
+ const raiz=['romaneio_ambientes',ambienteId];
  for(const tipo of ['embalado','paripassu']){
-  unsub.push(onSnapshot(doc(db,'rom_v250_contas',uid,'estoques_oficiais',tipo),snap=>{
+  unsub.push(onSnapshot(doc(db,...raiz,'estoques_oficiais',tipo),snap=>{
    const d=snap.exists()?snap.data():null;versoes[tipo]=d?.versao||'';
    if(tipo==='embalado'&&d?.itens?.length){window.estoqueTesteConsulta=new Map(d.itens.map((x,i)=>[String(i),x]));window.reservaTesteAtiva=true;for(const fn of ['atualizarResumoReservaTeste','renderizarEstoqueCompletoTeste','operadorAtualizarCardsEstoque','renderizarPendenciasConferenciaEstoque'])try{window[fn]?.()}catch{}}
    window.__etapa4=window.__etapa4||{};window.__etapa4[tipo]=d?.itens||null;
@@ -101,11 +106,11 @@ function observar(uid){
   },e=>mostrar('Firebase: '+e.message)));
  }
  renderizarDestinosExcluidos();
- unsub.push(onSnapshot(query(collection(db,'rom_v250_contas',uid,'movimentos'),orderBy('criadoEm','desc'),limit(250)),snapshot=>{
+ unsub.push(onSnapshot(query(collection(db,...raiz,'movimentos'),orderBy('criadoEm','desc'),limit(50)),snapshot=>{
    renderizarDestinosExcluidos(snapshot.docs.map(d=>d.data()));
  },err=>{const alvo=$('listaDestinosExcluidos');if(alvo){const p=document.createElement('p');p.textContent='Histórico remoto indisponível: '+err.message+'. As exclusões locais e a fila não foram descartadas.';alvo.append(p)}}));
 }
-onAuthStateChanged(auth,u=>{unsub.forEach(f=>f());unsub=[];if(u)observar(u.uid);else mostrar('Faça login na Central de Conexão para compartilhar os estoques.')});
+onAuthStateChanged(auth,async u=>{unsub.forEach(f=>f());unsub=[];ambienteAtual=null;usuarioAtual=u?.uid||null;versoes={embalado:'',paripassu:''};if(!u){mostrar('Faça login na Central de Conexão para compartilhar os estoques.');return;}try{const vinculo=await resolverAmbienteUsuario({db,uid:u.uid});if(usuarioAtual!==u.uid)return;ambienteAtual=vinculo;observar(u.uid,vinculo.ambienteId);}catch(e){if(usuarioAtual!==u.uid)return;mostrar('Sincronização suspensa: '+e.message);}});
 $('etapa4Arquivo')?.addEventListener('change',async()=>{const arquivo=$('etapa4Arquivo')?.files?.[0];if(!arquivo||$('etapa4Tipo')?.value!=='embalado')return;try{await importar(arquivo,'embalado');await guardarModeloEmbalado(arquivo);window.__etapa4ArquivoEmbalado=arquivo;mostrar('Modelo de Estoque Embalado preservado neste navegador. Publique para sincronizar os saldos no Firebase.')}catch(err){mostrar('Arquivo não preservado: '+err.message)}});
 $('etapa4Publicar')?.addEventListener('click',async()=>{
  const b=$('etapa4Publicar');b.disabled=true;
@@ -117,7 +122,8 @@ $('etapa4Publicar')?.addEventListener('click',async()=>{
   if(new TextEncoder().encode(JSON.stringify(itens)).length>750000)throw Error('Estoque excede tamanho seguro para um documento Firebase; publicação cancelada sem perda de dados.');
   if(!confirm('Publicar '+itens.length+' lotes de '+tipo+' para os aparelhos autenticados? A planilha oficial não será modificada.'))return;
   const versao=crypto.randomUUID();
-  const r=await publicarEstoqueOficial({db,uid:u.uid,tipo,dados:{tipo,nome:file.name,versao,itens},versaoEsperada:versoes[tipo],doc,runTransaction,autorizado:true});
+  if(ambienteAtual&&!ambienteAtual.permissoes.publicarExcel)throw Error('Usuário sem permissão para publicar Excel.');
+  const r=await publicarEstoqueOficial({db,uid:u.uid,tipo,dados:{tipo,nome:file.name,versao,itens},versaoEsperada:versoes[tipo],doc,runTransaction,autorizado:true,ambienteId:ambienteAtual?.ambienteId||null});
   if(tipo==='embalado'){try{await guardarModeloEmbalado(file)}catch(err){mostrar('Publicado no Firebase, mas a cópia local do Excel não foi preservada: '+err.message);return;}}
   mostrar('Publicado no Firebase: '+r.quantidadeLotes+' lotes, versão '+r.versao);
  }catch(e){mostrar('Publicação não concluída: '+e.message)}finally{b.disabled=false}

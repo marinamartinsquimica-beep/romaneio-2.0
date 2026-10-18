@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function autenticado() { return request.auth != null; }
+    function membroPath(ambiente) {
+      return /databases/$(database)/documents/romaneio_ambientes/$(ambiente)/membros/$(request.auth.uid);
+    }
+    function membroAtivo(ambiente) {
+      return autenticado() && exists(membroPath(ambiente))
+        && get(membroPath(ambiente)).data.ativo == true;
+    }
+    function administrador(ambiente) {
+      return membroAtivo(ambiente)
+        && get(membroPath(ambiente)).data.perfil == 'administrador';
+    }
+    function operadorAutorizado(ambiente) {
+      return membroAtivo(ambiente)
+        && get(membroPath(ambiente)).data.perfil in ['administrador', 'operador'];
+    }
+    match /romaneio_usuarios/{uid} {
+      allow get: if autenticado() && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+    match /romaneio_ambientes/{ambiente} {
+      allow get: if membroAtivo(ambiente);
+      allow list, create, update, delete: if false;
+      match /membros/{uid} {
+        allow get: if membroAtivo(ambiente) && (request.auth.uid == uid || administrador(ambiente));
+        allow list: if administrador(ambiente);
+        allow create, update, delete: if false;
+      }
+      match /estoques_oficiais/{tipo} {
+        function valido() {
+          return operadorAutorizado(ambiente)
+            && tipo in ['embalado', 'paripassu']
+            && request.resource.data.keys().hasOnly(['tipo','nome','versao','itens','importadoEm','autorUid'])
+            && request.resource.data.keys().hasAll(['tipo','nome','versao','itens','importadoEm','autorUid'])
+            && request.resource.data.tipo == tipo
+            && request.resource.data.nome is string
+            && request.resource.data.versao is string
+            && request.resource.data.itens is list
+            && request.resource.data.itens.size() > 0
+            && request.resource.data.itens.size() <= 15000
+            && request.resource.data.autorUid == request.auth.uid;
+        }
+        allow get: if membroAtivo(ambiente) && tipo in ['embalado','paripassu'];
+        allow list, delete: if false;
+        allow create: if valido();
+        allow update: if valido() && request.resource.data.versao != resource.data.versao;
+      }
+      match /movimentos/{id} {
+        function valido(d) {
+          return operadorAutorizado(ambiente)
+            && id.matches('^[a-zA-Z0-9_-]{8,160}$')
+            && d.keys().hasOnly(['id','autorUid','dispositivoId','tipo','item','antes','criadoEm'])
+            && d.keys().hasAll(['id','autorUid','dispositivoId','tipo','item','antes','criadoEm'])
+            && d.id == id && d.autorUid == request.auth.uid
+            && d.dispositivoId is string && d.dispositivoId.size() > 0
+            && d.dispositivoId.size() <= 160
+            && d.tipo in ['inclusao','edicao','exclusao']
+            && d.item is map
+            && d.item.keys().hasAll(['sku','loteCompleto','caixas'])
+            && d.item.sku is string && d.item.sku.size() > 0 && d.item.sku.size() <= 100
+            && d.item.loteCompleto is string && d.item.loteCompleto.size() > 0 && d.item.loteCompleto.size() <= 150
+            && ((d.item.caixas is int && d.item.caixas > 0 && d.item.caixas <= 1000000)
+              || (d.item.caixas is string && d.item.caixas.matches('^[1-9][0-9]{0,5}$')))
+            && ((d.tipo == 'edicao' && d.antes is map) || (d.tipo != 'edicao' && d.antes == null))
+            && d.criadoEm is string && d.criadoEm.size() > 0 && d.criadoEm.size() <= 40;
+        }
+        allow get: if membroAtivo(ambiente);
+        allow list: if membroAtivo(ambiente) && request.query.limit != null;
+        allow create: if valido(request.resource.data);
+        allow update, delete: if false;
+      }
+      match /expedicoes/{id} {
+        allow get: if membroAtivo(ambiente);
+        allow list: if membroAtivo(ambiente) && request.query.limit != null;
+        allow create: if operadorAutorizado(ambiente)
+          && request.resource.data.keys().hasAll(['destino','estado','criadoEm','autorUid'])
+          && request.resource.data.autorUid == request.auth.uid
+          && request.resource.data.estado == 'PENDENTE_BAIXA';
+        allow update: if operadorAutorizado(ambiente)
+          && resource.data.estado == 'PENDENTE_BAIXA'
+          && request.resource.data.estado == 'BAIXA_CONCLUIDA'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','baixaConfirmadaEm','confirmadoPor'])
+          && request.resource.data.confirmadoPor == request.auth.uid;
+        allow delete: if false;
+      }
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

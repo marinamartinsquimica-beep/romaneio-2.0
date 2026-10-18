@@ -1,0 +1,673 @@
+
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  match /rom_lab_conexao/{userId} {
+   allow get: if request.auth != null && request.auth.uid == userId;
+   allow create, update: if request.auth != null && request.auth.uid == userId
+     && request.resource.data.keys().hasOnly(['dono','tipo','valor','atualizadoEm'])
+     && request.resource.data.keys().hasAll(['dono','tipo','valor','atualizadoEm'])
+     && request.resource.data.dono == userId
+     && request.resource.data.tipo == 'teste_conexao'
+     && request.resource.data.valor == 1;
+   allow list, delete: if false;
+  }
+  match /rom_lab_sync/{userId} {
+   allow get: if request.auth != null && request.auth.uid == userId;
+   allow create, update: if request.auth != null && request.auth.uid == userId
+     && request.resource.data.keys().hasOnly(['dono','palete','observacao','origem','atualizadoEm'])
+     && request.resource.data.keys().hasAll(['dono','palete','observacao','origem','atualizadoEm'])
+     && request.resource.data.dono == userId
+     && request.resource.data.palete == 'TESTE-SYNC-001'
+     && request.resource.data.origem == 'laboratorio'
+     && request.resource.data.observacao is string
+     && request.resource.data.observacao.size() > 0
+     && request.resource.data.observacao.size() <= 100;
+   allow list, delete: if false;
+  }
+  match /rom_lab_pendencias/{cenario} {
+   function autorizado(){return request.auth != null && cenario == 'CENARIO-001';}
+   function dadosValidos(d){
+    return d.keys().hasOnly(['codigo','estoque','romaneio','historico','atualizadoEm'])
+      && d.keys().hasAll(['codigo','estoque','romaneio','historico','atualizadoEm'])
+      && d.codigo == 'CENARIO-001'
+      && d.estoque is int && d.estoque >= 0 && d.estoque <= 100000
+      && d.romaneio is int && d.romaneio >= 0 && d.romaneio <= 100000
+      && d.historico is list && d.historico.size() >= 1 && d.historico.size() <= 60;
+   }
+   allow get: if autorizado();
+   allow list, delete: if false;
+   allow create: if autorizado() && dadosValidos(request.resource.data)
+     && request.resource.data.estoque == 30 && request.resource.data.romaneio == 0
+     && request.resource.data.historico == ['Cenário inicializado: estoque 30, Romaneio 0'];
+   allow update: if autorizado() && dadosValidos(request.resource.data)
+     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estoque','romaneio','historico','atualizadoEm'])
+     && request.resource.data.historico.size() == resource.data.historico.size()+1
+     && request.resource.data.historico.hasAll(resource.data.historico);
+  }
+  // TESTE 10 — Múltiplos paletes (somente laboratório)
+match /rom_lab_multiplos/{paleteId} {
+
+  function autorizado() {
+    return request.auth != null
+      && paleteId in ['LAB-A', 'LAB-B', 'LAB-C'];
+  }
+
+  function dadosValidos(d) {
+    return d.keys().hasOnly([
+      'codigo', 'sku', 'lote', 'destino',
+      'estoque', 'romaneio', 'historico'
+    ])
+    && d.keys().hasAll([
+      'codigo', 'sku', 'lote', 'destino',
+      'estoque', 'romaneio', 'historico'
+    ])
+    && d.codigo == paleteId
+    && d.sku is string
+    && d.lote is string
+    && d.destino is string
+    && d.estoque is int
+    && d.estoque >= 0
+    && d.estoque <= 100000
+    && d.romaneio is int
+    && d.romaneio >= 0
+    && d.romaneio <= 100000
+    && d.historico is list
+    && d.historico.size() >= 1
+    && d.historico.size() <= 40;
+  }
+
+  allow get: if autorizado();
+  allow list, delete: if false;
+
+  allow create: if autorizado()
+    && dadosValidos(request.resource.data)
+    && request.resource.data.romaneio == 0
+    && request.resource.data.historico.size() == 1;
+
+  allow update: if autorizado()
+    && dadosValidos(request.resource.data)
+    && request.resource.data.codigo == resource.data.codigo
+    && request.resource.data.sku == resource.data.sku
+    && request.resource.data.lote == resource.data.lote
+    && request.resource.data.destino == resource.data.destino
+    && request.resource.data.diff(resource.data)
+         .affectedKeys()
+         .hasOnly(['estoque', 'romaneio', 'historico'])
+    && request.resource.data.historico.size()
+       == resource.data.historico.size() + 1
+    && request.resource.data.historico.hasAll(resource.data.historico);
+}
+// TESTE 11 — adicionar DENTRO de match /databases/{database}/documents,
+// antes do bloqueio final match /{document=**}. Não substituir regras atuais.
+match /rom_lab_idempotencia/{id} {
+  function autorizado() {
+    return request.auth != null && id == 'LAB-TESTE-11';
+  }
+  function valido(d) {
+    return d.keys().hasOnly(['codigo','estoque','romaneio','operacoes','historico'])
+      && d.keys().hasAll(['codigo','estoque','romaneio','operacoes','historico'])
+      && d.codigo == 'LAB-TESTE-11'
+      && d.estoque is int && d.estoque == 50
+      && d.romaneio is int && d.romaneio >= 0 && d.romaneio <= 100000
+      && d.operacoes is list && d.operacoes.size() <= 30
+      && d.historico is list && d.historico.size() <= 31;
+  }
+  allow get: if autorizado();
+  allow list, delete: if false;
+  allow create: if autorizado() && valido(request.resource.data)
+    && request.resource.data.romaneio == 0
+    && request.resource.data.operacoes == []
+    && request.resource.data.historico == ['Inicializado: 0 caixas'];
+  allow update: if autorizado() && valido(request.resource.data)
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['romaneio','operacoes','historico'])
+    && request.resource.data.operacoes.size() == resource.data.operacoes.size() + 1
+    && request.resource.data.historico.size() == resource.data.historico.size() + 1
+    && request.resource.data.operacoes.hasAll(resource.data.operacoes)
+    && request.resource.data.historico.hasAll(resource.data.historico);
+}
+// TESTE 14 — adicionar dentro de match /databases/{database}/documents,
+// imediatamente antes do bloqueio final. Não substituir regras existentes.
+match /rom_lab_duplicidade_paletes/{paleteId} {
+  function autorizado() {
+    return request.auth != null && paleteId in ['LAB-A','LAB-B'];
+  }
+  function valido(d) {
+    return d.keys().hasOnly(['codigo','sku','lote','estoque','romaneio','operacoes','historico'])
+      && d.keys().hasAll(['codigo','sku','lote','estoque','romaneio','operacoes','historico'])
+      && d.codigo == paleteId
+      && d.sku == 'G' && d.lote == '001'
+      && d.estoque == 50
+      && d.romaneio is int && d.romaneio >= 0 && d.romaneio <= 100000
+      && d.operacoes is list && d.operacoes.size() <= 25
+      && d.historico is list && d.historico.size() <= 26;
+  }
+  allow get: if autorizado();
+  allow list, delete: if false;
+  allow create: if autorizado() && valido(request.resource.data)
+    && request.resource.data.romaneio == 0
+    && request.resource.data.operacoes == []
+    && request.resource.data.historico == ['Inicializado: 0 caixas'];
+  allow update: if autorizado() && valido(request.resource.data)
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['romaneio','operacoes','historico'])
+    && request.resource.data.operacoes.size() == resource.data.operacoes.size() + 1
+    && request.resource.data.historico.size() == resource.data.historico.size() + 1
+    && request.resource.data.operacoes.hasAll(resource.data.operacoes)
+    && request.resource.data.historico.hasAll(resource.data.historico);
+}// TESTE 14: inserir dentro de match /databases/{database}/documents,
+// antes de match /{document=**}. Não substituir as regras existentes.
+match /rom_lab_duplicidade14/{paleteId} {
+ function autorizado() {
+  return request.auth != null && paleteId in ['LAB-A','LAB-B'];
+ }
+ function valido(d) {
+  return d.keys().hasOnly(['codigo','sku','lote','estoque','romaneio','operacoes','historico'])
+   && d.keys().hasAll(['codigo','sku','lote','estoque','romaneio','operacoes','historico'])
+   && d.codigo == paleteId && d.sku == 'G' && d.lote == '001'
+   && d.estoque == 20 && d.romaneio is int
+   && d.romaneio >= 0 && d.romaneio <= 100000
+   && d.operacoes is list && d.operacoes.size() <= 25
+   && d.historico is list && d.historico.size() <= 26;
+ }
+ allow get: if autorizado();
+ allow list, delete: if false;
+ allow create: if autorizado() && valido(request.resource.data)
+  && request.resource.data.romaneio == 0
+  && request.resource.data.operacoes == []
+  && request.resource.data.historico == ['Palete inicializado'];
+ allow update: if autorizado() && valido(request.resource.data)
+  && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['romaneio','operacoes','historico'])
+  && request.resource.data.operacoes.size() == resource.data.operacoes.size()+1
+  && request.resource.data.historico.size() == resource.data.historico.size()+1
+  && request.resource.data.operacoes.hasAll(resource.data.operacoes)
+  && request.resource.data.historico.hasAll(resource.data.historico);
+}
+// Regra compatível com firebase-duplicidade-paletes-teste14.html
+// Inserir dentro de match /databases/{database}/documents antes do bloqueio final.
+match /rom_lab_duplicidade14/{paleteId} {
+ function autorizado() {return request.auth != null && paleteId in ['LAB-A','LAB-B'];}
+ function valido(d) {
+  return d.keys().hasOnly(['codigo','sku','lote','estoque','romaneio','operacoes','historico'])
+  && d.keys().hasAll(['codigo','sku','lote','estoque','romaneio','operacoes','historico'])
+  && d.codigo == paleteId && d.sku == 'G' && d.lote == '001'
+  && d.estoque == 20 && d.romaneio is int
+  && d.romaneio >= 0 && d.romaneio <= 100000
+  && d.operacoes is list && d.operacoes.size() <= 25
+  && d.historico is list && d.historico.size() <= 26;
+ }
+ allow get: if autorizado();
+ allow list, delete: if false;
+ allow create: if autorizado() && valido(request.resource.data)
+  && request.resource.data.romaneio == 0
+  && request.resource.data.operacoes == []
+  && request.resource.data.historico == ['Palete inicializado'];
+ allow update: if autorizado() && valido(request.resource.data)
+  && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['romaneio','operacoes','historico'])
+  && request.resource.data.operacoes.size() == resource.data.operacoes.size()+1
+  && request.resource.data.historico.size() == resource.data.historico.size()+1
+  && request.resource.data.operacoes.hasAll(resource.data.operacoes)
+  && request.resource.data.historico.hasAll(resource.data.historico);
+}
+// TESTE 14 — Cole este bloco DENTRO de match /databases/{database}/documents,
+// antes do match final que nega tudo. Não substitua as regras anteriores.
+// Exclusivo do laboratório; autenticação não equivale a autorização por função.
+match /rom_lab_paletes14/{paleteId} {
+  function autorizado() {
+    return request.auth != null && paleteId in ['LAB-A', 'LAB-B'];
+  }
+  function valido(d) {
+    return d.keys().hasOnly(['codigo','sku','lote','estoque','romaneio','operacoes','historico'])
+      && d.keys().hasAll(['codigo','sku','lote','estoque','romaneio','operacoes','historico'])
+      && d.codigo == paleteId && d.sku == 'G' && d.lote == '001'
+      && d.estoque == 50 && d.romaneio is int
+      && d.romaneio >= 0 && d.romaneio <= 100000
+      && d.operacoes is list && d.operacoes.size() <= 25
+      && d.historico is list && d.historico.size() <= 26;
+  }
+  allow get: if autorizado();
+  allow list, delete: if false;
+  allow create: if autorizado() && valido(request.resource.data)
+    && request.resource.data.romaneio == 0
+    && request.resource.data.operacoes == []
+    && request.resource.data.historico == ['Inicializado: 0 caixas'];
+  allow update: if autorizado() && valido(request.resource.data)
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['romaneio','operacoes','historico'])
+    && request.resource.data.operacoes.size() == resource.data.operacoes.size() + 1
+    && request.resource.data.historico.size() == resource.data.historico.size() + 1
+    && request.resource.data.operacoes.hasAll(resource.data.operacoes)
+    && request.resource.data.historico.hasAll(resource.data.historico);
+}
+// TESTE 11 — adicionar DENTRO de match /databases/{database}/documents,
+// antes do bloqueio final match /{document=**}. Não substituir regras atuais.
+match /rom_lab_idempotencia/{id} {
+  function autorizado() {
+    return request.auth != null && id == 'LAB-TESTE-11';
+  }
+  function valido(d) {
+    return d.keys().hasOnly(['codigo','estoque','romaneio','operacoes','historico'])
+      && d.keys().hasAll(['codigo','estoque','romaneio','operacoes','historico'])
+      && d.codigo == 'LAB-TESTE-11'
+      && d.estoque is int && d.estoque == 50
+      && d.romaneio is int && d.romaneio >= 0 && d.romaneio <= 100000
+      && d.operacoes is list && d.operacoes.size() <= 30
+      && d.historico is list && d.historico.size() <= 31;
+  }
+  allow get: if autorizado();
+  allow list, delete: if false;
+  allow create: if autorizado() && valido(request.resource.data)
+    && request.resource.data.romaneio == 0
+    && request.resource.data.operacoes == []
+    && request.resource.data.historico == ['Inicializado: 0 caixas'];
+  allow update: if autorizado() && valido(request.resource.data)
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['romaneio','operacoes','historico'])
+    && request.resource.data.operacoes.size() == resource.data.operacoes.size() + 1
+    && request.resource.data.historico.size() == resource.data.historico.size() + 1
+    && request.resource.data.operacoes.hasAll(resource.data.operacoes)
+    && request.resource.data.historico.hasAll(resource.data.historico);
+}
+// TESTE 14 — inserir dentro de match /databases/{database}/documents,
+// antes de match /{document=**}. Preservar as regras anteriores.
+// Somente laboratório. Não é autorização por perfil de produção.
+match /rom_lab_confirmacao_paletes/{palete} {
+  function permitido() {
+    return request.auth != null && palete in ['LAB-A','LAB-B','LAB-C'];
+  }
+  function valido(d) {
+    return d.keys().hasOnly(['codigo','sku','lote','estoque','romaneio','operacoes','historico'])
+      && d.keys().hasAll(['codigo','sku','lote','estoque','romaneio','operacoes','historico'])
+      && d.codigo == palete
+      && d.sku is string && d.lote is string
+      && d.estoque is int && d.estoque >= 0 && d.estoque <= 100000
+      && d.romaneio is int && d.romaneio >= 0 && d.romaneio <= 100000
+      && d.operacoes is list && d.operacoes.size() <= 30
+      && d.historico is list && d.historico.size() <= 31;
+  }
+  allow get: if permitido();
+  allow list, delete: if false;
+  allow create: if permitido() && valido(request.resource.data)
+    && request.resource.data.romaneio == 0
+    && request.resource.data.operacoes == []
+    && request.resource.data.historico == ['Inicializado: 0 caixas'];
+  allow update: if permitido() && valido(request.resource.data)
+    && request.resource.data.codigo == resource.data.codigo
+    && request.resource.data.sku == resource.data.sku
+    && request.resource.data.lote == resource.data.lote
+    && request.resource.data.estoque == resource.data.estoque
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['romaneio','operacoes','historico'])
+    && request.resource.data.operacoes.size() == resource.data.operacoes.size() + 1
+    && request.resource.data.historico.size() == resource.data.historico.size() + 1
+    && request.resource.data.operacoes.hasAll(resource.data.operacoes)
+    && request.resource.data.historico.hasAll(resource.data.historico);
+}
+// TESTE 14 — Adicione este bloco dentro de match /databases/{database}/documents,
+// ANTES de match /{document=**}. Preserve as regras existentes.
+match /rom_lab_paletes14/{paleteId} {
+  function autorizado() {
+    return request.auth != null && paleteId in ['LAB-A', 'LAB-B'];
+  }
+  function valido(d) {
+    return d.keys().hasOnly(['codigo','sku','lote','estoque','romaneio','operacoes','historico'])
+      && d.keys().hasAll(['codigo','sku','lote','estoque','romaneio','operacoes','historico'])
+      && d.codigo == paleteId && d.sku == 'G' && d.lote == '001'
+      && d.estoque is int && d.estoque == 50
+      && d.romaneio is int && d.romaneio >= 0 && d.romaneio <= 100000
+      && d.operacoes is list && d.operacoes.size() <= 30
+      && d.historico is list && d.historico.size() <= 31;
+  }
+  allow get: if autorizado();
+  allow list, delete: if false;
+  allow create: if autorizado() && valido(request.resource.data)
+    && request.resource.data.romaneio == 0
+    && request.resource.data.operacoes == []
+    && request.resource.data.historico == ['Inicializado: 0 caixas'];
+  allow update: if autorizado() && valido(request.resource.data)
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['romaneio','operacoes','historico'])
+    && request.resource.data.operacoes.size() == resource.data.operacoes.size() + 1
+    && request.resource.data.historico.size() == resource.data.historico.size() + 1
+    && request.resource.data.operacoes.hasAll(resource.data.operacoes)
+    && request.resource.data.historico.hasAll(resource.data.historico);
+}
+// TESTE 17 — cole DENTRO de match /databases/{database}/documents
+// ANTES do bloqueio final match /{document=**}. Não substitua outras regras.
+// Exclusivo do laboratório; não é uma política de autorização de produção.
+// TESTE 17 — cole DENTRO de match /databases/{database}/documents
+// ANTES do bloqueio final match /{document=**}. Não substitua outras regras.
+// Exclusivo do laboratório; não é uma política de autorização de produção.
+match /rom_lab_reservas17/{paleteId} {
+  function autorizado() {
+    return request.auth != null && paleteId in ['LAB-A', 'LAB-B'];
+  }
+  function valido(d) {
+    return d.keys().hasOnly(['codigo','sku','lote','estoque','reservado','expedido','romaneio','operacoes','historico'])
+      && d.keys().hasAll(['codigo','sku','lote','estoque','reservado','expedido','romaneio','operacoes','historico'])
+      && d.codigo == paleteId && d.sku == 'G' && d.lote == '001'
+      && d.estoque is int && d.estoque >= 0 && d.estoque <= 50
+      && d.reservado is int && d.reservado >= 0 && d.reservado <= 100000
+      && d.expedido is int && d.expedido >= 0 && d.expedido <= 50
+      && d.estoque + d.expedido == 50
+      && d.romaneio is int && d.romaneio >= 0 && d.romaneio <= 100000
+      && d.operacoes is list && d.operacoes.size() <= 25
+      && d.historico is list && d.historico.size() <= 80;
+  }
+  function preservado() {
+    return request.resource.data.codigo == resource.data.codigo
+      && request.resource.data.sku == resource.data.sku
+      && request.resource.data.lote == resource.data.lote
+      && request.resource.data.operacoes.hasAll(resource.data.operacoes)
+      && request.resource.data.historico.hasAll(resource.data.historico)
+      && request.resource.data.historico.size() == resource.data.historico.size() + 1;
+  }
+  allow get: if autorizado();
+  allow list, delete: if false;
+  allow create: if autorizado() && valido(request.resource.data)
+    && request.resource.data.estoque == 50
+    && request.resource.data.reservado == 0
+    && request.resource.data.expedido == 0
+    && request.resource.data.romaneio == 0
+    && request.resource.data.operacoes == []
+    && request.resource.data.historico == ['Inicializado: 0 caixas'];
+  allow update: if autorizado() && valido(request.resource.data) && preservado()
+    && (
+      // Inclusão de romaneio: preserva todos os saldos de estoque.
+      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['romaneio','operacoes','historico'])
+       && request.resource.data.romaneio > resource.data.romaneio
+       && request.resource.data.operacoes.size() == resource.data.operacoes.size() + 1)
+      ||
+      // Reserva: pode superar o saldo físico; a divergência fica visível no aplicativo.
+      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reservado','historico'])
+       && request.resource.data.reservado > resource.data.reservado
+       && request.resource.data.romaneio == resource.data.romaneio)
+      ||
+      // Baixa: transfere quantidade reservada para expedida e reduz estoque.
+      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reservado','estoque','expedido','historico'])
+       && request.resource.data.reservado < resource.data.reservado
+       && resource.data.estoque - request.resource.data.estoque == resource.data.reservado - request.resource.data.reservado
+       && request.resource.data.expedido - resource.data.expedido == resource.data.reservado - request.resource.data.reservado
+       && request.resource.data.romaneio == resource.data.romaneio)
+    );
+}
+
+match /rom_lab_reservas17/{paleteId} {
+  allow update: if request.auth != null
+    && paleteId in ['LAB-A', 'LAB-B']
+    && request.resource.data.diff(resource.data)
+      .affectedKeys().hasOnly(['reservado', 'historico'])
+    && request.resource.data.reservado is int
+    && request.resource.data.reservado >= 0
+    && request.resource.data.reservado < resource.data.reservado
+    && request.resource.data.historico is list
+    && request.resource.data.historico.size()
+      == resource.data.historico.size() + 1
+    && request.resource.data.historico.hasAll(resource.data.historico);
+}
+
+// TESTE 17.10 — adicionar como bloco separado dentro de match /databases/{database}/documents
+// Simula a leitura de uma planilha atualizada, sem modificar estoque oficial.
+match /rom_lab_estoque_importado1710/{paleteId} {
+  function autorizado() { return request.auth != null && paleteId == 'LAB-A'; }
+  function valido(d) {
+    return d.keys().hasOnly(['codigo','sku','lote','estoqueConferido','origem','historico'])
+      && d.keys().hasAll(['codigo','sku','lote','estoqueConferido','origem','historico'])
+      && d.codigo == 'LAB-A' && d.sku == 'G' && d.lote == '001'
+      && d.origem == 'SIMULACAO_PLANILHA_TESTE_17_10'
+      && d.estoqueConferido is int && d.estoqueConferido >= 0 && d.estoqueConferido <= 100000
+      && d.historico is list && d.historico.size() >= 1 && d.historico.size() <= 20;
+  }
+  allow get: if autorizado();
+  allow list, delete: if false;
+  allow create: if autorizado() && valido(request.resource.data)
+    && request.resource.data.estoqueConferido == 51
+    && request.resource.data.historico == ['TESTE 17.10: importacao simulada de 51 caixas'];
+  allow update: if false;
+}
+
+// TESTE 17.12 — ADICIONAR como bloco independente dentro de /databases/{database}/documents
+// Dados ficticios e fixos. Nunca contem dados reais de planilhas.
+match /rom_lab_conferencia1712/{documento} {
+  function autorizado() { return request.auth != null && documento == 'LAB-CONFERENCIA'; }
+  function valido(d) {
+    return d.keys().hasOnly(['codigo','sku','lote','postura','reservado','estoqueConferido','revisao','origem','historico'])
+      && d.keys().hasAll(['codigo','sku','lote','postura','reservado','estoqueConferido','revisao','origem','historico'])
+      && d.codigo == 'LAB-CONFERENCIA' && d.sku == 'G' && d.lote == '001'
+      && d.postura == 'TESTE' && d.reservado == 51
+      && d.estoqueConferido is int && d.estoqueConferido in [50,51]
+      && d.revisao is int && d.revisao >= 1 && d.revisao <= 100
+      && d.origem == 'LABORATORIO_17_12'
+      && d.historico is list && d.historico.size() >= 1 && d.historico.size() <= 100;
+  }
+  allow get: if autorizado();
+  allow list, delete: if false;
+  allow create: if autorizado() && valido(request.resource.data)
+    && request.resource.data.estoqueConferido == 50
+    && request.resource.data.revisao == 1
+    && request.resource.data.historico == ['Laboratorio 17.12 iniciado: 50 caixas'];
+  allow update: if autorizado() && valido(request.resource.data)
+    && request.resource.data.diff(resource.data).affectedKeys()
+       .hasOnly(['estoqueConferido','revisao','historico'])
+    && request.resource.data.revisao == resource.data.revisao + 1
+    && request.resource.data.estoqueConferido != resource.data.estoqueConferido
+    && request.resource.data.historico.size() == resource.data.historico.size() + 1
+    && request.resource.data.historico.hasAll(resource.data.historico);
+}
+
+// 2.0.50 — ADICIONAR DENTRO DE match /databases/{database}/documents
+// ANTES do match final /{document=**}. Nao substitui regras existentes.
+// Login operacional compartilhado: somente o proprio UID acessa seus movimentos.
+// Cada movimento e imutavel. Nao autoriza estoque oficial nem administracao.
+match /rom_v250_contas/{contaUid}/movimentos/{movimentoId} {
+  function dono() {
+    return request.auth != null && request.auth.uid == contaUid;
+  }
+  function valido(d) {
+    return d.keys().hasOnly(['id','autorUid','dispositivoId','tipo','item','antes','criadoEm'])
+      && d.keys().hasAll(['id','autorUid','dispositivoId','tipo','item','antes','criadoEm'])
+      && d.id == movimentoId
+      && d.autorUid == contaUid
+      && d.dispositivoId is string && d.dispositivoId.size() > 0 && d.dispositivoId.size() <= 160
+      && d.tipo in ['inclusao','edicao','exclusao']
+      && d.item is map
+      && d.item.keys().hasAll(['sku','loteCompleto','caixas'])
+      && d.item.sku is string && d.item.sku.size() > 0 && d.item.sku.size() <= 100
+      && d.item.loteCompleto is string && d.item.loteCompleto.size() > 0 && d.item.loteCompleto.size() <= 150
+      && (
+        (d.item.caixas is int && d.item.caixas > 0 && d.item.caixas <= 1000000)
+        || (d.item.caixas is string && d.item.caixas.matches('^[1-9][0-9]{0,5}$'))
+      )
+      && ((d.tipo == 'edicao' && d.antes is map) || (d.tipo != 'edicao' && d.antes == null))
+      && d.criadoEm is string && d.criadoEm.size() > 0 && d.criadoEm.size() <= 40;
+  }
+  allow get: if dono();
+  allow list: if dono() && request.query.limit != null
+  && request.query.limit <= 50;
+  allow update, delete: if false;
+  allow create: if dono()
+  && movimentoId.matches('^[a-zA-Z0-9_-]{8,160}$')
+  && valido(request.resource.data);
+}
+// Somente laboratório. Não é autorização por função para produção.
+// Somente laboratório; não representa autorização segura por função.
+  // BLOCO 4 — Estoques compartilhados do Romaneio 2.0
+  // Apenas consulta e importação versionada, sem baixa oficial.
+  match /rom_v250_contas/{uid}/estoques_oficiais/{tipo} {
+    function mesmaConta() {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    function podePublicar() {
+      return mesmaConta()
+        && exists(/databases/$(database)/documents/rom_v250_admins/$(uid));
+    }
+    function dadosValidos() {
+      return tipo in ['embalado','paripassu']
+        && request.resource.data.keys().hasOnly([
+          'tipo','nome','versao','itens','importadoEm','autorUid'
+        ])
+        && request.resource.data.keys().hasAll([
+          'tipo','nome','versao','itens','importadoEm','autorUid'
+        ])
+        && request.resource.data.tipo == tipo
+        && request.resource.data.nome is string
+        && request.resource.data.versao is string
+        && request.resource.data.itens is list
+        && request.resource.data.itens.size() > 0
+        && request.resource.data.itens.size() <= 15000
+        && request.resource.data.autorUid == request.auth.uid;
+    }
+    allow get: if mesmaConta();
+    allow list, delete: if false;
+    allow create: if podePublicar() && dadosValidos();
+    allow update: if podePublicar() && dadosValidos()
+      && request.resource.data.versao != resource.data.versao;
+  }
+
+  // Documento de autorização criado apenas no Console do Firebase.
+  match /rom_v250_admins/{uid} {
+    allow read, write: if false;
+  }
+
+  function logged(){return request.auth != null;}
+  function memberDoc(env){return /databases/$(database)/documents/romaneio_ambientes/$(env)/membros/$(request.auth.uid);}
+  function active(env){return logged() && exists(memberDoc(env)) && get(memberDoc(env)).data.ativo == true;}
+  function admin(env){return active(env) && get(memberDoc(env)).data.perfil == 'administrador';}
+  function publisher(env){return active(env) && get(memberDoc(env)).data.perfil in ['administrador','operador'];}
+  // Índice do próprio usuário: deve ser criado por processo administrativo seguro.
+  match /romaneio_usuarios/{uid} {
+   allow get: if logged() && request.auth.uid == uid;
+   allow list, create, update, delete: if false;
+  }
+  match /romaneio_ambientes/{env} {
+   allow get: if active(env);
+   allow list, create, update, delete: if false;
+   match /membros/{uid} {
+    allow get: if active(env) && (request.auth.uid == uid || admin(env));
+    allow list: if admin(env);
+    // Provisionamento inicial via console/Admin SDK; novos membros via backend seguro.
+    allow create, update, delete: if false;
+   }
+   // Estoques estruturados (o XLSX completo permanece no OneDrive).
+   match /estoques_oficiais/{tipo} {
+    allow get: if active(env) && tipo in ['embalado','paripassu'];
+    allow list, delete: if false;
+    function valido(){
+     return publisher(env) && tipo in ['embalado','paripassu']
+       && request.resource.data.keys().hasOnly(['tipo','nome','versao','itens','importadoEm','autorUid'])
+       && request.resource.data.keys().hasAll(['tipo','nome','versao','itens','importadoEm','autorUid'])
+       && request.resource.data.tipo == tipo
+       && request.resource.data.nome is string
+       && request.resource.data.versao is string
+       && request.resource.data.versao.size() > 0
+       && request.resource.data.itens is list
+       && request.resource.data.itens.size() > 0
+       && request.resource.data.itens.size() <= 15000
+       && request.resource.data.autorUid == request.auth.uid;
+    }
+    allow create: if valido();
+    allow update: if valido() && request.resource.data.versao != resource.data.versao;
+   }
+   // Histórico append-only, mesmo formato usado pelo envio operacional legado.
+   match /movimentos/{movimentoId} {
+    function valido(){
+     let d = request.resource.data;
+     return publisher(env)
+       && movimentoId.matches('^[a-zA-Z0-9_-]{8,160}
+    allow read: if active(env) && tipo in ['embalado','paripassu'];
+    allow create: if publisher(env)
+      && tipo in ['embalado','paripassu']
+      && request.resource.data.keys().hasOnly(['tipo','vigente','anterior','alteradoEm'])
+      && request.resource.data.tipo == tipo
+      && request.resource.data.anterior == null
+      && request.resource.data.vigente.autorUid == request.auth.uid;
+    allow update: if publisher(env)
+      && tipo in ['embalado','paripassu']
+      && request.resource.data.keys().hasOnly(['tipo','vigente','anterior','alteradoEm'])
+      && request.resource.data.tipo == tipo
+      && request.resource.data.anterior == resource.data.vigente
+      && request.resource.data.vigente.versao != resource.data.vigente.versao
+      && request.resource.data.vigente.autorUid == request.auth.uid;
+    allow delete: if false;
+   }
+  }
+  // Regras existentes do legado devem ser incorporadas sem alteração na
+  // configuração ativa, por meio de revisão das regras reais do Firebase.
+ }
+}
+)
+       && d.keys().hasOnly(['id','autorUid','dispositivoId','tipo','item','antes','criadoEm'])
+       && d.keys().hasAll(['id','autorUid','dispositivoId','tipo','item','antes','criadoEm'])
+       && d.id == movimentoId && d.autorUid == request.auth.uid
+       && d.dispositivoId is string && d.dispositivoId.size() > 0 && d.dispositivoId.size() <= 160
+       && d.tipo in ['inclusao','edicao','exclusao']
+       && d.item is map
+       && d.item.keys().hasAll(['sku','loteCompleto','caixas'])
+       && d.item.sku is string && d.item.sku.size() > 0 && d.item.sku.size() <= 100
+       && d.item.loteCompleto is string && d.item.loteCompleto.size() > 0 && d.item.loteCompleto.size() <= 150
+       && ((d.item.caixas is int && d.item.caixas > 0 && d.item.caixas <= 1000000) ||
+           (d.item.caixas is string && d.item.caixas.matches('^[1-9][0-9]{0,5}
+    allow read: if active(env) && tipo in ['embalado','paripassu'];
+    allow create: if publisher(env)
+      && tipo in ['embalado','paripassu']
+      && request.resource.data.keys().hasOnly(['tipo','vigente','anterior','alteradoEm'])
+      && request.resource.data.tipo == tipo
+      && request.resource.data.anterior == null
+      && request.resource.data.vigente.autorUid == request.auth.uid;
+    allow update: if publisher(env)
+      && tipo in ['embalado','paripassu']
+      && request.resource.data.keys().hasOnly(['tipo','vigente','anterior','alteradoEm'])
+      && request.resource.data.tipo == tipo
+      && request.resource.data.anterior == resource.data.vigente
+      && request.resource.data.vigente.versao != resource.data.vigente.versao
+      && request.resource.data.vigente.autorUid == request.auth.uid;
+    allow delete: if false;
+   }
+  }
+  // Regras existentes do legado devem ser incorporadas sem alteração na
+  // configuração ativa, por meio de revisão das regras reais do Firebase.
+ }
+}
+)))
+       && ((d.tipo == 'edicao' && d.antes is map) || (d.tipo != 'edicao' && d.antes == null))
+       && d.criadoEm is string && d.criadoEm.size() > 0 && d.criadoEm.size() <= 40;
+    }
+    allow get: if active(env);
+    allow list: if active(env) && request.query.limit != null && request.query.limit <= 50;
+    allow create: if valido();
+    allow update, delete: if false;
+   }
+   // Histórico de expedição: estado versionado, sem remoção destrutiva.
+   match /expedicoes/{expedicaoId} {
+    allow get: if active(env);
+    allow list: if active(env) && request.query.limit != null && request.query.limit <= 50;
+    allow create: if publisher(env)
+      && request.resource.data.keys().hasAll(['destino','estado','criadoEm','autorUid'])
+      && request.resource.data.autorUid == request.auth.uid
+      && request.resource.data.estado == 'PENDENTE_BAIXA';
+    allow update: if publisher(env)
+      && resource.data.estado == 'PENDENTE_BAIXA'
+      && request.resource.data.estado == 'BAIXA_CONCLUIDA'
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','baixaConfirmadaEm','confirmadoPor'])
+      && request.resource.data.confirmadoPor == request.auth.uid;
+    allow delete: if false;
+   }
+   match /excel_oficiais/{tipo} {
+    allow read: if active(env) && tipo in ['embalado','paripassu'];
+    allow create: if publisher(env)
+      && tipo in ['embalado','paripassu']
+      && request.resource.data.keys().hasOnly(['tipo','vigente','anterior','alteradoEm'])
+      && request.resource.data.tipo == tipo
+      && request.resource.data.anterior == null
+      && request.resource.data.vigente.autorUid == request.auth.uid;
+    allow update: if publisher(env)
+      && tipo in ['embalado','paripassu']
+      && request.resource.data.keys().hasOnly(['tipo','vigente','anterior','alteradoEm'])
+      && request.resource.data.tipo == tipo
+      && request.resource.data.anterior == resource.data.vigente
+      && request.resource.data.vigente.versao != resource.data.vigente.versao
+      && request.resource.data.vigente.autorUid == request.auth.uid;
+    allow delete: if false;
+   }
+  }
+
+  match /{document=**} {allow read, write: if false;}
+ }
+}
+// Apenas laboratório fictício. As regras não são autorização por função
+// nem garantem segurança de produção contra clientes adulterados.

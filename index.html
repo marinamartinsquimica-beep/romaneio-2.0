@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#254D69">
-<link rel="icon" href="icon-192.png">
+<link rel="icon" type="image/svg+xml" href="icon-romaneio-2-azul.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="vendor/jszip.min.js"></script>
@@ -2392,6 +2392,12 @@ let pendingServiceWorker = null;
 
 function showUpdateBanner(worker) {
     pendingServiceWorker = worker || pendingServiceWorker;
+    // Evitar avisos repetidos durante atualizações sucessivas do cache PWA.
+    const chaveAviso = "romaneio_update_banner_ultima_exibicao";
+    const agora = Date.now();
+    const ultima = Number(sessionStorage.getItem(chaveAviso) || 0);
+    if (ultima && agora - ultima < 5 * 60 * 1000) return;
+    sessionStorage.setItem(chaveAviso, String(agora));
     const banner = document.getElementById("updateBanner");
     if (banner) banner.classList.add("show");
 }
@@ -2875,6 +2881,10 @@ function operadorAtualizarCardsEstoque(){
  document.getElementById('opEstoqueSkus').textContent=itens?new Set(itens.map(i=>String(i.sku).trim().toLocaleUpperCase('pt-BR'))).size.toLocaleString('pt-BR'):'—';
 }
 function abrirPainelOperador(){document.body.classList.add('modo-operador');if(window.matchMedia('(max-width:767px)').matches)return;document.getElementById('abaTotal').classList.add('hidden');document.getElementById('abaCaminhao').classList.add('hidden');document.getElementById('painelOperadorDesktop').classList.add('active');document.getElementById('tabTotal').classList.remove('active');document.getElementById('tabCaminhao').classList.remove('active');document.getElementById('abrirPainelOperador').classList.add('active');document.getElementById('abrirPainelOperador').setAttribute('aria-pressed','true');operadorSelecionarAba('visao');operadorAtualizarPainel();}
+// Desktop inicia no Painel do Operador; no celular preserva a entrada do Romaneio.
+window.addEventListener('DOMContentLoaded',()=>{
+ if(window.matchMedia('(min-width:768px)').matches)abrirPainelOperador();
+});
 function operadorVoltarRomaneios(){document.body.classList.remove('modo-operador');document.getElementById('painelOperadorDesktop').classList.remove('active');document.getElementById('abrirPainelOperador').setAttribute('aria-pressed','false');abrirAba('total');document.querySelector('#tabela')?.scrollIntoView({behavior:'smooth',block:'start'});}
 function operadorAbrirEstoque(){operadorSelecionarAba('estoque');document.getElementById('opTabEstoque')?.scrollIntoView({behavior:'smooth',block:'start'});}
 function operadorVerPendencias(){if(typeof consultarFilaMovimentos==='function')consultarFilaMovimentos();operadorAtualizarPainel();}
@@ -2885,17 +2895,33 @@ async function sincronizarRomaneioCelular(){
   if(!navigator.onLine)throw Error('Sem internet. Os registros estão preservados para o próximo envio.');
   const {sincronizarMovimentos250}=await import('./integracao/envio-movimentos250.js');
   await sincronizarMovimentos250();
+  localStorage.setItem('romaneio2_solicitar_sincronizacao_v1',String(Date.now()));
   const qtd=lerFilaMovimentos().length;
   atualizarIndicadorFilaMovimentos();
   if(qtd)throw Error(qtd+' movimentação(ões) ainda pendente(s). Nada foi descartado.');
   if(botao)botao.textContent='SINCRONIZADO';
+  return true;
   setTimeout(()=>{if(botao)botao.textContent='SINCRONIZAR';},2500);
  }catch(e){
   if(botao)botao.textContent='PENDENTE';
   console.warn('Sincronização preservada:',e);
+  return false;
  }finally{if(botao)botao.disabled=false;}
 }
-function operadorSincronizarAgora(){operadorSelecionarAba('importacao');document.getElementById('etapa4Arquivo')?.focus();}
+async function operadorSincronizarAgora(){
+ const botao=document.querySelector('[onclick="operadorSincronizarAgora()"]');
+ if(botao){botao.disabled=true;botao.textContent='SINCRONIZANDO...';}
+ try{
+  const enviado=await sincronizarRomaneioCelular();
+  if(!enviado)throw Error('Envio não confirmado; fila preservada.');
+  localStorage.setItem('romaneio2_solicitar_sincronizacao_v1',String(Date.now()));
+  if(botao)botao.textContent='CONSULTANDO FIREBASE...';
+  await new Promise(resolve=>setTimeout(resolve,1800));
+  if(typeof operadorAtualizarPainel==='function')operadorAtualizarPainel();
+  if(botao)botao.textContent='SINCRONIZAÇÃO SOLICITADA';
+ }catch(e){if(botao)botao.textContent='VERIFICAR CONEXÃO';console.warn('Sincronização manual:',e);}
+ finally{setTimeout(()=>{if(botao){botao.disabled=false;botao.textContent='SINCRONIZAR AGORA';}},2500);}
+}
 document.getElementById('tabTotal')?.addEventListener('click',()=>{document.getElementById('painelOperadorDesktop').classList.remove('active');document.getElementById('abrirPainelOperador').setAttribute('aria-pressed','false')});
 document.getElementById('tabCaminhao')?.addEventListener('click',()=>{document.getElementById('painelOperadorDesktop').classList.remove('active');document.getElementById('abrirPainelOperador').setAttribute('aria-pressed','false')});
 window.matchMedia('(max-width:767px)').addEventListener('change',event=>{if(event.matches&&document.getElementById('painelOperadorDesktop').classList.contains('active'))abrirAba('total');});
@@ -2906,13 +2932,32 @@ window.matchMedia('(max-width:767px)').addEventListener('change',event=>{if(even
 // Executa recepção segura em segundo plano, sem abrir telas ou efetuar baixa de estoque.
 (function(){
  const central=document.createElement('iframe');
- central.src='./integracao/central-conexao.html';
+ central.src='./integracao/central-conexao.html?estado=418d599';
  central.title='Sincronização automática do Romaneio';
  central.tabIndex=-1;
  central.setAttribute('aria-hidden','true');
  central.style.cssText='position:absolute;width:0;height:0;border:0;opacity:0;pointer-events:none';
  document.body.appendChild(central);
  let atualizando=false;
+ // Avisos internos Raiar: discretos, não bloqueantes, sem notificações do sistema operacional.
+ let avisoTimer;
+ function avisoSincronizacaoRaiar(mensagem,erro=false){
+  let aviso=document.getElementById('avisoSyncRaiar');
+  if(!aviso){
+   aviso=document.createElement('div');aviso.id='avisoSyncRaiar';aviso.setAttribute('role','status');aviso.setAttribute('aria-live','polite');
+   aviso.style.cssText='position:fixed;right:18px;bottom:20px;z-index:99998;max-width:min(420px,calc(100vw - 36px));background:#254D69;color:#fff;border-left:5px solid #5CDCF2;border-radius:12px;padding:14px 18px;box-shadow:0 10px 28px rgba(0,0,0,.25);font:600 14px Arial,sans-serif;';
+   document.body.appendChild(aviso);
+  }
+  aviso.style.borderLeftColor=erro?'#ffcf45':'#5CDCF2';
+  aviso.textContent=mensagem;aviso.hidden=false;
+  clearTimeout(avisoTimer);
+  // Conflitos exigem conferência: aviso permanece até resolução explícita.
+  if(!erro)avisoTimer=setTimeout(()=>aviso.hidden=true,6000);
+ }
+ window.addEventListener('message',event=>{
+  if(event.origin!==location.origin||event.data?.origem!=='romaneio-sync')return;
+  if(event.data.estado==='erro')avisoSincronizacaoRaiar('Sincronização pendente: '+String(event.data.mensagem||'verifique a Central de Conexão'),true);
+ });
  window.addEventListener('storage',event=>{
   if(event.key==='romaneio2_expedicoes_excluidas_pendentes_v1'){
    if(typeof operadorAtualizarPainel==='function')operadorAtualizarPainel();
@@ -2946,6 +2991,10 @@ window.matchMedia('(max-width:767px)').addEventListener('change',event=>{if(even
    if(typeof atualizarIndicadorFilaMovimentos==='function')atualizarIndicadorFilaMovimentos();
    if(typeof operadorAtualizarPainel==='function')operadorAtualizarPainel();
    if(typeof atualizarDashboardVisual==='function')atualizarDashboardVisual();
+   const antes=(()=>{try{return JSON.parse(event.oldValue||'[]')}catch{return []}})();
+   const anteriores=new Map((Array.isArray(antes)?antes:[]).filter(x=>x.registroId).map(x=>[String(x.registroId),x]));
+   const mudaram=recebidos.filter(x=>!anteriores.has(String(x.registroId||''))||String(anteriores.get(String(x.registroId))?.caixas)!==String(x.caixas));
+   if(mudaram.length)avisoSincronizacaoRaiar('Romaneio atualizado: '+mudaram.length+' registro(s) recebido(s) do Firebase.');
   }finally{atualizando=false;}
  });
 })();

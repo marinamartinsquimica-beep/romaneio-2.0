@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - desenvolvimento/etapa-4-estoques-paripassu
+      - desenvolvimento/persistencia-usuarios-excel
+      - homologacao/multiusuarios-romaneio-2
       - main
   pull_request:
     paths:
@@ -25,6 +27,14 @@ jobs:
           node --check integracao/operacoes-estoque.mjs
           node --check integracao/estoques-firebase-ui.mjs
           node --check integracao/publicacao-estoques.mjs
+          node --check integracao/ambiente-compartilhado.mjs
+          node --check integracao/migracao-historico.mjs
+          node --check integracao/validar-corte-migracao.mjs
+          node --check integracao/conferir-backup.mjs
+          node --check integracao/contrato-homologacao.mjs
+          node --check integracao/guarda-firebase-homologacao.mjs
+          node --check integracao/perfis-usuarios.mjs
+          node --check integracao/envio-movimentos250.js
           node testes/verificar-sintaxe-html.mjs
-      - name: Executar testes de estoque
-        run: node --test integracao/*.test.mjs
+      - name: Executar testes de estoque e perfis
+        run: node --test integracao/*.test.mjs testes/perfis-usuarios.test.mjs testes/estoque-ambiente-compartilhado.test.mjs testes/migracao-historico.test.mjs testes/validar-corte-migracao.test.mjs testes/conferir-backup.test.mjs testes/contrato-homologacao.test.mjs testes/guarda-firebase-homologacao.test.mjs testes/regras-homologacao.test.mjs

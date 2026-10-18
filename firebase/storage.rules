@@ -1,0 +1,25 @@
+rules_version = '2';
+service firebase.storage {
+ match /b/{bucket}/o {
+  function signedIn(){return request.auth != null;}
+  function member(ambiente){
+   return signedIn() &&
+    firestore.exists(/databases/(default)/documents/romaneio_ambientes/$(ambiente)/membros/$(request.auth.uid)) &&
+    firestore.get(/databases/(default)/documents/romaneio_ambientes/$(ambiente)/membros/$(request.auth.uid)).data.ativo == true;
+  }
+  function publisher(ambiente){
+   return member(ambiente) &&
+    firestore.get(/databases/(default)/documents/romaneio_ambientes/$(ambiente)/membros/$(request.auth.uid)).data.perfil in ['administrador', 'operador'];
+  }
+  match /romaneio_ambientes/{ambiente}/excel/{tipo}/{arquivo} {
+   allow read: if member(ambiente) && (tipo == 'embalado' || tipo == 'paripassu');
+   // Cada versão de Excel é imutável: administrador e operador podem publicar.
+   allow create: if publisher(ambiente) &&
+     (tipo == 'embalado' || tipo == 'paripassu') &&
+     arquivo.matches('[A-Za-z0-9_-]+\\.xlsx') &&
+     request.resource.size > 0 && request.resource.size <= 20 * 1024 * 1024 &&
+     request.resource.contentType == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+   allow update, delete: if false;
+  }
+ }
+}
