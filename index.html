@@ -3212,13 +3212,9 @@ document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async(
  try{
   const atual=resultadoEtapa4;
   if(!atual||atual.modo!=='baixa')throw Error('Prepare a conferência antes de registrar a baixa.');
+  if(atual.confirmada)throw Error('Esta baixa já foi confirmada. Baixe o Excel e depois apague o romaneio.');
   if(!atual.destino.startsWith('arquivo:')&&atual.destino!=='ativo:__TODOS__')throw Error('Selecione TODOS OS DESTINOS ou uma pendência de expedição para a baixa.');
-  if(!atual.exportado){
-   const faltam=atual.resultado.pendencias.reduce((t,x)=>t+Number(x.caixas||0),0);
-   await confirmarRaiar('DOWNLOAD OBRIGATÓRIO\n\nCaixas não baixadas / ausentes: '+faltam+'\n\nClique primeiro em BAIXAR EXCEL DO RESULTADO e confira o arquivo atualizado. Sem gerar o Excel, a baixa não pode ser registrada.');
-   return;
-  }
-  if(!atual.resultado.aplicados.length)
+  // O Excel pode ser baixado antes ou depois da confirmação, sem bloquear a baixa.\n  if(!atual.resultado.aplicados.length)
    throw Error('Nenhuma caixa pôde ser baixada. Confira o estoque antes de registrar.');
   if(document.getElementById('etapa4DestinoBaixa').value!==atual.destino)
    throw Error('O destino mudou. Prepare novamente a conferência.');
@@ -3242,10 +3238,12 @@ document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async(
   localStorage.setItem(CHAVE_EXPEDICOES_PENDENTES,JSON.stringify(lista));operadorAtualizarPainel();
   const confirmado=Boolean(executado);
   if(!confirmado)return;
-  status.textContent='Baixa registrada para '+destino+'. '+totalBaixado+' caixa(s) descontadas do estoque no Firebase e '+totalNaoBaixado+' não baixadas. Pendência arquivada.';
+  status.textContent='Baixa registrada para '+destino+'. '+totalBaixado+' caixa(s) descontadas do estoque no Firebase e '+totalNaoBaixado+' não baixadas. Baixe o Excel atualizado e, depois, use APAGAR TODO O ROMANEIO.';
   window.renderizarPendenciasConferenciaEstoque?.();
-  resultadoEtapa4=null;
-  const btn=document.getElementById('etapa4ConfirmarBaixa');btn.hidden=true;btn.disabled=true;
+  // Manter o resultado preparado para permitir baixar o Excel após a baixa efetiva.
+  resultadoEtapa4.confirmada=true;
+  document.getElementById('etapa4Exportar').disabled=false;
+  const btn=document.getElementById('etapa4ConfirmarBaixa');btn.hidden=false;btn.disabled=true;
   document.getElementById('etapa4OrientacaoConfirmacao').hidden=true;
   atualizarDestinosBaixa();
  }catch(e){status.textContent='Baixa não confirmada: '+e.message;}
