@@ -272,7 +272,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.80</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.81</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
 <div class="romaneio-backup-actions" style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button class="desktop-backup-action" type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Pendências de sincronização</button><button class="desktop-backup-action" type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button><button class="mobile-sync-action" type="button" onclick="sincronizarRomaneioCelular()" style="width:auto;background:#5CDCF2;color:#254D69;font-weight:800;font-size:13px;padding:10px 18px;border-radius:12px;border:2px solid #254D69">SINCRONIZAR</button></div>
 <section class="dashboard"><div class="metric"><div class="ico">📋</div><div><b id="dashRegistros">0</b><span id="dashRegistrosLabel">Registros totais</span></div></div><div class="metric"><div class="ico">📦</div><div><b id="dashCaixas">0</b><span id="dashCaixasLabel">Caixas totais</span></div></div><div class="metric"><div class="ico">🧱</div><div><b id="dashPaletes">0</b><span id="dashPaletesLabel">Paletes totais</span></div></div><div class="metric"><div class="ico">📍</div><div><b id="dashDestinos">0</b><span id="dashDestinosLabel">Destinos totais</span></div></div><div class="metric"><div class="ico">🕒</div><div><b id="dashUltimo">--</b><span>Último registro</span></div></div></section>
@@ -391,7 +391,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.80";
+const APP_VERSION = "2.0.81";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -3053,7 +3053,7 @@ function marcarExpedicoesBaixadasNoArquivo(confirmadas,resumoBaixa=null){
  return alterados;
 }
 function exportarExpedicaoExcluida(destino){
- const itens=lerExpedicoesPendentes().filter(x=>x.destino===destino&&x.estado!=='BAIXA_CONCLUIDA');
+ const itens=lerExpedicoesPendentes().filter(x=>x.destino===destino&&x.estado!=='BAIXA_CONCLUIDA'&&x.estado!=='ARQUIVADA_APOS_CONFERENCIA');
  if(!itens.length)return;
  const tab=document.createElement('table'),body=tab.createTBody();
  for(const item of itens){const tr=body.insertRow();for(const v of [item.data,item.sku,item.destino,item.palete,item.loteCompleto,item.lote,item.postura,item.caixas,item.observacoes])tr.insertCell().textContent=String(v??'');}
@@ -3063,14 +3063,58 @@ function exportarExpedicaoExcluida(destino){
 async function confirmarBaixaExpedicao(destino,resumoBaixa=null){
  if(!await confirmarRaiar('Confirmar que a baixa do estoque do destino '+destino+' foi concluída e conferida?'))return false;
  const lista=lerExpedicoesPendentes(),agora=new Date().toISOString();
- for(const x of lista)if(!ativos&&(totalGeral||x.destino===destino)&&x.estado!=='BAIXA_CONCLUIDA'){x.estado='BAIXA_CONCLUIDA';x.baixaConfirmadaEm=agora;if(resumoBaixa)x.resumoBaixa={...resumoBaixa};}
+ for(const x of lista)if(!ativos&&(totalGeral||x.destino===destino)&&x.estado!=='BAIXA_CONCLUIDA'&&x.estado!=='ARQUIVADA_APOS_CONFERENCIA'){x.estado='BAIXA_CONCLUIDA';x.baixaConfirmadaEm=agora;if(resumoBaixa)x.resumoBaixa={...resumoBaixa};}
  localStorage.setItem(CHAVE_EXPEDICOES_PENDENTES,JSON.stringify(lista));operadorAtualizarPainel();
  return true;
+}
+// Exceção auditável para baixa anterior cujo documento antigo não pode ser
+// comprovado: arquiva a PENDÊNCIA LOCAL, sem dizer que houve baixa nova no Firebase.
+// Não baixa saldo, não altera outras expedições nem toca na fila de movimentos.
+async function arquivarPendenciaHistoricaSemNovaBaixa(destino){
+ const registros=lerExpedicoesPendentes();
+ const selecionar=x=>x.destino===destino&&x.estado!=='BAIXA_CONCLUIDA'&&x.estado!=='ARQUIVADA_APOS_CONFERENCIA';
+ const pendentes=registros.filter(selecionar);
+ if(!pendentes.length){operadorAtualizarPainel();return;}
+ const cx=pendentes.reduce((a,x)=>a+Number(x.caixas||0),0);
+ const identificacao=pendentes.map(x=>[x.sku,x.loteCompleto||x.lote,x.caixas+' CX'].join(' / ')).join('; ');
+ const aprovado=await confirmarRaiar(
+  'ENCERRAR SOMENTE A PENDÊNCIA HISTÓRICA?\n\nDestino: '+destino+
+  '\nRegistros: '+pendentes.length+' | Caixas: '+cx+
+  '\n'+identificacao+
+  '\n\nUse SOMENTE se a baixa já foi executada e conferida anteriormente. Esta operação NÃO registra uma baixa, NÃO modifica estoque e NÃO altera o Firebase.'+
+  '\n\nO encerramento ficará registrado no histórico local de auditoria. Se não tiver certeza da baixa anterior, escolha CANCELAR.');
+ if(!aprovado)return;
+ const atuais=lerExpedicoesPendentes();
+ const ids=new Set(pendentes.map(x=>String(x.movimentoExclusaoId||'')+'|'+String(x.registroId||'')+'|'+[x.destino,x.palete,x.sku,x.loteCompleto||x.lote,x.caixas].join('|')));
+ const key=x=>String(x.movimentoExclusaoId||'')+'|'+String(x.registroId||'')+'|'+[x.destino,x.palete,x.sku,x.loteCompleto||x.lote,x.caixas].join('|');
+ const agora=new Date().toISOString(),afetados=[];
+ for(const x of atuais){
+  if(!selecionar(x)||!ids.has(key(x)))continue;
+  x.estado='ARQUIVADA_APOS_CONFERENCIA';
+  x.arquivadaSemNovaBaixaEm=agora;
+  x.motivoArquivo='Operador confirmou baixa anterior; não houve novo desconto nem alteração do Firebase.';
+  afetados.push({...x});
+ }
+ if(!afetados.length)return;
+ const chaveAuditoria='romaneio2_auditoria_pendencias_historicas_v1';
+ const anterior=lerJsonLocalStorage(chaveAuditoria,[]);
+ const journal=Array.isArray(anterior)?anterior:[];
+ journal.push({id:criarIdentificadorMovimento(),data:agora,destino,
+  tipo:'ARQUIVO_HISTORICO_SEM_NOVA_BAIXA',registros:afetados,caixas:cx});
+ try{
+  // Primeiro grava evidência, depois atualiza a lista de pendências.
+  localStorage.setItem(chaveAuditoria,JSON.stringify(journal));
+  localStorage.setItem(CHAVE_EXPEDICOES_PENDENTES,JSON.stringify(atuais));
+ }catch(e){alert('Falha ao salvar auditoria; pendências preservadas: '+e.message);return;}
+ operadorAtualizarPainel();
+ atualizarDestinosBaixa();
+ const status=document.getElementById('etapa4OperacoesStatus');
+ if(status)status.textContent='Pendência histórica de '+destino+' arquivada por confirmação do operador. NENHUMA caixa foi descontada e NENHUMA baixa foi gravada no Firebase.';
 }
 function mostrarExpedicoesExcluidasOperador(){
  const painel=document.getElementById('historicoDestinosExcluidos'),alvo=document.getElementById('listaDestinosExcluidos');
  if(!painel||!alvo)return;
- const itens=lerExpedicoesPendentes().filter(x=>x.estado!=='BAIXA_CONCLUIDA');
+ const itens=lerExpedicoesPendentes().filter(x=>x.estado!=='BAIXA_CONCLUIDA'&&x.estado!=='ARQUIVADA_APOS_CONFERENCIA');
  painel.hidden=!itens.length;alvo.replaceChildren();
  const grupos=new Map();
  for(const item of itens){const g=grupos.get(item.destino)||[];g.push(item);grupos.set(item.destino,g);}
@@ -3080,7 +3124,8 @@ function mostrarExpedicoesExcluidasOperador(){
   const titulo=document.createElement('p');titulo.textContent=destino+' — '+paletes.size+' paletes, '+caixas+' caixas — REMOVIDO DO CELULAR / PRESERVADO NO COMPUTADOR / BAIXA PENDENTE';
   const exportar=document.createElement('button');exportar.textContent='BAIXAR ROMANEIO EXCEL';exportar.onclick=()=>exportarExpedicaoExcluida(destino);
   const preparar=document.createElement('button');preparar.textContent='PREPARAR BAIXA';preparar.onclick=()=>{operadorSelecionarAba('movimentos');window.dispatchEvent(new CustomEvent('romaneio:preparar-baixa-destino',{detail:{destino}}));};
-  div.append(titulo,exportar,preparar);alvo.append(div);
+  const arquivar=document.createElement('button');arquivar.className='btn-secondary';arquivar.textContent='ENCERRAR PENDÊNCIA ANTIGA (SEM BAIXA)';arquivar.onclick=()=>arquivarPendenciaHistoricaSemNovaBaixa(destino);
+  div.append(titulo,exportar,preparar,arquivar);alvo.append(div);
  }
 }
 function operadorAtualizarPainel(){
@@ -3218,6 +3263,7 @@ window.matchMedia('(max-width:767px)').addEventListener('change',event=>{if(even
  window.addEventListener('storage',event=>{
   if(event.key==='romaneio2_expedicoes_excluidas_pendentes_v1'){
    if(typeof operadorAtualizarPainel==='function')operadorAtualizarPainel();
+   if(typeof atualizarDestinosBaixa==='function')atualizarDestinosBaixa();
    return;
   }
   if(event.key!=='entradas'||atualizando)return;
@@ -3312,7 +3358,7 @@ function atualizarDestinosBaixa(){
  const campo=document.getElementById('etapa4DestinoBaixa'),anterior=campo.value||'ativo:__TODOS__';
  const nomes=[...new Set([...document.querySelectorAll('#tabela tbody tr')].map(tr=>String(tr.cells[2]?.textContent||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
  campo.replaceChildren();const todos=new Option('TODOS OS DESTINOS — BAIXA TOTAL','ativo:__TODOS__');campo.append(todos);
- const arquivos=[...new Set(lerExpedicoesPendentes().filter(x=>x.estado!=='BAIXA_CONCLUIDA').map(x=>x.destino))];
+ const arquivos=[...new Set(lerExpedicoesPendentes().filter(x=>x.estado!=='BAIXA_CONCLUIDA'&&x.estado!=='ARQUIVADA_APOS_CONFERENCIA').map(x=>x.destino))];
  if(arquivos.length)campo.append(new Option('TODAS AS PENDÊNCIAS EXCLUÍDAS — BAIXA TOTAL','arquivo:__TODOS__'));
  for(const nome of nomes.filter(n=>!arquivos.includes(n)))campo.append(new Option(nome+' — no computador / conferir exclusão no celular',nome));
  for(const nome of arquivos)campo.append(new Option(nome+' — excluído no celular / baixa pendente','arquivo:'+nome));
@@ -3328,7 +3374,7 @@ function movimentosDoRomaneio(){
  const selecionado=document.getElementById('etapa4DestinoBaixa')?.value||'ativo:__TODOS__';
  if(selecionado.startsWith('arquivo:')){
   const total=selecionado==='arquivo:__TODOS__';
-  const itens=lerExpedicoesPendentes().filter(x=>x.estado!=='BAIXA_CONCLUIDA'&&(total||x.destino===selecionado.slice(8)));
+  const itens=lerExpedicoesPendentes().filter(x=>x.estado!=='BAIXA_CONCLUIDA'&&x.estado!=='ARQUIVADA_APOS_CONFERENCIA'&&(total||x.destino===selecionado.slice(8)));
   if(!itens.length)throw Error('Não há caixas pendentes registradas neste destino.');
   return itens.map((x,i)=>({id:'arquivo-'+i,sku:x.sku,lote:x.loteCompleto,caixas:Number(x.caixas)}));
  }
@@ -3526,7 +3572,7 @@ document.getElementById('etapa4Preparar')?.addEventListener('click',async()=>{
   if(modo==='baixa'){
    const selecao=document.getElementById('etapa4DestinoBaixa')?.value||'ativo:__TODOS__';
    const arquivo=selecao.startsWith('arquivo:');
-   const pendencias=arquivo?lerExpedicoesPendentes().filter(x=>x.estado!=='BAIXA_CONCLUIDA'&&(selecao==='arquivo:__TODOS__'||x.destino===selecao.slice(8))):lerRegistrosAtivosParaBaixa();
+   const pendencias=arquivo?lerExpedicoesPendentes().filter(x=>x.estado!=='BAIXA_CONCLUIDA'&&x.estado!=='ARQUIVADA_APOS_CONFERENCIA'&&(selecao==='arquivo:__TODOS__'||x.destino===selecao.slice(8))):lerRegistrosAtivosParaBaixa();
    if(typeof window.filtrarExpedicoesParaBaixa!=='function')throw Error('Aguardando conexão com o Firebase para verificar baixas anteriores.');
    const identificador=selecao==='ativo:__TODOS__'||selecao==='arquivo:__TODOS__'?'TODOS OS DESTINOS':selecao.slice(8);
    const verificados=await window.filtrarExpedicoesParaBaixa({destino:identificador,registros:pendencias});
