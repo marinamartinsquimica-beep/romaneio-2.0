@@ -3144,7 +3144,7 @@ function atualizarDestinosBaixa(){
  if(arquivos.length)campo.append(new Option('TODAS AS PENDÊNCIAS EXCLUÍDAS — BAIXA TOTAL','arquivo:__TODOS__'));
  for(const nome of nomes.filter(n=>!arquivos.includes(n)))campo.append(new Option(nome+' — no computador / conferir exclusão no celular',nome));
  for(const nome of arquivos)campo.append(new Option(nome+' — excluído no celular / baixa pendente','arquivo:'+nome));
- campo.value=arquivos.includes(anterior)?'arquivo:'+anterior:((nomes.includes(anterior)&&!arquivos.includes(anterior))||arquivos.some(n=>'arquivo:'+n===anterior)?anterior:(arquivos.length?'arquivo:__TODOS__':''));
+ campo.value=(anterior==='arquivo:__TODOS__'&&arquivos.length)?anterior:((nomes.includes(anterior)&&!arquivos.includes(anterior))||arquivos.some(n=>'arquivo:'+n===anterior)?anterior:(arquivos.length?'arquivo:__TODOS__':''));
 }
 function movimentosDoRomaneio(){
  const selecionado=document.getElementById('etapa4DestinoBaixa')?.value||'';
@@ -3208,7 +3208,16 @@ document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async(
   const atual=resultadoEtapa4;
   if(!atual||atual.modo!=='baixa')throw Error('Prepare a conferência antes de registrar a baixa.');
   if(!atual.destino.startsWith('arquivo:')){
-   await confirmarRaiar('Este destino ainda está ativo neste computador. A conclusão da pendência é permitida somente depois da exclusão confirmada no celular. Confira a sincronização do destino.');
+   const seletor=document.getElementById('etapa4DestinoBaixa');
+   const pendencias=lerExpedicoesPendentes().filter(x=>x.estado!=='BAIXA_CONCLUIDA');
+   if(pendencias.length){
+    atualizarDestinosBaixa();
+    seletor.value='arquivo:__TODOS__';
+    document.getElementById('etapa4Preparar').click();
+    await confirmarRaiar('BAIXA TOTAL\\n\\nA seleção anterior era uma conferência de paletes ativos. Selecionei TODAS AS PENDÊNCIAS EXCLUÍDAS e atualizei a conferência. Baixe o Excel correspondente antes de confirmar a baixa.');
+   }else{
+    await confirmarRaiar('Não existem expedições excluídas aguardando baixa. Confira a sincronização do celular antes de registrar.');
+   }
    return;
   }
   if(!atual.exportado){
