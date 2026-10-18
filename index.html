@@ -2499,7 +2499,7 @@ let verificacaoVersaoEmAndamento = null;
 // Não confundir worker em espera, cache antigo ou versão igual com novo release.
 function versaoPublicadaMaisNova(publicada, instalada = APP_VERSION) {
     const partes = valor => {
-        if (!/^\\d+(?:\\.\\d+){1,3}$/.test(String(valor || ""))) return null;
+        if (!/^\d+(?:\.\d+){1,3}$/.test(String(valor || ""))) return null;
         return String(valor).split(".").map(Number);
     };
     const nova = partes(publicada), atual = partes(instalada);
