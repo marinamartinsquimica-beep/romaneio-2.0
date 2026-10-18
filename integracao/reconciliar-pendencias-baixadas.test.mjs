@@ -65,7 +65,7 @@ test('o código principal não gera Excel se todas as expedições já foram con
 });
 test('sincronizador usa consulta remota e salva somente dados conciliados',()=>{
  const source=readFileSync(new URL('./central-conexao.html',import.meta.url),'utf8');
- assert.match(source,/await reconciliarPendenciasJaBaixadas\(final,async id=>/);
+ assert.match(source,/await reconciliarPendenciasJaBaixadas\(final,buscarBaixa\)/);
  assert.match(source,/getDocFromServer\(doc\(db,\.\.\.raiz,'expedicoes',id\)\)/);
  assert.match(source,/localStorage\.setItem\(chave,JSON\.stringify\(comprovadas\.registros\)\)/);
 });
