@@ -3173,7 +3173,7 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
    resultadoEtapa4.exportado=true;
    const completa=resultadoEtapa4.destino.startsWith('arquivo:')&&resultadoEtapa4.resultado.aplicados.length>0;
    const botao=document.getElementById('etapa4ConfirmarBaixa');
-   botao.hidden=!resultadoEtapa4.destino.startsWith('arquivo:');botao.disabled=!completa;
+   botao.hidden=!resultadoEtapa4.destino.startsWith('arquivo:');botao.disabled=false;
    document.getElementById('etapa4OrientacaoConfirmacao').hidden=!resultadoEtapa4.destino.startsWith('arquivo:');
   }
   status.textContent=res.operacao==='baixa'?'Excel gerado: '+res.baixadas+' caixa(s) baixadas; '+res.removidas+' linha(s) zeradas removidas; '+res.naoBaixadas+' caixa(s) não baixadas. Estoque: '+res.estoqueAntes+' → '+res.estoqueDepois+' caixas. Confira o Excel antes de publicar no Firebase.':'Excel de ajuste gerado com '+res.registros+' registros no histórico. Confira antes de publicar no Firebase.';
@@ -3184,15 +3184,21 @@ document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async(
  const status=document.getElementById('etapa4OperacoesStatus');
  try{
   const atual=resultadoEtapa4;
-  if(!atual||atual.modo!=='baixa'||!atual.exportado||!atual.destino.startsWith('arquivo:'))
-   throw Error('Prepare e exporte a baixa da expedição pendente antes de confirmar.');
+  if(!atual||atual.modo!=='baixa'||!atual.destino.startsWith('arquivo:'))
+   throw Error('Selecione e prepare uma expedição pendente antes de confirmar.');
+  if(!atual.exportado){
+   await confirmarRaiar('DOWNLOAD OBRIGATÓRIO\\n\\nBaixe primeiro o Excel de estoque atualizado em BAIXAR EXCEL DO RESULTADO. Sem gerar o arquivo, a baixa não poderá ser registrada.');
+   return;
+  }
   if(!atual.resultado.aplicados.length)
    throw Error('Nenhuma caixa pôde ser baixada. Confira o estoque antes de registrar.');
   if(document.getElementById('etapa4DestinoBaixa').value!==atual.destino)
    throw Error('O destino mudou. Prepare novamente a conferência.');
   const novaVersao=window.__etapa4Versoes?.embalado||'';
-  if(!novaVersao||novaVersao===atual.versaoInicial)
-   throw Error('Publique primeiro a nova planilha de Estoque Embalado no Firebase; a versão oficial ainda não mudou.');
+  if(!novaVersao||novaVersao===atual.versaoInicial){
+   await confirmarRaiar('PUBLICAÇÃO PENDENTE\\n\\nO Excel atualizado já foi gerado, mas o Estoque Embalado ainda não foi publicado no Firebase. Publique a planilha e tente novamente.');
+   return;
+  }
   const chave=x=>JSON.stringify([String(x.sku??'').trim().toUpperCase(),String(x.lote??'').trim().toUpperCase()]);
   const esperado=new Map(atual.resultado.itens.map(x=>[chave(x),Number(x.saldo)]));
   const atualCloud=window.__etapa4?.embalado||[];
@@ -3266,7 +3272,7 @@ document.getElementById('etapa4Preparar')?.addEventListener('click',()=>{
   resultadoEtapa4={modo,resultado,origem:e.map(x=>({...x})),destino:document.getElementById('etapa4DestinoBaixa')?.value||'TODOS',versaoInicial:window.__etapa4Versoes?.embalado||'',exportado:false};document.getElementById('etapa4Exportar').disabled=false;
   if(resultadoEtapa4.destino.startsWith('arquivo:')){
    const botao=document.getElementById('etapa4ConfirmarBaixa'),aviso=document.getElementById('etapa4OrientacaoConfirmacao');
-   botao.hidden=false;botao.disabled=true;aviso.hidden=false;
+   botao.hidden=false;botao.disabled=false;aviso.hidden=false;
    const faltam=resultado.pendencias.reduce((s,x)=>s+Number(x.caixas||0),0);
    aviso.textContent=faltam?'BAIXA PARCIAL: '+faltam+' caixa(s) sem saldo. Após gerar o Excel e publicar o estoque atualizado, o operador poderá confirmar mediante aviso.':'Gere o Excel, confira, publique o estoque atualizado no Firebase e confirme a conclusão.';
   }
