@@ -679,6 +679,19 @@ async function aplicarUniaoSeguraOperacional(){
    localStorage.setItem(chaveArquivo,JSON.stringify([...arquivadas,...novosArquivados]));
   }
 
+  // PROTEÇÃO OPERACIONAL: exclusões remotas do celular são pendências,
+  // nunca uma ordem para reduzir ou apagar paletes ativos deste computador.
+  // A exclusão deliberada no próprio aparelho continua via botão Romaneios.
+  if(resultado.length<entradas.length){
+   const localIds=new Set(resultado.map(x=>String(x.registroId||'')).filter(Boolean));
+   const eliminados=entradas.filter(x=>!localIds.has(String(x.registroId||'')));
+   if(eliminados.length){
+    const aviso='SINCRONIZAÇÃO PROTEGIDA: '+eliminados.length+' registro(s) locais seriam apagados pela união remota. Nenhuma exclusão foi aplicada. Verifique as pendências de baixa.';
+    saida.textContent=aviso;
+    if(window.parent!==window)window.parent.postMessage({origem:'romaneio-sync',estado:'erro',mensagem:aviso},location.origin);
+    return;
+   }
+  }
   // Não regravar entradas idênticas: evita atualizações repetidas entre tela principal e agente.
   if(JSON.stringify(resultado)===JSON.stringify(entradas)){
    if(uniaoAutomaticaEmAndamento)localStorage.removeItem(CHAVE_BACKUP_AUTOMATICO);
