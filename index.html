@@ -2882,10 +2882,11 @@ function exportarExpedicaoExcluida(destino){
  gerarArquivoExcel([...body.rows],'romaneio_excluido_'+nomeSeguroArquivo(destino)+'_'+total+'-caixas.xlsx','Destino '+destino);
 }
 async function confirmarBaixaExpedicao(destino){
- if(!await confirmarRaiar('Confirmar que a baixa do estoque do destino '+destino+' foi concluída e conferida?'))return;
+ if(!await confirmarRaiar('Confirmar que a baixa do estoque do destino '+destino+' foi concluída e conferida?'))return false;
  const lista=lerExpedicoesPendentes(),agora=new Date().toISOString();
  for(const x of lista)if(x.destino===destino&&x.estado!=='BAIXA_CONCLUIDA'){x.estado='BAIXA_CONCLUIDA';x.baixaConfirmadaEm=agora;}
  localStorage.setItem(CHAVE_EXPEDICOES_PENDENTES,JSON.stringify(lista));operadorAtualizarPainel();
+ return true;
 }
 function mostrarExpedicoesExcluidasOperador(){
  const painel=document.getElementById('historicoDestinosExcluidos'),alvo=document.getElementById('listaDestinosExcluidos');
@@ -3178,6 +3179,40 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
   status.textContent=res.operacao==='baixa'?'Excel gerado: '+res.baixadas+' caixa(s) baixadas; '+res.removidas+' linha(s) zeradas removidas; '+res.naoBaixadas+' caixa(s) não baixadas. Estoque: '+res.estoqueAntes+' → '+res.estoqueDepois+' caixas. Confira o Excel antes de publicar no Firebase.':'Excel de ajuste gerado com '+res.registros+' registros no histórico. Confira antes de publicar no Firebase.';
  }catch(e){status.textContent='Excel não gerado: '+e.message;}
  finally{button.disabled=false;}
+});
+document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async()=>{
+ const status=document.getElementById('etapa4OperacoesStatus');
+ try{
+  const atual=resultadoEtapa4;
+  if(!atual||atual.modo!=='baixa'||!atual.exportado||!atual.destino.startsWith('arquivo:'))
+   throw Error('Prepare e exporte a baixa da expedição pendente antes de confirmar.');
+  if(atual.resultado.pendencias.length||!atual.resultado.aplicados.length)
+   throw Error('Baixa parcial ou com pendência de estoque: não é possível concluir a expedição.');
+  if(document.getElementById('etapa4DestinoBaixa').value!==atual.destino)
+   throw Error('O destino mudou. Prepare novamente a conferência.');
+  const novaVersao=window.__etapa4Versoes?.embalado||'';
+  if(!novaVersao||novaVersao===atual.versaoInicial)
+   throw Error('Publique primeiro a nova planilha de Estoque Embalado no Firebase; a versão oficial ainda não mudou.');
+  const chave=x=>JSON.stringify([String(x.sku??'').trim().toUpperCase(),String(x.lote??'').trim().toUpperCase()]);
+  const esperado=new Map(atual.resultado.itens.map(x=>[chave(x),Number(x.saldo)]));
+  const atualCloud=window.__etapa4?.embalado||[];
+  const mapa=new Map(atualCloud.map(x=>[chave(x),Number(x.saldo)]));
+  for(const mov of atual.resultado.aplicados){
+   const k=chave(mov);
+   if(!esperado.has(k)||Number(mapa.get(k)??0)!==esperado.get(k))
+    throw Error('O saldo publicado ainda não corresponde à baixa preparada para SKU '+mov.sku+' / lote '+mov.lote+'. Confira a planilha e publique o estoque correto.');
+  }
+  const destino=atual.destino.slice('arquivo:'.length);
+  const baixados=lerExpedicoesPendentes().filter(x=>x.destino===destino&&x.estado!=='BAIXA_CONCLUIDA');
+  if(!baixados.length)throw Error('Expedição já concluída ou não localizada.');
+  const confirmado=await confirmarBaixaExpedicao(destino);
+  if(!confirmado)return;
+  status.textContent='Baixa concluída para '+destino+'. Pendência arquivada; estoque oficial previamente publicado permanece inalterado por esta confirmação.';
+  resultadoEtapa4=null;
+  const btn=document.getElementById('etapa4ConfirmarBaixa');btn.hidden=true;btn.disabled=true;
+  document.getElementById('etapa4OrientacaoConfirmacao').hidden=true;
+  atualizarDestinosBaixa();
+ }catch(e){status.textContent='Baixa não confirmada: '+e.message;}
 });
 document.getElementById('etapa4DestinoBaixa')?.addEventListener('focus',atualizarDestinosBaixa);
 window.addEventListener('romaneio:preparar-baixa-destino',event=>{
