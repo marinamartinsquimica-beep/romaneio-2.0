@@ -15,7 +15,7 @@ export async function filtrarExpedicoesJaBaixadas({registros,destino,buscar}){
    const principal=identidadeExpedicaoBaixa(registro,ativos);
    let encontrado=await buscar(principal.id);
    // Um registro baixado antes da exclusão mantém o ID ativo_<registroId>.
-   if(registro.movimentoExclusaoId&&registro.registroId&&!encontrado){
+   if(registro.movimentoExclusaoId&&registro.registroId&&encontrado?.estado!=='BAIXA_CONCLUIDA'){
     const anterior=identidadeExpedicaoBaixa({...registro,movimentoExclusaoId:''},true);
     const finalizado=await buscar(anterior.id);
     if(finalizado?.estado==='BAIXA_CONCLUIDA')encontrado=finalizado;
