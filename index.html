@@ -377,7 +377,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.62";
+const APP_VERSION = "2.0.63";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -2514,7 +2514,7 @@ async function verificarVersaoPublicada() {
 }
 
 if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js").then(reg => {
+    navigator.serviceWorker.register("service-worker.js", {updateViaCache:"none"}).then(reg => {
         swRegistration = reg;
         if (reg.waiting) showUpdateBanner(reg.waiting);
         reg.update().catch(e=>console.warn("Verificação do service worker indisponível",e));
