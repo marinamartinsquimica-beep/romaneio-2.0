@@ -2231,8 +2231,14 @@ async function reiniciarEntradas() {
     try{salvarHistoricoFechamento();}catch(e){alert(e.message);return;}
 
     // Exclusão no celular gera aviso de baixa. No computador, somente limpeza local.
-    if(dispositivoCelular) registrarMovimentosLocais([]);
-    else localStorage.setItem(BASE_MOVIMENTOS_KEY,'[]');
+    if(dispositivoCelular){
+      // Garantir que exclusões antigas entrem na fila mesmo em um primeiro uso sem estado-base.
+      if(!Array.isArray(lerJsonLocalStorage(BASE_MOVIMENTOS_KEY,null)))
+        localStorage.setItem(BASE_MOVIMENTOS_KEY,JSON.stringify(lerJsonLocalStorage('entradas',[])));
+      registrarMovimentosLocais([]);
+    } else {
+      localStorage.setItem(BASE_MOVIMENTOS_KEY,'[]');
+    }
     // Marca o início do próximo romaneio apenas neste dispositivo.
     localStorage.setItem('romaneio2_ultimo_reinicio_local_v1',new Date().toISOString());
     // Preservar a última cópia de segurança em vez de substituí-la por uma lista vazia.
