@@ -2221,7 +2221,10 @@ function renderizarHistoricoFechamentos(){
 async function reiniciarEntradas() {
     if (!await confirmarRaiar("APAGAR TODO O ROMANEIO?\n\nEsta ação apagará todas as entradas, paletes, placas e o histórico dos caminhões. Não será possível desfazer.")) return;
 
-    // Guardar snapshot recuperável antes de qualquer exclusão local.\n    try{salvarHistoricoFechamento();}catch(e){alert(e.message);return;}\n\n    // Registrar exclusões pendentes antes de apagar o romaneio. A fila permanece intacta.
+    // Guardar snapshot recuperável antes de qualquer exclusão local.
+    try{salvarHistoricoFechamento();}catch(e){alert(e.message);return;}
+
+    // Registrar exclusões pendentes antes de apagar o romaneio. A fila permanece intacta.
     registrarMovimentosLocais([]);
     // Preservar a última cópia de segurança em vez de substituí-la por uma lista vazia.
     localStorage.removeItem("entradas");
