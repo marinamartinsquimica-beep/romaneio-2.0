@@ -1014,6 +1014,7 @@ $('consultarConflitosCaixas').onclick=async()=>{
     saida.textContent='Verificando backup, registro local e última edição do Firebase…';
     botao.disabled=true;
     try{
+     if(!receberEntradasNoAparelho())throw Error('O celular não importa correções do computador. Corrija o registro diretamente no celular.');
      if(backupConflitoNaSessao===null)throw Error('Baixe a cópia de segurança local usando o botão desta Central de Conexão, sem fechar a página.');
      if(localStorage.getItem('entradas')!==backupConflitoNaSessao)throw Error('Os registros mudaram após o backup. Baixe uma nova cópia antes de conciliar.');
      if(lerOperacional().length)throw Error('Movimentações locais pendentes.');
