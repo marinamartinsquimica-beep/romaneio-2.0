@@ -128,3 +128,41 @@ $('etapa4Publicar')?.addEventListener('click',async()=>{
   mostrar('Publicado no Firebase: '+r.quantidadeLotes+' lotes, versão '+r.versao);
  }catch(e){mostrar('Publicação não concluída: '+e.message)}finally{b.disabled=false}
 });
+
+
+window.registrarBaixaConferida=async ({resultado,versaoInicial,destino,registros})=>{
+ await auth.authStateReady();
+ const usuario=auth.currentUser;
+ if(!usuario||!ambienteAtual?.ambienteId||!ambienteAtual?.permissoes?.publicarExcel)throw Error('Operador sem acesso para registrar a baixa.');
+ if(!navigator.onLine)throw Error('É necessário estar online.');
+ const chave=x=>JSON.stringify([N(x.sku),N(x.lote)]);
+ const origens=new Map(resultado.origem.map(x=>[chave(x),x]));
+ const aplicados=resultado.aplicados;
+ const quantidades=new Map();
+ for(const x of aplicados){const k=chave(x);quantidades.set(k,(quantidades.get(k)||0)+Number(x.caixas));}
+ const raiz=['romaneio_ambientes',ambienteAtual.ambienteId],estoqueRef=doc(db,...raiz,'estoques_oficiais','embalado');
+ const hash=x=>{let h=2166136261;for(const c of x)h=Math.imul(h^c.charCodeAt(0),16777619)>>>0;return h.toString(16)};
+ const base=x=>[x.destino,x.palete,x.sku,x.loteCompleto,x.lote,x.postura].map(v=>String(v??'').trim().toUpperCase()).join('|');
+ const ident=x=>String(x.movimentoExclusaoId||'')||'legado_'+hash(base(x));
+ const pendentes=registros.map(x=>({id:'exp_'+hash(ident(x))+'_'+ident(x).length,registro:x}));
+ if(!pendentes.length)throw Error('Nenhuma expedição pendente localizada.');
+ const baixadas=aplicados.reduce((a,x)=>a+Number(x.caixas),0);
+ const naoBaixadas=resultado.pendencias.reduce((a,x)=>a+Number(x.caixas),0);
+ const novaVersao=crypto.randomUUID();
+ await runTransaction(db,async tx=>{
+  const atual=await tx.get(estoqueRef);
+  if(!atual.exists())throw Error('Estoque oficial indisponível.');
+  const dados=atual.data();
+  if(dados.versao!==versaoInicial)throw Error('O estoque mudou desde a conferência. Prepare a baixa novamente.');
+  const snaps=[];
+  for(const x of pendentes){const ref=doc(db,...raiz,'expedicoes',x.id);snaps.push({ref,snap:await tx.get(ref)});}
+  if(snaps.some(x=>!x.snap.exists()||x.snap.data().estado!=='PENDENTE_BAIXA'))throw Error('Pendência não encontrada no Firebase ou já baixada. Atualize a tela.');
+  const saldos=new Map(dados.itens.map(x=>[chave(x),x]));
+  for(const [k,qtd] of quantidades){const atual=saldos.get(k);if(!atual||Number(atual.saldo)<qtd)throw Error('Saldo alterado ou insuficiente. Prepare a conferência novamente.');}
+  const itens=dados.itens.map(x=>{const qtd=quantidades.get(chave(x))||0;return qtd?{...x,saldo:Number(x.saldo)-qtd}:x;});
+  tx.update(estoqueRef,{tipo:'embalado',nome:dados.nome||'Estoque Embalado',versao:novaVersao,itens,importadoEm:new Date().toISOString(),autorUid:usuario.uid});
+  const agora=new Date().toISOString();
+  for(const x of snaps)tx.update(x.ref,{estado:'BAIXA_CONCLUIDA',baixaConfirmadaEm:agora,confirmadoPor:usuario.uid});
+ });
+ return {baixadas,naoBaixadas,versao:novaVersao};
+};
