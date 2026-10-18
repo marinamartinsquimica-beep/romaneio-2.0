@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v269-selecao-baixa";
+const CACHE_NAME = "romaneio-2-0-cache-v270-baixa-atomica";
 
 const FILES_TO_CACHE = [
   "./inicio.html",
@@ -10,6 +10,7 @@ const FILES_TO_CACHE = [
   "./integracao/baixa-modelo-aprovado.mjs",
   "./integracao/modelo-estoque-persistente.mjs",
   "./integracao/estoques-firebase-ui.mjs",
+  "./integracao/baixa-transacional.mjs",
   "./vendor/LICENSE-zxing.txt",
   "./qr-parser.js",
   "./manifest.json",
