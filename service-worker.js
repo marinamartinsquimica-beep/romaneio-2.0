@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v268-baixa-avisos";
+const CACHE_NAME = "romaneio-2-0-cache-v269-selecao-baixa";
 
 const FILES_TO_CACHE = [
   "./inicio.html",
