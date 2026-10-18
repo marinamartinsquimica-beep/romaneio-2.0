@@ -2268,7 +2268,7 @@ async function apagarHistoricoFechamento(id){
  const item=lerHistoricoFechamentos().find(x=>x.id===id);
  if(!item){alert('Este histórico não está mais disponível.');renderizarHistoricoFechamentos();return;}
  const descricao=new Date(item.data).toLocaleString('pt-BR')+' — '+(item.registros||0)+' registro(s)';
- if(!await confirmarRaiar('APAGAR HISTÓRICO?\\n\\n'+descricao+'\\n\\nEsta ação exclui SOMENTE esta cópia local do histórico. Não é possível recuperá-la depois. Baixe o Excel antes, se desejar guardá-la.\\n\\nOs outros históricos, romaneios ativos e o estoque não serão alterados.'))return;
+ if(!await confirmarRaiar('APAGAR HISTÓRICO?\n\n'+descricao+'\n\nEsta ação exclui SOMENTE esta cópia local do histórico. Não é possível recuperá-la depois. Baixe o Excel antes, se desejar guardá-la.\n\nOs outros históricos, romaneios ativos e o estoque não serão alterados.'))return;
  exclusaoHistoricoFechamentoEmAndamento=true;
  try{
   // Confere novamente a identidade antes de excluir a cópia. Nenhuma
