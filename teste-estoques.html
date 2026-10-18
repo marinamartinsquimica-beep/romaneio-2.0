@@ -11,7 +11,7 @@ const $=id=>document.getElementById(id),N=x=>String(x??'').normalize('NFD').repl
 const num=x=>{const s=String(x??'').trim();if(!s)return NaN;return Number(s.replace(',','.'))};
 const fmt=x=>Number(x).toLocaleString('pt-BR',{maximumFractionDigits:8});
 const key=(sku,lote)=>JSON.stringify([N(sku),N(lote)]);
-let pendencias=[];
+let pendencias=[];let pendenciasAnteriores=null;
 async function planilha(file,aba){if(!file)throw Error('Selecione os dois arquivos.');if(typeof XLSX==='undefined')throw Error('Biblioteca Excel não carregou. Verifique a conexão.');const w=XLSX.read(await file.arrayBuffer(),{type:'array'});const name=w.SheetNames.find(x=>N(x)===N(aba));if(!name)throw Error('Aba '+aba+' não encontrada em '+file.name);return XLSX.utils.sheet_to_json(w.Sheets[name],{header:1,defval:'',raw:true})}
 function cabecalho(rows,required){const i=rows.findIndex(r=>required.every(c=>r.some(x=>N(x)===c)));if(i<0)throw Error('Cabeçalhos não encontrados: '+required.join(', '));return {i,h:rows[i].map(N)}}
 function add(map,sku,lote,saldo,ovos=null,cap=null){const k=key(sku,lote);let a=map.get(k);if(a){if(cap!==null&&a.cap!==cap)throw Error('Capacidades diferentes no SKU '+sku+' lote '+lote);a.saldo+=saldo;if(ovos!==null)a.ovos+=ovos;}else map.set(k,{sku,lote,saldo,ovos,cap});}
@@ -25,7 +25,7 @@ function paripassu(rows){
   const nome=String(row[pi]??'').trim(),lote=String(row[li]??'').trim();
   if(!nome&&!lote)continue;
   if(N(nome).includes('INDUSTRI'))continue;
-  const sku=nome.match(/^(\\d+)\\s*-/),cap=nome.match(/\\(\\s*(\\d+)\\s*\\)/);
+  const sku=nome.match(/^(\d+)\s*-/),cap=nome.match(/\(\s*(\d+)\s*\)/);
   if(!sku||!cap||!Number(cap[1])){naoIdentificados++;continue}
   const ovos=num(row[qi]);if(!lote||!Number.isSafeInteger(ovos)||ovos<0)throw Error('Quantidade ou lote inválido no PariPassu: '+nome);
   const rastro=ri<0?'':String(row[ri]??'').trim(),chave=key(sku[1],lote);
@@ -45,6 +45,9 @@ function conferir(e,p){const arr=[],all=new Set([...e.keys(),...p.keys()]);let c
 function cell(tr,value){const td=document.createElement('td');td.textContent=String(value);tr.appendChild(td)}
 $('conferir').onclick=async()=>{const btn=$('conferir');btn.disabled=true;$('resultado').hidden=true;$('csv').disabled=true;$('msg').textContent='Lendo planilhas...';try{const [er,pr]=await Promise.all([planilha($('emb').files[0],'ESTOQUE'),planilha($('pari').files[0],'1. Estoque')]);const e=embalado(er),p=paripassu(pr),r=conferir(e,p.map);pendencias=r.arr;
  for(const c of p.conflitos){const k=key(c.sku,c.lote);const existe=pendencias.find(x=>key(x.sku,x.lote)===k);if(existe)existe.tipo+=' + Rastreabilidade divergente';else{const eItem=e.get(k),pItem=p.map.get(k);pendencias.push({sku:c.sku,lote:c.lote,tipo:'Rastreabilidade divergente',embalado:eItem?.saldo??0,paripassu:pItem?.saldo??0,diferenca:(eItem?.saldo??0)-(pItem?.saldo??0),ovos:pItem?.ovos??'',cap:pItem?.cap??''})}}
- const stats=$('stats');stats.replaceChildren();for(const v of ['Lotes conferidos: '+r.total,'Conformes: '+r.conformes,'Pendências: '+pendencias.length]){const el=document.createElement('span');el.textContent=v;stats.appendChild(el)}const body=$('linhas');body.replaceChildren();for(const a of pendencias){const tr=document.createElement('tr');[a.sku,a.lote,a.tipo,fmt(a.embalado),fmt(a.paripassu),fmt(a.diferenca),a.ovos===''?'':fmt(a.ovos),a.cap].forEach(v=>cell(tr,v));body.appendChild(tr)}$('resultado').hidden=false;$('csv').disabled=!pendencias.length;$('msg').textContent='Conferência concluída. '+p.duplicados+' registros repetidos de rastreabilidade desconsiderados. Nenhuma planilha foi alterada.'}catch(e){$('msg').textContent='Não foi possível conferir: '+e.message}finally{btn.disabled=false}};
+ const chavesPendentes=new Set(pendencias.map(x=>key(x.sku,x.lote)));
+ const resolvidas=pendenciasAnteriores===null?null:[...pendenciasAnteriores].filter(k=>!chavesPendentes.has(k));
+ pendenciasAnteriores=chavesPendentes;
+ const stats=$('stats');stats.replaceChildren();for(const v of ['Lotes conferidos: '+r.total,'Conformes: '+r.conformes,'Pendências: '+pendencias.length,...(resolvidas===null?[]:['Resolvidas após nova conferência: '+resolvidas.length])]){const el=document.createElement('span');el.textContent=v;stats.appendChild(el)}const body=$('linhas');body.replaceChildren();for(const a of pendencias){const tr=document.createElement('tr');[a.sku,a.lote,a.tipo,fmt(a.embalado),fmt(a.paripassu),fmt(a.diferenca),a.ovos===''?'':fmt(a.ovos),a.cap].forEach(v=>cell(tr,v));body.appendChild(tr)}$('resultado').hidden=false;$('csv').disabled=!pendencias.length;$('msg').textContent='Conferência concluída. '+p.duplicados+' registros repetidos de rastreabilidade desconsiderados. Nenhuma planilha foi alterada.'}catch(e){$('msg').textContent='Não foi possível conferir: '+e.message}finally{btn.disabled=false}};
 $('csv').onclick=()=>{const cols=['SKU','LOTE','PENDENCIA','EMBALADO_CAIXAS','PARIPASSU_CAIXAS','DIFERENCA','OVOS_PARIPASSU','OVOS_POR_CAIXA'];const rows=[cols,...pendencias.map(a=>[a.sku,a.lote,a.tipo,a.embalado,a.paripassu,a.diferenca,a.ovos,a.cap])];const csv='\ufeff'+rows.map(r=>r.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='pendencias_estoques_romaneio_2.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
 </script></body></html>

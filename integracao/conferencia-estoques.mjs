@@ -1,23 +1,23 @@
-// Conferência somente leitura: não modifica nenhuma base oficial.
-const chave=x=>JSON.stringify([String(x.sku||'').trim().toUpperCase(),String(x.lote||'').trim().toUpperCase()]);
+// Conferência unilateral: só Embalado demanda correspondência no PariPassu.
+const norm=x=>String(x??'').trim().toUpperCase();
+// O lote completo normalmente já codifica a postura (DD.MM.AA no final).
+// A exportação PariPassu pode não ter coluna Postura; não criar ausências artificiais por isso.
+function posturaLote(lote){const m=String(lote??'').match(/(\\d{2})[.\\/-](\\d{2})[.\\/-](\\d{2,4})$/);return m?m[1]+'/'+m[2]+'/'+(m[3].length===2?'20'+m[3]:m[3]):''}
+const chave=x=>JSON.stringify([norm(x.sku),norm(x.lote)]);
 function consolidar(itens){
  const mapa=new Map();
- for(const item of itens||[]){
-  const sku=String(item?.sku||'').trim(),lote=String(item?.lote||'').trim(),saldo=Number(item?.saldo);
-  if(!sku||!lote||!Number.isFinite(saldo)||saldo<0)throw Error('Linha de estoque inválida.');
-  const k=chave({sku,lote}),prev=mapa.get(k);
-  if(prev){prev.saldo+=saldo;if(!Number.isFinite(prev.saldo))throw Error('Soma de caixas inválida.');}else mapa.set(k,{sku,lote,saldo});
- }
+ for(const x of itens||[]){const sku=String(x?.sku??'').trim(),lote=String(x?.lote??'').trim(),postura=String(x?.postura??'').trim(),saldo=Number(x?.saldo);
+ if(!sku||!lote||!Number.isFinite(saldo)||saldo<0)throw Error('Linha de estoque inválida.');
+ const doLote=posturaLote(lote),posturaEfetiva=doLote||postura;
+ const k=chave({sku,lote}),a=mapa.get(k);if(a)a.saldo+=saldo;else mapa.set(k,{sku,lote,postura:posturaEfetiva,saldo});}
  return mapa;
 }
 export function conferirEstoques(embalado,paripassu){
- const e=consolidar(embalado),p=consolidar(paripassu),pendencias=[];
- for(const [k,a] of e){
-  const b=p.get(k);
-  if(!b)pendencias.push({sku:a.sku,lote:a.lote,tipo:'ausente_paripassu',embalado:a.saldo,paripassu:0,diferenca:a.saldo});
-  else if(Math.abs(a.saldo-b.saldo)>1e-9||!Number.isInteger(b.saldo))pendencias.push({sku:a.sku,lote:a.lote,tipo:Math.abs(a.saldo-b.saldo)<=1e-9?'caixa_fracionada':'divergencia_saldo',embalado:a.saldo,paripassu:b.saldo,diferenca:a.saldo-b.saldo});
- }
- for(const [k,b] of p)if(!e.has(k))pendencias.push({sku:b.sku,lote:b.lote,tipo:'ausente_embalado',embalado:0,paripassu:b.saldo,diferenca:-b.saldo});
+ const e=consolidar(embalado),p=consolidar(paripassu),pendencias=[],conformesItens=[];
+ for(const [k,a] of e){const b=p.get(k);
+ if(!b)pendencias.push({...a,tipo:'ausente_paripassu',embalado:a.saldo,paripassu:0,diferenca:a.saldo});
+ else if(b.saldo+1e-9<a.saldo)pendencias.push({...a,tipo:'saldo_insuficiente_paripassu',embalado:a.saldo,paripassu:b.saldo,diferenca:a.saldo-b.saldo});
+ else conformesItens.push({...a,paripassu:b.saldo});}
  pendencias.sort((a,b)=>a.sku.localeCompare(b.sku,'pt-BR')||a.lote.localeCompare(b.lote,'pt-BR'));
- return {conferidos:new Set([...e.keys(),...p.keys()]).size,conformes:[...e].filter(([k,a])=>p.has(k)&&Math.abs(p.get(k).saldo-a.saldo)<=1e-9&&Number.isInteger(p.get(k).saldo)&&Number.isInteger(p.get(k).saldo)).length,pendencias};
+ return {conferidos:e.size,conformes:conformesItens.length,conformesItens,pendencias};
 }

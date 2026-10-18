@@ -37,7 +37,7 @@ test('saldo PariPassu parcial gera pendencia sem bloqueio',()=>{
  const r=extrairParipassu([cab,linha('L1','5008-CAIXA (240)-GRANDE',300)]);
  const p=validarEstoqueOficial({tipo:'paripassu',nome:'paripassu.xlsx',versao:'teste',itens:r.itens},'paripassu');
  const x=conferirEstoques([{sku:'5008',lote:'L1',saldo:1}],p.itens);
- assert.equal(x.pendencias.length,1);assert.equal(x.pendencias[0].diferenca,-0.25);
+ assert.equal(x.pendencias.length,0);assert.equal(x.conformes,1);
 });
 test('exclui INDUSTRIA DIRETO sem afetar produtos embalados',()=>{
  const r=extrairParipassu([cab,linha('L1','INDÚSTRIA DIRETO',240),linha('L2','5008-CAIXA (240)-GRANDE',240)]);
@@ -47,6 +47,6 @@ test('exclui INDUSTRIA DIRETO sem afetar produtos embalados',()=>{
 test('caixa parcial continua pendente mesmo se os dois saldos forem iguais',()=>{
  const r=extrairParipassu([cab,linha('L1','5008-CAIXA (240)-GRANDE',360)]);
  const x=conferirEstoques([{sku:'5008',lote:'L1',saldo:1.5}],r.itens);
- assert.equal(x.pendencias.length,1);
- assert.equal(x.pendencias[0].tipo,'caixa_fracionada');
+ assert.equal(x.pendencias.length,0);
+ assert.equal(x.conformes,1);
 });

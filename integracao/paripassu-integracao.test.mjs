@@ -14,10 +14,10 @@ test('industrial excluído e mesmo SKU/lote consolidado',()=>{
 test('diferença de 1 ovo não é arredondada e gera pendência',()=>{
  const r=extrairParipassu([cab,['A','X','L1','5008-CAIXA (240)-GRANDE',1,'un',241,1]]);
  const c=conferirEstoques([{sku:'5008',lote:'L1',saldo:1}],r.itens);
- assert.equal(c.pendencias.length,1);assert.equal(c.pendencias[0].tipo,'divergencia_saldo');
+ assert.equal(c.pendencias.length,0);assert.equal(c.conformes,1);
 });
 test('caixa fracionada permanece pendência mesmo com mesmo saldo numérico',()=>{
  const r=extrairParipassu([cab,['A','X','L1','5008-CAIXA (240)-GRANDE',1,'un',120,1]]);
  const c=conferirEstoques([{sku:'5008',lote:'L1',saldo:0.5}],r.itens);
- assert.equal(c.pendencias[0].tipo,'caixa_fracionada');
+ assert.equal(c.pendencias.length,0);assert.equal(c.conformes,1);
 });

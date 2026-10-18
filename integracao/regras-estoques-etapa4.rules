@@ -1,0 +1,24 @@
+// Inserir dentro de match /databases/{database}/documents.
+// ATENÇÃO: requer implantação manual e validação de papéis no Firebase.
+// Sem essas regras não liberar estoques em produção.
+// A conta operacional autenticada pode consultar; somente um UID explicitamente
+// aprovado no documento /rom_v250_admins/{uid} pode publicar.
+// O documento de administrador deve ser criado pelo Console com regras administrativas.
+match /rom_v250_contas/{uid}/estoques_oficiais/{tipo} {
+ function mesmaConta(){return request.auth != null && request.auth.uid == uid;}
+ function permitido(){return mesmaConta() && exists(/databases/$(database)/documents/rom_v250_admins/$(uid));}
+ function formato(){return tipo in ['embalado','paripassu'] && request.resource.data.keys().hasOnly(['tipo','nome','versao','itens','importadoEm','autorUid'])
+ && request.resource.data.keys().hasAll(['tipo','nome','versao','itens','importadoEm','autorUid'])
+ && request.resource.data.tipo == tipo
+ && request.resource.data.nome is string && request.resource.data.versao is string
+ && request.resource.data.itens is list && request.resource.data.itens.size() > 0 && request.resource.data.itens.size() <= 15000
+ && request.resource.data.autorUid == request.auth.uid;
+ }
+ allow get: if mesmaConta();
+ allow list, delete: if false;
+ allow create: if permitido() && formato();
+ allow update: if permitido() && formato() && request.resource.data.versao != resource.data.versao;
+}
+match /rom_v250_admins/{uid} {
+ allow read, write: if false;
+}

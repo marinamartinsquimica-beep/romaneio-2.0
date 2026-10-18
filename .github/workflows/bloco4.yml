@@ -1,0 +1,28 @@
+name: Validar Bloco 4
+on:
+  push:
+    branches:
+      - desenvolvimento/etapa-4-estoques-paripassu
+  pull_request:
+    paths:
+      - 'integracao/**'
+      - 'index.html'
+      - '.github/workflows/bloco4.yml'
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar sintaxe da integração
+        run: |
+          node --check integracao/excel-modelo-etapa4.mjs
+          node --check integracao/baixa-modelo-aprovado.mjs
+          node --check integracao/modelo-estoque-persistente.mjs
+          node --check integracao/operacoes-estoque.mjs
+          node --check integracao/estoques-firebase-ui.mjs
+          node --check integracao/publicacao-estoques.mjs
+      - name: Executar testes de estoque
+        run: node --test integracao/*.test.mjs
