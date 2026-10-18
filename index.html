@@ -323,7 +323,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 <div class="input-group full qr-operational-field"><label>Observações</label><input type="text" id="campoObservacoes" maxlength="250"></div>
 </div><div class="actions"><div id="acoesComposicao" class="actions"><button id="btnAdicionarMais" class="btn-blue" type="button" onclick="salvarComposicao(false)">ADICIONAR MAIS AO PALETE</button><button id="btnFinalizarPalete" class="btn-primary" type="button" onclick="salvarComposicao(true)">FINALIZAR PALETE</button></div><button id="btnLerQrAtual" class="btn-secondary" type="button" onclick="abrirLeitorQr()">Ler código neste palete</button><button class="btn-secondary" type="button" onclick="voltarEscolhaFluxo()">Voltar</button><button id="btnExcel" onclick="gerarExcel()">Gerar e salvar Excel total</button><button id="btnReiniciar" class="btn-danger" onclick="reiniciarEntradas()">Apagar todo o romaneio</button></div></section>
 <section class="card destination-panel"><div class="card-header"><h2>Romaneios por Destino</h2><span class="badge" id="badgeDestinos">0 destinos</span></div><p class="truck-help">Cada Destino pode receber novos paletes e gerar sua própria planilha. O romaneio total permanece completo.</p><div id="listaRomaneiosDestino" class="destination-grid"></div><div id="destinosVazio" class="truck-empty">Os romaneios aparecerão aqui após a primeira entrada com Destino.</div></section>
-<section class="card"><div class="card-header"><h2>Entradas</h2><span class="badge">Lista</span></div><div class="input-group search-romaneio"><label for="buscaRomaneio">PESQUISAR NO ROMANEIO</label><input id="buscaRomaneio" type="search" placeholder="Palete, SKU, destino, lote, data ou placa" oninput="filtrarRomaneio()"></div><div class="table-container" id="tableContainer"><table id="tabela"><thead><tr><th onclick="ordenarTabela(0)">DATA</th><th onclick="ordenarTabela(1)">SKU</th><th onclick="ordenarTabela(2)">DESTINO</th><th onclick="ordenarTabela(3)">PALETE</th><th onclick="ordenarTabela(4)">LOTE COMPLETO</th><th>LOTE</th><th>POST</th><th>CX</th><th>OBSERVAÇÕES</th><th>AÇÃO</th></tr></thead><tbody></tbody></table><div class="empty-state" id="emptyState"><div class="empty-icon">📋</div><strong>Nenhuma entrada encontrada</strong><span>Preencha o formulário para adicionar o primeiro romaneio.</span></div></div></section>
+<section class="card"><div class="card-header"><h2>Histórico de romaneios encerrados</h2></div><p class="truck-help">Cópias anteriores preservadas neste dispositivo, sem alterar o estoque. Baixe o arquivo para recuperação.</p><div id="historicoFechamentos"></div></section><section class="card"><div class="card-header"><h2>Entradas</h2><span class="badge">Lista</span></div><div class="input-group search-romaneio"><label for="buscaRomaneio">PESQUISAR NO ROMANEIO</label><input id="buscaRomaneio" type="search" placeholder="Palete, SKU, destino, lote, data ou placa" oninput="filtrarRomaneio()"></div><div class="table-container" id="tableContainer"><table id="tabela"><thead><tr><th onclick="ordenarTabela(0)">DATA</th><th onclick="ordenarTabela(1)">SKU</th><th onclick="ordenarTabela(2)">DESTINO</th><th onclick="ordenarTabela(3)">PALETE</th><th onclick="ordenarTabela(4)">LOTE COMPLETO</th><th>LOTE</th><th>POST</th><th>CX</th><th>OBSERVAÇÕES</th><th>AÇÃO</th></tr></thead><tbody></tbody></table><div class="empty-state" id="emptyState"><div class="empty-icon">📋</div><strong>Nenhuma entrada encontrada</strong><span>Preencha o formulário para adicionar o primeiro romaneio.</span></div></div></section>
 </main>
 <main id="abaCaminhao" class="truck-layout hidden">
 <section class="card"><div class="card-header"><h2>Romaneio por Caminhão</h2><span class="badge">Placa atual</span></div><p class="truck-help">Informe a placa e selecione os paletes que serão carregados neste caminhão.</p><div class="input-group"><label for="campoPlaca">PLACA</label><input id="campoPlaca" type="text" maxlength="8" placeholder="ABC1D23" oninput="formatarPlaca(); atualizarSelecaoCaminhao()"></div><div class="input-group"><label for="campoDataCarregamento">DATA DO CARREGAMENTO</label><input id="campoDataCarregamento" type="date"></div><div class="input-group"><label for="campoResponsavelCaminhao">MOTORISTA OU RESPONSÁVEL (OPCIONAL)</label><input id="campoResponsavelCaminhao" type="text" maxlength="100"></div><div class="input-group"><label for="campoObservacaoCaminhao">OBSERVAÇÃO (OPCIONAL)</label><input id="campoObservacaoCaminhao" type="text" maxlength="250"></div><div class="actions"><button class="btn-finish-truck" type="button" onclick="finalizarCaminhao()">FINALIZAR CAMINHÃO</button><button class="btn-danger" type="button" onclick="reiniciarCaminhoes()">LIMPAR SOMENTE CAMINHÕES</button></div><div class="truck-summary" id="resumoCaminhao">Nenhum palete selecionado</div><div class="truck-stats"><div class="truck-stat"><strong id="statPaletesDisponiveis">0</strong><span>Paletes disponíveis</span></div><div class="truck-stat"><strong id="statPaletesDistribuidos">0</strong><span>Paletes distribuídos</span></div><div class="truck-stat"><strong id="statCaixasRestantes">0</strong><span>Caixas ainda disponíveis</span></div><div class="truck-stat"><strong id="statCaminhoesFinalizados">0</strong><span>Caminhões finalizados</span></div></div></section>
@@ -733,6 +733,7 @@ async function apagarDestino(destino) {
 }
 
 function renderizarRomaneiosDestino() {
+    renderizarHistoricoFechamentos();
     const lista = document.getElementById("listaRomaneiosDestino");
     if (!lista) return;
     const romaneios = obterRomaneiosDestino();
@@ -2179,12 +2180,50 @@ async function excluirLinha(botao) {
     indiceEditando = null;
 }
 
+const CHAVE_HISTORICO_FECHAMENTOS='romaneio2_historico_fechamentos_v1';
+function lerHistoricoFechamentos(){
+ const lista=lerJsonLocalStorage(CHAVE_HISTORICO_FECHAMENTOS,[]);
+ return Array.isArray(lista)?lista:[];
+}
+function salvarHistoricoFechamento(){
+ const entradas=lerJsonLocalStorage('entradas',[]);
+ const pendencias=lerJsonLocalStorage('romaneio2_expedicoes_excluidas_pendentes_v1',[]);
+ const arquivo=lerHistoricoFechamentos();
+ const registro={id:criarIdentificadorMovimento(),data:new Date().toISOString(),
+    entradas:Array.isArray(entradas)?entradas:[],pendencias:Array.isArray(pendencias)?pendencias:[],
+    caminhoes:lerCaminhoes(),historicoCaminhoes:lerHistoricoCaminhoes()};
+ arquivo.unshift(registro);
+ try{localStorage.setItem(CHAVE_HISTORICO_FECHAMENTOS,JSON.stringify(arquivo));}
+ catch(e){throw Error('Não foi possível preservar o histórico do encerramento. Nenhum palete foi apagado. '+(e.message||e));}
+ return registro;
+}
+function exportarHistoricoFechamento(id){
+ const item=lerHistoricoFechamentos().find(x=>x.id===id);
+ if(!item)return;
+ const blob=new Blob([JSON.stringify(item,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='romaneio_historico_'+item.data.slice(0,10)+'.json';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function renderizarHistoricoFechamentos(){
+ const alvo=document.getElementById('historicoFechamentos');
+ if(!alvo)return;
+ alvo.replaceChildren();
+ const itens=lerHistoricoFechamentos();
+ if(!itens.length){alvo.textContent='Ainda não há romaneios encerrados neste dispositivo.';return;}
+ for(const item of itens){
+  const linha=document.createElement('div');linha.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:9px 0;border-bottom:1px solid #d9e2ec';
+  const descricao=document.createElement('span');descricao.textContent=new Date(item.data).toLocaleString('pt-BR')+' — '+(item.entradas?.length||0)+' registros arquivados';
+  const botao=document.createElement('button');botao.className='btn-secondary';botao.type='button';botao.textContent='BAIXAR HISTÓRICO';botao.onclick=()=>exportarHistoricoFechamento(item.id);
+  linha.append(descricao,botao);alvo.append(linha);
+ }
+}
 async function reiniciarEntradas() {
     if (!await confirmarRaiar("APAGAR TODO O ROMANEIO?\n\nEsta ação apagará todas as entradas, paletes, placas e o histórico dos caminhões. Não será possível desfazer.")) return;
 
-    // Registrar exclusões pendentes antes de apagar o romaneio. A fila permanece intacta.
+    // Guardar snapshot recuperável antes de qualquer exclusão local.\n    try{salvarHistoricoFechamento();}catch(e){alert(e.message);return;}\n\n    // Registrar exclusões pendentes antes de apagar o romaneio. A fila permanece intacta.
     registrarMovimentosLocais([]);
-    registrarCopiaSegurancaOffline([]);
+    // Preservar a última cópia de segurança em vez de substituí-la por uma lista vazia.
     localStorage.removeItem("entradas");
     localStorage.removeItem(ESTADO_OPERACIONAL_KEY);
     localStorage.removeItem(RASCUNHO_KEY);
@@ -2204,6 +2243,7 @@ async function reiniciarEntradas() {
     renderizarPaletesCaminhao();
     renderizarRomaneiosDestino();
     atualizarDashboardVisual();
+    renderizarHistoricoFechamentos();
 
     alert("Todo o romaneio foi apagado: entradas, paletes, placas e histórico dos caminhões.");
 }
