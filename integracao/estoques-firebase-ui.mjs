@@ -143,8 +143,10 @@ window.registrarBaixaConferida=async ({resultado,versaoInicial,destino,registros
  const raiz=['romaneio_ambientes',ambienteAtual.ambienteId],estoqueRef=doc(db,...raiz,'estoques_oficiais','embalado');
  const hash=x=>{let h=2166136261;for(const c of x)h=Math.imul(h^c.charCodeAt(0),16777619)>>>0;return h.toString(16)};
  const base=x=>[x.destino,x.palete,x.sku,x.loteCompleto,x.lote,x.postura].map(v=>String(v??'').trim().toUpperCase()).join('|');
- const ident=x=>String(x.movimentoExclusaoId||'')||'legado_'+hash(base(x));
+ const ativos=destino==='TODOS OS DESTINOS'&&registros.every(x=>!x.movimentoExclusaoId);
+ const ident=x=>String(x.movimentoExclusaoId||'')||(ativos?'ativo_'+String(x.registroId||''):'legado_'+hash(base(x)));
  const pendentes=registros.map(x=>({id:'exp_'+hash(ident(x))+'_'+ident(x).length,registro:x}));
+ if(new Set(pendentes.map(x=>x.id)).size!==pendentes.length)throw Error('Identificadores repetidos. A baixa foi cancelada para evitar desconto duplicado.');
  if(!pendentes.length)throw Error('Nenhuma expedição pendente localizada.');
  const baixadas=aplicados.reduce((a,x)=>a+Number(x.caixas),0);
  const naoBaixadas=resultado.pendencias.reduce((a,x)=>a+Number(x.caixas),0);
@@ -156,13 +158,17 @@ window.registrarBaixaConferida=async ({resultado,versaoInicial,destino,registros
   if(dados.versao!==versaoInicial)throw Error('O estoque mudou desde a conferência. Prepare a baixa novamente.');
   const snaps=[];
   for(const x of pendentes){const ref=doc(db,...raiz,'expedicoes',x.id);snaps.push({ref,snap:await tx.get(ref)});}
-  if(snaps.some(x=>!x.snap.exists()||x.snap.data().estado!=='PENDENTE_BAIXA'))throw Error('Pendência não encontrada no Firebase ou já baixada. Atualize a tela.');
+  if(snaps.some(x=>x.snap.exists()?x.snap.data().estado!=='PENDENTE_BAIXA':!ativos))throw Error('Expedição já baixada ou pendência remota indisponível. Atualize a conferência.');
   const saldos=new Map(dados.itens.map(x=>[chave(x),x]));
   for(const [k,qtd] of quantidades){const atual=saldos.get(k);if(!atual||Number(atual.saldo)<qtd)throw Error('Saldo alterado ou insuficiente. Prepare a conferência novamente.');}
   const itens=dados.itens.map(x=>{const qtd=quantidades.get(chave(x))||0;return qtd?{...x,saldo:Number(x.saldo)-qtd}:x;});
   tx.update(estoqueRef,{tipo:'embalado',nome:dados.nome||'Estoque Embalado',versao:novaVersao,itens,importadoEm:new Date().toISOString(),autorUid:usuario.uid});
   const agora=new Date().toISOString();
-  for(const x of snaps)tx.update(x.ref,{estado:'BAIXA_CONCLUIDA',baixaConfirmadaEm:agora,confirmadoPor:usuario.uid});
+  for(const x of snaps){
+   const conclusao={estado:'BAIXA_CONCLUIDA',baixaConfirmadaEm:agora,confirmadoPor:usuario.uid};
+   if(x.snap.exists())tx.update(x.ref,conclusao);
+   else tx.set(x.ref,{...x.registro,origemId:ident(x.registro),criadoEm:agora,autorUid:usuario.uid,...conclusao});
+  }
  });
  return {baixadas,naoBaixadas,versao:novaVersao};
 };

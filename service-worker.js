@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v262-pendencias-selecao";
+const CACHE_NAME = "romaneio-2-0-cache-v263-atualizacao-controlada";
 
 const FILES_TO_CACHE = [
   "./",
@@ -11,6 +11,7 @@ const FILES_TO_CACHE = [
   "./integracao/excel-modelo-etapa4.mjs",
   "./integracao/baixa-modelo-aprovado.mjs",
   "./integracao/modelo-estoque-persistente.mjs",
+  "./integracao/estoques-firebase-ui.mjs",
   "./vendor/LICENSE-zxing.txt",
   "./qr-parser.js",
   "./manifest.json",
@@ -40,11 +41,13 @@ self.addEventListener("fetch", event => {
 
   if (req.method !== "GET") return;
 
-  if (url.pathname.endsWith("/version.json") || url.pathname.includes("/integracao/") || req.mode === "navigate") {
+  if (url.pathname.endsWith("/version.json") || url.pathname.endsWith("/service-worker.js") || url.pathname.includes("/integracao/") || req.mode === "navigate") {
     event.respondWith(
       fetch(req).then(resp => {
-        const copy = resp.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+        if (resp.ok) {
+          const copy = resp.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(req, copy)).catch(() => {});
+        }
         return resp;
       }).catch(() => caches.match(req).then(cached => cached || caches.match("./inicio.html")))
     );
