@@ -3170,7 +3170,7 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
    painel.replaceChildren();if(cards)painel.append(cards);painel.append(table);
   }
   if(resultadoEtapa4&&res.operacao==='baixa'){
-   resultadoEtapa4.exportado=true;
+   resultadoEtapa4.exportado=true; // geração concluída e download iniciado
    const completa=resultadoEtapa4.destino.startsWith('arquivo:')&&resultadoEtapa4.resultado.aplicados.length>0;
    const botao=document.getElementById('etapa4ConfirmarBaixa');
    botao.hidden=!resultadoEtapa4.destino.startsWith('arquivo:');botao.disabled=false;
