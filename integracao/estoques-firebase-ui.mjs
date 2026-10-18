@@ -59,7 +59,7 @@ function observar(uid,ambienteId=null){
  const raiz=['romaneio_ambientes',ambienteId];
  for(const tipo of ['embalado','paripassu']){
   unsub.push(onSnapshot(doc(db,...raiz,'estoques_oficiais',tipo),snap=>{
-   const d=snap.exists()?snap.data():null;versoes[tipo]=d?.versao||'';
+   const d=snap.exists()?snap.data():null;versoes[tipo]=d?.versao||'';window.__etapa4Versoes=window.__etapa4Versoes||{};window.__etapa4Versoes[tipo]=versoes[tipo];
    if(tipo==='embalado'&&d?.itens?.length){window.estoqueTesteConsulta=new Map(d.itens.map((x,i)=>[String(i),x]));window.reservaTesteAtiva=true;for(const fn of ['atualizarResumoReservaTeste','renderizarEstoqueCompletoTeste','operadorAtualizarCardsEstoque','renderizarPendenciasConferenciaEstoque'])try{window[fn]?.()}catch{}}
    window.__etapa4=window.__etapa4||{};window.__etapa4[tipo]=d?.itens||null;
    const e=window.__etapa4.embalado,p=window.__etapa4.paripassu;
