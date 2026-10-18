@@ -128,3 +128,93 @@ export async function gerarBaixaModeloAprovado({arquivo,resultado,origem}){
  if(historia){const data=historia.doc.getElementsByTagNameNS(NS,'sheetData')[0];if(data){let last=Math.max(1,...sx.rows(historia.doc).map(x=>Number(x.getAttribute('r'))));const agora=new Date().toISOString();for(const d of plano.details){if(!d.baixado)continue;const row=historia.doc.createElementNS(NS,'row');row.setAttribute('r',String(++last));const vals=[agora,d.sku,'',d.lote,d.baixado,d.baixado,d.saldoAntes,d.saldoDepois,'BAIXA ROMANEIO'];for(let i=0;i<vals.length;i++){const c=historia.doc.createElementNS(NS,'c');c.setAttribute('r',String.fromCharCode(65+i)+last);if(typeof vals[i]==='number'){const v=historia.doc.createElementNS(NS,'v');v.textContent=String(vals[i]);c.appendChild(v)}else{c.setAttribute('t','inlineStr');const is=historia.doc.createElementNS(NS,'is'),t=historia.doc.createElementNS(NS,'t');t.textContent=String(vals[i]);is.appendChild(t);c.appendChild(is)}row.appendChild(c)}data.appendChild(row)}await sx.saveSheet(historia)}}
  return {blob:await sx.blob(),operacao:'baixa',registros:plano.details.length,removidas:reescrito.removed,baixadas:plano.matchedCx,naoBaixadas:(resultado.pendencias||[]).reduce((n,x)=>n+Number(x.caixas||0),0),estoqueAntes:antes,estoqueDepois:depois,detalhes:plano.details,conciliacoes};
 }
+
+// Recontagem integral baseada exclusivamente no romaneio DESTINO ESTOQUE.
+// Cria nova cópia XLSX do modelo oficial, sem gravar sobre o arquivo original.
+export async function gerarSubstituicaoModeloAprovado({arquivo,resultado,origem}){
+ if(typeof JSZip==='undefined')throw Error('Biblioteca Excel não disponível.');
+ if(!arquivo)throw Error('Modelo Excel do Estoque Embalado ausente neste navegador. Importe o arquivo original antes de substituir.');
+ if(resultado?.tipo!=='substituicao-total'||resultado.destino!=='ESTOQUE'||!resultado.itens?.length)
+  throw Error('Prepare novamente o ajuste com destino ESTOQUE.');
+ if(!Array.isArray(origem)||!origem.length)throw Error('Estoque anterior indisponível para histórico.');
+ const sx=await new XlsxXML(arquivo).load(),sheet=await sx.sheetByName('Estoque');
+ if(!sheet)throw Error('Aba Estoque ausente do modelo oficial.');
+ const layout=detectStockLayout(sx,sheet.doc),antigo=buildStock(sx,sheet.doc,layout);
+ if(!antigo.records.length)throw Error('Modelo oficial sem linha estrutural de estoque.');
+ const cadastro=await sx.sheetByName('Cadastro');
+ if(!cadastro)throw Error('Modelo oficial sem aba Cadastro; não é possível preservar os cálculos.');
+ const produtos=new Map();
+ for(const row of sx.rows(cadastro.doc)){
+  const id=normSku(sx.value(sx.findCell(row,'A')));
+  const ovos=num(sx.value(sx.findCell(row,'D')));
+  if(!id||!/^\\d+$/.test(id)||!Number.isSafeInteger(ovos)||ovos<=0)continue;
+  produtos.set(id,{
+   produto:String(sx.value(sx.findCell(row,'B'))||''),
+   tamanho:String(sx.value(sx.findCell(row,'C'))||''),
+   ovosCx:ovos
+  });
+ }
+ const dataLote=lote=>{
+  const partes=String(lote).split('.');
+  if(partes.length<4)return null;
+  const [dd,mm,aa]=partes.slice(-3).map(Number);
+  if(![dd,mm,aa].every(Number.isInteger)||aa<0||aa>99)return null;
+  const data=Date.UTC(2000+aa,mm-1,dd);
+  const correta=new Date(data);
+  if(correta.getUTCFullYear()!==2000+aa||correta.getUTCMonth()!==mm-1||correta.getUTCDate()!==dd)return null;
+  return Math.round((data-Date.UTC(1899,11,30))/86400000);
+ };
+ const registros=resultado.itens.map((item,i)=>{
+  const codigo=normSku(item.sku),lote=normLote(item.lote),qtd=Number(item.saldo);
+  const info=produtos.get(codigo),postura=dataLote(lote);
+  if(!info)throw Error('SKU '+codigo+' não está completo no Cadastro do Excel original. Cadastre antes de substituir.');
+  if(postura===null)throw Error('Data de postura do lote '+lote+' inválida. Corrija o lote ESTOQUE.');
+  if(!Number.isSafeInteger(qtd)||qtd<=0)throw Error('Caixas inválidas para '+codigo+'/'+lote);
+  return {
+   row:antigo.records[0].row,rowNum:layout.headerRow+1+i,
+   sku:codigo,lote,produto:info.produto,tamanho:info.tamanho,
+   loteBase:lote.split('.')[0],postura,ovosCx:info.ovosCx,
+   caixas:qtd,saidas:0,saldo:qtd,shelf:Math.max(0,Math.floor((Date.now()-Date.UTC(1899,11,30))/86400000)-postura)
+  };
+ });
+ const fonte={records:registros,map:new Map()};
+ const reescrito=rewriteStockSheet(sx,sheet,layout,fonte,{changes:[]});
+ const caixasEsperadas=resultado.itens.reduce((s,x)=>s+Number(x.saldo),0);
+ const caixasGeradas=reescrito.finalRecords.reduce((s,x)=>s+Number(x.saldo),0);
+ if(caixasGeradas!==caixasEsperadas)throw Error('Divergência no total Excel; não exportar.');
+ await sx.updateTableRef(sheet,'A'+layout.headerRow+':M'+reescrito.lastRow);
+ await sx.saveSheet(sheet);
+ await updateDependentCaches(sx,reescrito.finalRecords);
+ await installPanelFormulas(sx);
+ const historia=await sx.sheetByName('Historico');
+ if(historia){
+  const data=historia.doc.getElementsByTagNameNS(NS,'sheetData')[0];
+  if(data){
+   let last=Math.max(1,...sx.rows(historia.doc).map(x=>Number(x.getAttribute('r'))));
+   const antes=new Map(origem.map(x=>[normSku(x.sku)+'|'+normLote(x.lote),Number(x.saldo)||0]));
+   const depois=new Map(resultado.itens.map(x=>[normSku(x.sku)+'|'+normLote(x.lote),Number(x.saldo)]));
+   for(const k of new Set([...antes.keys(),...depois.keys()])){
+    const anterior=antes.get(k)||0,novo=depois.get(k)||0;
+    if(anterior===novo)continue;
+    const [sku,lote]=k.split('|'),row=historia.doc.createElementNS(NS,'row');
+    row.setAttribute('r',String(++last));
+    const vals=[new Date().toISOString(),sku,'',lote,0,0,anterior,novo,'INVENTÁRIO TOTAL / DESTINO ESTOQUE'];
+    vals.forEach((v,i)=>{const c=historia.doc.createElementNS(NS,'c');
+      c.setAttribute('r',String.fromCharCode(65+i)+last);
+      if(typeof v==='number'){const valor=historia.doc.createElementNS(NS,'v');valor.textContent=String(v);c.appendChild(valor);}
+      else {c.setAttribute('t','inlineStr');const is=historia.doc.createElementNS(NS,'is'),t=historia.doc.createElementNS(NS,'t');t.textContent=String(v);is.appendChild(t);c.appendChild(is);}
+      row.appendChild(c);
+    });
+    data.appendChild(row);
+   }
+   await sx.saveSheet(historia);
+  }
+ }
+ await sx.forceRecalc();
+ return {blob:await sx.blob(),operacao:'substituicao-total',registros:registros.length,
+  estoqueAntes:resultado.estoqueAnterior,estoqueDepois:caixasGeradas,
+  itens:resultado.itens.map((item,i)=>({
+   ...item,
+   ovosPorCaixa:registros[i].ovosCx,ovos:registros[i].ovosCx*Number(item.saldo)
+  }))};
+}

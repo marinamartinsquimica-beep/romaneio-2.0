@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v279-reconciliar-baixas";
+const CACHE_NAME = "romaneio-2-0-cache-v280-ajuste-inventario-total";
 
 const FILES_TO_CACHE = [
   "./inicio.html",
@@ -14,6 +14,7 @@ const FILES_TO_CACHE = [
   "./integracao/filtro-expedicoes-baixadas.mjs",
   "./integracao/direcao-sincronizacao.mjs",
   "./integracao/reconciliar-pendencias-baixadas.mjs",
+  "./integracao/substituicao-estoque-total.mjs",
   "./vendor/LICENSE-zxing.txt",
   "./qr-parser.js",
   "./manifest.json",

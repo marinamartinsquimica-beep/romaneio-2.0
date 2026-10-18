@@ -272,7 +272,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.79</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.80</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
 <div class="romaneio-backup-actions" style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button class="desktop-backup-action" type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Pendências de sincronização</button><button class="desktop-backup-action" type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button><button class="mobile-sync-action" type="button" onclick="sincronizarRomaneioCelular()" style="width:auto;background:#5CDCF2;color:#254D69;font-weight:800;font-size:13px;padding:10px 18px;border-radius:12px;border:2px solid #254D69">SINCRONIZAR</button></div>
 <section class="dashboard"><div class="metric"><div class="ico">📋</div><div><b id="dashRegistros">0</b><span id="dashRegistrosLabel">Registros totais</span></div></div><div class="metric"><div class="ico">📦</div><div><b id="dashCaixas">0</b><span id="dashCaixasLabel">Caixas totais</span></div></div><div class="metric"><div class="ico">🧱</div><div><b id="dashPaletes">0</b><span id="dashPaletesLabel">Paletes totais</span></div></div><div class="metric"><div class="ico">📍</div><div><b id="dashDestinos">0</b><span id="dashDestinosLabel">Destinos totais</span></div></div><div class="metric"><div class="ico">🕒</div><div><b id="dashUltimo">--</b><span>Último registro</span></div></div></section>
@@ -298,13 +298,13 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 <div id="etapa4PainelLista" class="etapa4-pari-lista"></div></section><p id="etapa4Resumo" class="etapa4-pari-resumo">Aguardando os dois estoques compartilhados.</p>
 <ul id="etapa4Pendencias" hidden aria-hidden="true"></ul><div id="etapa4Conformes" role="status" aria-live="polite"></div><div id="etapa4Aviso" hidden aria-hidden="true"></div></section></div><div id="opAbaMovimentos" role="tabpanel" class="hidden"><section class="card" style="padding:18px;margin:14px 0"><h2>Baixa e ajuste</h2><section id="etapa4Operacoes" style="margin:12px 0;padding:14px;border:1px solid #cbd5e1;border-radius:12px;background:#f8fafc">
 <h3>Baixa e ajuste — prévia segura</h3>
-<p style="color:#334155">As operações abaixo preparam a conferência sem alterar o Firebase nem a planilha oficial. Confirmação de baixa ou ajuste oficial permanece indisponível até integração autenticada com o arquivo.</p>
+<p style="color:#334155">Prepare a conferência antes de modificar os dados. A baixa de expedição é independente da substituição integral de estoque. Nenhum dado será alterado antes de confirmação explícita.</p>
 <label for="etapa4Modo">Operação</label><select id="etapa4Modo"><option value="baixa">Baixa de expedição</option><option value="ajuste">Ajuste por contagem física</option></select>
 <div id="etapa4DestinoBloco"><label for="etapa4DestinoBaixa">Destino da expedição</label><select id="etapa4DestinoBaixa"><option value="">Todos os destinos — baixa total</option></select><p style="font-size:12px;color:#48647a">A baixa considera somente os paletes do destino escolhido; nenhum destino é apagado.</p></div>
-<p id="etapa4Orientacao">Baixa automática das caixas existentes no romaneio. Nenhuma digitação necessária.</p><label for="etapa4Movimentos" id="etapa4MovimentosLabel" hidden>Contagem física: SKU;LOTE;CAIXAS (uma linha por registro)</label>
+<p id="etapa4Orientacao">Baixa automática das caixas existentes no romaneio. Nenhuma digitação necessária.</p><label for="etapa4Movimentos" id="etapa4MovimentosLabel" hidden>Inventário automático: somente paletes com destino ESTOQUE</label>
 <textarea id="etapa4Movimentos" rows="5" hidden style="width:100%;padding:10px;border-radius:8px" placeholder="SKU;LOTE;CAIXAS"></textarea>
-<button type="button" id="etapa4Preparar">PREPARAR CONFERÊNCIA</button><button type="button" id="etapa4Exportar" disabled>BAIXAR EXCEL DO RESULTADO</button><button type="button" id="etapa4ConfirmarBaixa" hidden disabled>CONFIRMAR BAIXA NO SISTEMA</button><p id="etapa4OrientacaoConfirmacao" hidden style="font-size:12px;color:#48647a">Gere e baixe o Excel atualizado antes de confirmar a baixa no Firebase. Nenhum saldo será alterado antes da confirmação.</p>
-<p id="etapa4OperacoesStatus" role="status"></p><div id="etapa4OperacoesResultado" style="max-height:250px;overflow:auto"></div>
+<button type="button" id="etapa4Preparar">PREPARAR CONFERÊNCIA</button><button type="button" id="etapa4Exportar" disabled>BAIXAR EXCEL DO RESULTADO</button><button type="button" id="etapa4ConfirmarBaixa" hidden disabled>CONFIRMAR BAIXA NO SISTEMA</button><button type="button" id="etapa4ConfirmarSubstituicao" class="btn-danger" hidden disabled>CONFIRMAR SUBSTITUIÇÃO INTEGRAL DO ESTOQUE</button><p id="etapa4OrientacaoConfirmacao" hidden style="font-size:12px;color:#48647a">Gere e baixe o Excel atualizado antes de confirmar a baixa no Firebase. Nenhum saldo será alterado antes da confirmação.</p>
+<p id="etapa4AjusteAviso" hidden style="color:#93222e;font-weight:700">ATENÇÃO: esta operação substitui TODO o Estoque Embalado pelos registros cujo destino seja ESTOQUE. Lotes ausentes serão retirados; não somar nem descontar caixas. Exige o Excel atualizado e confirmação no Firebase.</p><p id="etapa4OperacoesStatus" role="status"></p><div id="etapa4OperacoesResultado" style="max-height:250px;overflow:auto"></div>
 </section></section></div><div id="opAbaEstoque" role="tabpanel" class="hidden"><section class="card" id="painelEstoqueTeste" style="margin:14px 0;padding:20px">
   <div class="card-header"><h2>Estoque completo <small style="font-size:13px;color:#64748b">v2.0.50</small></h2><span class="badge">Consulta de estoque</span></div>
   <p style="margin:8px 0;color:#475569">Consulte os saldos compartilhados pelo Firebase e confira as pendências do romaneio.</p>
@@ -391,7 +391,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.79";
+const APP_VERSION = "2.0.80";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -3296,13 +3296,16 @@ let resultadoEtapa4=null;
 const modoEtapa4=document.getElementById('etapa4Modo');
 modoEtapa4?.addEventListener('change',()=>{
  const ajuste=modoEtapa4.value==='ajuste';
- document.getElementById('etapa4Movimentos').hidden=!ajuste;
+ document.getElementById('etapa4Movimentos').hidden=true;
  document.getElementById('etapa4MovimentosLabel').hidden=!ajuste;
+ document.getElementById('etapa4AjusteAviso').hidden=!ajuste;
  document.getElementById('etapa4DestinoBloco').hidden=ajuste;
- document.getElementById('etapa4Orientacao').textContent=ajuste?'Informe a contagem física de SKU, lote e caixas.':'Baixa automática das caixas existentes no romaneio. Nenhuma digitação necessária.';
+ document.getElementById('etapa4Orientacao').textContent=ajuste?'O sistema utilizará exclusivamente os paletes cujo DESTINO seja ESTOQUE, substituindo integralmente o Estoque Embalado, após baixar o Excel e confirmar.':'Baixa automática das caixas existentes no romaneio. Nenhuma digitação necessária.';
  resultadoEtapa4=null;document.getElementById('etapa4Exportar').disabled=true;
  const botao=document.getElementById('etapa4ConfirmarBaixa');
  botao.hidden=ajuste;botao.disabled=ajuste;
+ const substituir=document.getElementById('etapa4ConfirmarSubstituicao');
+ substituir.hidden=!ajuste;substituir.disabled=true;
  document.getElementById('etapa4OrientacaoConfirmacao').hidden=ajuste;
 });
 function atualizarDestinosBaixa(){
@@ -3350,12 +3353,17 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
   if(!arquivo)throw Error('Modelo Excel original não está salvo neste navegador. Selecione o arquivo na aba IMPORTAR PLANILHAS para preservar uma cópia local. Não é necessário publicá-lo novamente no Firebase.');
   const res=resultadoEtapa4.modo==='baixa'
     ?await (await import('./integracao/baixa-modelo-aprovado.mjs')).gerarBaixaModeloAprovado({arquivo,resultado:resultadoEtapa4.resultado,origem:resultadoEtapa4.origem})
-    :await (await import('./integracao/excel-modelo-etapa4.mjs')).gerarExcelModeloEstoque({arquivo,operacao:resultadoEtapa4.modo,estoqueOriginal:resultadoEtapa4.origem,resultado:resultadoEtapa4.resultado});
+    :await (await import('./integracao/baixa-modelo-aprovado.mjs')).gerarSubstituicaoModeloAprovado({arquivo,resultado:resultadoEtapa4.resultado,origem:resultadoEtapa4.origem});
   if(resultadoEtapa4.modo==='baixa'){
    const totalBase=resultadoEtapa4.origem.reduce((a,x)=>a+Number(x.saldo||0),0);
    if(res.estoqueAntes!==totalBase)throw Error('O modelo não pôde ser conciliado integralmente com o Firebase. Importe uma cópia atualizada antes de baixar. Nenhum saldo foi alterado.');
   }
   if(res.conciliacoes?.length){const detalhes=res.conciliacoes.map(x=>x.sku+' / '+x.lote+': '+x.anterior+' → '+x.oficial+' CX').join('; ');status.textContent='Modelo Excel conciliado com o Firebase antes da baixa: '+detalhes+'. A cópia original não foi modificada.';}
+  if(res.operacao==='substituicao-total'){
+   if(resultadoEtapa4.assinatura!== (await import('./integracao/substituicao-estoque-total.mjs')).assinaturaInventario(lerJsonLocalStorage('entradas',[])))
+    throw Error('O romaneio ESTOQUE mudou desde a conferência. Prepare novamente.');
+   if(!await confirmarRaiar('EXCEL DO INVENTÁRIO TOTAL\n\nTodo o Estoque Embalado será substituído pelos lotes do destino ESTOQUE.\nEstoque atual: '+res.estoqueAntes+' caixas.\nNovo estoque: '+res.estoqueDepois+' caixas.\n\nBaixe e confira o Excel antes de confirmar a substituição no Firebase.'))return;
+  }
   if(res.operacao==='baixa'){
    const n=Number(res.naoBaixadas||0),b=Number(res.baixadas||0);
    const aviso=n>0
@@ -3374,6 +3382,13 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
    const cards=painel.querySelector('.etapa4-resumo-baixa');
    painel.replaceChildren();if(cards)painel.append(cards);painel.append(table);
   }
+  if(resultadoEtapa4&&res.operacao==='substituicao-total'){
+   resultadoEtapa4.resultado.itens=res.itens;
+   resultadoEtapa4.exportado=true;
+   resultadoEtapa4.excelAtualizado={blob:res.blob,nome:'ESTOQUE_EMBALADO_SUBSTITUICAO_'+new Date().toISOString().slice(0,10)+'.xlsx'};
+   const btn=document.getElementById('etapa4ConfirmarSubstituicao');
+   btn.hidden=false;btn.disabled=false;
+  }
   if(resultadoEtapa4&&res.operacao==='baixa'){
    resultadoEtapa4.exportado=true; // Excel gerado e download solicitado após aviso Raiar
    const completa=(resultadoEtapa4.destino.startsWith('arquivo:')||resultadoEtapa4.destino==='ativo:__TODOS__')&&resultadoEtapa4.resultado.aplicados.length>0;
@@ -3381,9 +3396,55 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
    botao.hidden=false;botao.disabled=Boolean(resultadoEtapa4.confirmada);
    document.getElementById('etapa4OrientacaoConfirmacao').hidden=!(resultadoEtapa4.destino.startsWith('arquivo:')||resultadoEtapa4.destino==='ativo:__TODOS__');
   }
-  status.textContent=(res.conciliacoes?.length?'Modelo alinhado ao Firebase: '+res.conciliacoes.length+' lote(s) corrigido(s) na cópia exportada. ':'')+(res.operacao==='baixa'?'Excel gerado: '+res.baixadas+' caixa(s) baixadas; '+res.removidas+' linha(s) zeradas removidas; '+res.naoBaixadas+' caixa(s) não baixadas. Estoque: '+res.estoqueAntes+' → '+res.estoqueDepois+' caixas. Confira o Excel antes de publicar no Firebase.':'Excel de ajuste gerado com '+res.registros+' registros no histórico. Confira antes de publicar no Firebase.');
+  status.textContent=(res.conciliacoes?.length?'Modelo alinhado ao Firebase: '+res.conciliacoes.length+' lote(s) corrigido(s) na cópia exportada. ':'')+(res.operacao==='baixa'?'Excel gerado: '+res.baixadas+' caixa(s) baixadas; '+res.removidas+' linha(s) zeradas removidas; '+res.naoBaixadas+' caixa(s) não baixadas. Estoque: '+res.estoqueAntes+' → '+res.estoqueDepois+' caixas. Confira o Excel antes de publicar no Firebase.':'Excel do INVENTÁRIO ESTOQUE gerado: '+res.registros+' lotes, '+res.estoqueAntes+' → '+res.estoqueDepois+' caixas. Confira o arquivo antes de confirmar a substituição integral no Firebase.');
  }catch(e){status.textContent='Excel não gerado: '+e.message;}
  finally{button.disabled=false;}
+});
+document.getElementById('etapa4ConfirmarSubstituicao')?.addEventListener('click',async()=>{
+ const botao=document.getElementById('etapa4ConfirmarSubstituicao'),status=document.getElementById('etapa4OperacoesStatus');
+ if(botao.disabled)return;
+ botao.disabled=true;
+ try{
+  const atual=resultadoEtapa4;
+  if(!atual||atual.modo!=='ajuste'||atual.resultado?.tipo!=='substituicao-total')
+   throw Error('Prepare novamente o inventário ESTOQUE.');
+  if(atual.confirmada)throw Error('Esta substituição já foi concluída.');
+  if(!atual.exportado||!atual.excelAtualizado?.blob)
+   throw Error('Primeiro gere e baixe o Excel do Estoque Embalado atualizado.');
+  const {assinaturaInventario}=await import('./integracao/substituicao-estoque-total.mjs');
+  if(atual.assinatura!==assinaturaInventario(lerJsonLocalStorage('entradas',[])))
+   throw Error('Os paletes de destino ESTOQUE foram alterados. Prepare e baixe novamente.');
+  if(atual.versaoInicial!==window.__etapa4Versoes?.embalado)
+   throw Error('O estoque no Firebase mudou. Prepare novamente o inventário antes de substituir.');
+  if(typeof window.substituirEstoqueEmbaladoPeloInventario!=='function')
+   throw Error('A integração de estoque Firebase ainda não está disponível.');
+  const aviso='SUBSTITUIÇÃO INTEGRAL DO ESTOQUE EMBALADO\n\n'+
+   'Esta operação NÃO É UMA BAIXA. Todos os '+atual.origem.length+' lotes anteriores serão substituídos pelos '+atual.resultado.totalLotes+' lotes do romaneio com destino ESTOQUE.\n\n'+
+   'Estoque ANTERIOR: '+atual.resultado.estoqueAnterior+' caixas.\n'+
+   'Estoque NOVO: '+atual.resultado.estoqueDepois+' caixas.\n'+
+   'Lotes retirados: '+atual.resultado.retirados.length+'.\n\n'+
+   'Você já conferiu e salvou o Excel gerado? CONFIRMAR substitui todos os saldos no Firebase.';
+  if(!await confirmarRaiar(aviso))return;
+  // O usuário pode alterar o romaneio durante a confirmação; repetir guarda.
+  if(atual.assinatura!==assinaturaInventario(lerJsonLocalStorage('entradas',[])))
+   throw Error('O romaneio ESTOQUE mudou enquanto a confirmação estava aberta.');
+  const r=await window.substituirEstoqueEmbaladoPeloInventario({
+   resultado:atual.resultado,versaoInicial:atual.versaoInicial
+  });
+  atual.confirmada=true;
+  let alerta='';
+  try{
+   const {guardarModeloEmbalado}=await import('./integracao/modelo-estoque-persistente.mjs');
+   const novoArquivo=new File([atual.excelAtualizado.blob],atual.excelAtualizado.nome,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+   await guardarModeloEmbalado(novoArquivo);
+   window.__etapa4ArquivoEmbalado=novoArquivo;
+  }catch(e){alerta=' O Firebase foi atualizado, porém não foi possível salvar o novo modelo Excel neste navegador: '+e.message+'. Guarde o arquivo já baixado.';}
+  status.textContent='ESTOQUE EMBALADO SUBSTITUÍDO: '+r.quantidadeLotes+' lotes, '+atual.resultado.estoqueDepois+' caixas. Nenhum romaneio, expedição ou estoque PariPassu foi alterado.'+alerta;
+  botao.hidden=true;
+ }catch(e){
+  status.textContent='Substituição não concluída: '+(e.code?e.code+' — ':'')+e.message;
+  botao.disabled=Boolean(resultadoEtapa4?.confirmada);
+ }
 });
 document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async()=>{
  const status=document.getElementById('etapa4OperacoesStatus');
@@ -3457,15 +3518,11 @@ window.addEventListener('romaneio:preparar-baixa-destino',event=>{
 
 document.getElementById('etapa4Preparar')?.addEventListener('click',async()=>{
  if(!document.getElementById('etapa4DestinoBaixa')?.value)atualizarDestinosBaixa();
- const status=document.getElementById('etapa4OperacoesStatus'),saida=document.getElementById('etapa4OperacoesResultado');saida.replaceChildren();resultadoEtapa4=null;document.getElementById('etapa4Exportar').disabled=true;const confirmar=document.getElementById('etapa4ConfirmarBaixa');confirmar.hidden=modoEtapa4.value!=='baixa';confirmar.disabled=modoEtapa4.value!=='baixa';document.getElementById('etapa4OrientacaoConfirmacao').hidden=modoEtapa4.value!=='baixa';
+ const status=document.getElementById('etapa4OperacoesStatus'),saida=document.getElementById('etapa4OperacoesResultado');saida.replaceChildren();resultadoEtapa4=null;document.getElementById('etapa4Exportar').disabled=true;const confirmar=document.getElementById('etapa4ConfirmarBaixa');confirmar.hidden=modoEtapa4.value!=='baixa';confirmar.disabled=modoEtapa4.value!=='baixa';document.getElementById('etapa4OrientacaoConfirmacao').hidden=modoEtapa4.value!=='baixa';const substituir=document.getElementById('etapa4ConfirmarSubstituicao');substituir.disabled=true;substituir.hidden=modoEtapa4.value!=='ajuste';
  try{
   const modo=modoEtapa4.value;
   let registrosParaBaixa=null,romaneiosJaBaixados=0;
-  let registros=modo==='baixa'?movimentosDoRomaneio():document.getElementById('etapa4Movimentos').value.trim().split(/\r?\n/).filter(Boolean).map((linha,i)=>{
-   const a=linha.split(';').map(x=>x.trim());if(a.length!==3)throw Error('Linha '+(i+1)+' deve ter SKU;LOTE;CAIXAS.');
-   const caixas=Number(a[2]);if(!Number.isSafeInteger(caixas)||caixas<0)throw Error('Contagem inválida na linha '+(i+1));
-   return {sku:a[0],lote:a[1],caixas};
-  });
+  let registros=modo==='baixa'?movimentosDoRomaneio():[];let assinaturaAjuste='';
   if(modo==='baixa'){
    const selecao=document.getElementById('etapa4DestinoBaixa')?.value||'ativo:__TODOS__';
    const arquivo=selecao.startsWith('arquivo:');
@@ -3488,9 +3545,13 @@ document.getElementById('etapa4Preparar')?.addEventListener('click',async()=>{
    registros=registrosParaBaixa.map((x,i)=>({id:'romaneio-'+(i+1),sku:x.sku,lote:String(x.loteCompleto||x.lote||''),caixas:Number(x.caixas)}));
   }
   const e=window.__etapa4?.embalado;if(!e?.length)throw Error('Carregue primeiro o estoque compartilhado do Firebase.');
-  if(!registros.length)throw Error('Nenhuma contagem informada.');
-  const resultado=modo==='baixa'?prepararBaixa(e,registros):prepararAjuste(e,registros);
-  const ocorrencias=modo==='baixa'?[...resultado.aplicados.map(x=>({...x,situacao:'Preparada'})),...resultado.pendencias.map(x=>({...x,situacao:x.motivo}))]:resultado.alteracoes.map(x=>({...x,situacao:'Ajuste preparado',caixas:x.fisico}));
+  let resultado;
+  if(modo==='baixa'){if(!registros.length)throw Error('Nenhum romaneio encontrado.');resultado=prepararBaixa(e,registros);}
+  else{const {prepararSubstituicaoTotal,assinaturaInventario}=await import('./integracao/substituicao-estoque-total.mjs');
+   const inventario=lerJsonLocalStorage('entradas',[]);assinaturaAjuste=assinaturaInventario(inventario);resultado=prepararSubstituicaoTotal(e,inventario);}
+  const ocorrencias=modo==='baixa'
+   ?[...resultado.aplicados.map(x=>({...x,situacao:'Preparada'})),...resultado.pendencias.map(x=>({...x,situacao:x.motivo}))]
+   :[...resultado.alteracoes.map(x=>({...x,caixas:x.saldo,situacao:x.acao+' (antes: '+x.anterior+')'})),...resultado.retirados.map(x=>({...x,caixas:0,situacao:'RETIRAR (antes: '+x.saldo+')'}))];
   const tab=document.createElement('table'),body=tab.createTBody();
   for(const x of ocorrencias){const tr=body.insertRow();[x.sku,x.lote,x.caixas,x.situacao].forEach(v=>{const td=tr.insertCell();td.textContent=String(v??'')})}
   saida.appendChild(tab);
@@ -3499,11 +3560,13 @@ document.getElementById('etapa4Preparar')?.addEventListener('click',async()=>{
   const estoqueAntes=e.reduce((a,x)=>a+Number(x.saldo||0),0);
   const estoqueDepois=resultado.itens.reduce((a,x)=>a+Number(x.saldo||0),0);
   const resumo=document.createElement('div');resumo.className='etapa4-resumo-baixa';
-  const dados=modo==='baixa'?[['Caixas solicitadas',solicitadas],['Caixas preparadas',efetivadas],['Não baixadas',solicitadas-efetivadas],['Estoque anterior',estoqueAntes],['Estoque após baixa',estoqueDepois]]:[['Lotes ajustados',resultado.alteracoes.length],['Estoque anterior',estoqueAntes],['Estoque após ajuste',estoqueDepois]];
+  const dados=modo==='baixa'?[['Caixas solicitadas',solicitadas],['Caixas preparadas',efetivadas],['Não baixadas',solicitadas-efetivadas],['Estoque anterior',estoqueAntes],['Estoque após baixa',estoqueDepois]]:[['Registros ESTOQUE',resultado.totalRegistros],['Lotes no novo estoque',resultado.totalLotes],['Lotes retirados',resultado.retirados.length],['Estoque anterior',estoqueAntes],['Novo estoque',estoqueDepois]];
   for(const [nome,valor] of dados){const card=document.createElement('div');card.className='etapa4-resumo-card';const title=document.createElement('span'),number=document.createElement('strong');title.textContent=nome;number.textContent=Number(valor).toLocaleString('pt-BR');card.append(title,number);resumo.appendChild(card)}
   saida.prepend(resumo);
-  resultadoEtapa4={modo,resultado,origem:e.map(x=>({...x})),destino:document.getElementById('etapa4DestinoBaixa')?.value||'ativo:__TODOS__',versaoInicial:window.__etapa4Versoes?.embalado||'',registrosBaixa:registrosParaBaixa,jaBaixadosIgnorados:romaneiosJaBaixados,exportado:false};document.getElementById('etapa4Exportar').disabled=modo==='baixa'&&!resultado.aplicados.length;
-  if(resultadoEtapa4.destino.startsWith('arquivo:')||resultadoEtapa4.destino==='ativo:__TODOS__'){
+  resultadoEtapa4={modo,resultado,origem:e.map(x=>({...x})),destino:modo==='ajuste'?'ESTOQUE':document.getElementById('etapa4DestinoBaixa')?.value||'ativo:__TODOS__',versaoInicial:window.__etapa4Versoes?.embalado||'',registrosBaixa:registrosParaBaixa,jaBaixadosIgnorados:romaneiosJaBaixados,assinatura:assinaturaAjuste,exportado:false};
+  document.getElementById('etapa4Exportar').disabled=modo==='baixa'&&!resultado.aplicados.length;
+  if(modo==='ajuste'){const substituir=document.getElementById('etapa4ConfirmarSubstituicao');substituir.hidden=false;substituir.disabled=true;}
+  if(modo==='baixa'&&(resultadoEtapa4.destino.startsWith('arquivo:')||resultadoEtapa4.destino==='ativo:__TODOS__')){
    const botao=document.getElementById('etapa4ConfirmarBaixa'),aviso=document.getElementById('etapa4OrientacaoConfirmacao');
    const podeBaixar=resultado.aplicados.length>0;
    botao.hidden=!podeBaixar;botao.disabled=!podeBaixar;aviso.hidden=!podeBaixar;
@@ -3511,7 +3574,7 @@ document.getElementById('etapa4Preparar')?.addEventListener('click',async()=>{
    if(podeBaixar)aviso.textContent=faltam?'BAIXA PARCIAL: '+faltam+' caixa(s) sem saldo. Gere e baixe o Excel atualizado; confirme com o aviso Raiar.':'Gere e baixe o Excel atualizado, confira e confirme a baixa no sistema.';
   }
   const disponiveis=modo==='baixa'?resultado.aplicados.length:resultado.alteracoes.length;
-  status.textContent=modo==='baixa'&&!disponiveis?'Nenhuma caixa disponível para uma nova baixa. As pendências sem confirmação continuam preservadas. Confira a baixa anterior e a correspondência dos lotes no Firebase; um saldo zerado não comprova que já foram baixadas. Não há novo Excel de baixa para gerar.':'Conferência concluída: '+ocorrencias.length+' registros. '+(romaneiosJaBaixados?romaneiosJaBaixados+' romaneio(s) já baixado(s) no Firebase foram ignorados. ':'')+'Excel disponível para geração e conferência obrigatória. Nenhum saldo compartilhado foi alterado.';
+  status.textContent=modo==='ajuste'?'Inventário ESTOQUE preparado: '+resultado.totalLotes+' lotes e '+resultado.estoqueDepois+' caixas substituirão o estoque atual de '+resultado.estoqueAnterior+' caixas; '+resultado.retirados.length+' lote(s) serão retirados. Nenhum saldo alterado. Gere o Excel e confirme.':modo==='baixa'&&!disponiveis?'Nenhuma caixa disponível para uma nova baixa. As pendências sem confirmação continuam preservadas. Confira a baixa anterior e a correspondência dos lotes no Firebase; um saldo zerado não comprova que já foram baixadas. Não há novo Excel de baixa para gerar.':'Conferência concluída: '+ocorrencias.length+' registros. '+(romaneiosJaBaixados?romaneiosJaBaixados+' romaneio(s) já baixado(s) no Firebase foram ignorados. ':'')+'Excel disponível para geração e conferência obrigatória. Nenhum saldo compartilhado foi alterado.';
  }catch(e){status.textContent='Operação não preparada: '+e.message;}
 });
 </script>

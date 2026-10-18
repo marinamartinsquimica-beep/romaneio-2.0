@@ -161,3 +161,30 @@ window.registrarBaixaConferida=async ({resultado,versaoInicial,destino,registros
    resultado,versaoInicial,destino,registros
  });
 };
+
+// Confirmação protegida da substituição integral do Estoque Embalado.
+// Não afeta o Estoque PariPassu, expedições, baixas ou dados do romaneio.
+window.substituirEstoqueEmbaladoPeloInventario=async ({resultado,versaoInicial})=>{
+ await auth.authStateReady();
+ const usuario=auth.currentUser;
+ if(!usuario||!ambienteAtual?.ambienteId||!ambienteAtual?.permissoes?.publicarExcel)
+  throw Error('Operador não autorizado a substituir o Estoque Embalado.');
+ if(!navigator.onLine)throw Error('É necessário estar online para substituir o estoque.');
+ if(resultado?.tipo!=='substituicao-total'||resultado.destino!=='ESTOQUE'||!resultado.itens?.length)
+  throw Error('Inventário ESTOQUE inválido. Prepare novamente.');
+ if(!versaoInicial)throw Error('Versão atual do Estoque Embalado não encontrada; aguarde a sincronização.');
+ const itens=resultado.itens.map(x=>({...x}));
+ const {validarEstoqueOficial}=await import('./contrato-estoques.mjs');
+ const dados=validarEstoqueOficial({
+  tipo:'embalado',
+  nome:'Inventário integral — destino ESTOQUE',
+  versao:crypto.randomUUID(),
+  itens
+ },'embalado');
+ if(new TextEncoder().encode(JSON.stringify(dados.itens)).length>750000)
+  throw Error('Inventário excede o tamanho seguro do documento Firestore.');
+ return publicarEstoqueOficial({
+  db,uid:usuario.uid,tipo:'embalado',dados,versaoEsperada:versaoInicial,
+  doc,runTransaction,autorizado:true,ambienteId:ambienteAtual.ambienteId
+ });
+};
