@@ -20,7 +20,7 @@ export function conferirEstoques(embalado,paripassu){
   const b=p.get(k);
  if(!b)pendencias.push({...a,tipo:'ausente_paripassu',embalado:a.saldo,paripassu:0,diferenca:a.saldo});
  else if(b.saldo+1e-9<a.saldo)pendencias.push({...a,tipo:'saldo_insuficiente_paripassu',embalado:a.saldo,paripassu:b.saldo,diferenca:a.saldo-b.saldo});
- else conformesItens.push({...a,paripassu:b.saldo});}
+ else conformesItens.push({...a,paripassu:b.saldo,excedenteParipassu:Math.max(0,b.saldo-a.saldo)});}
  pendencias.sort((a,b)=>a.sku.localeCompare(b.sku,'pt-BR')||a.lote.localeCompare(b.lote,'pt-BR'));
  return {conferidos:[...e.values()].filter(x=>x.saldo>0).length,conformes:conformesItens.length,conformesItens,pendencias};
 }
