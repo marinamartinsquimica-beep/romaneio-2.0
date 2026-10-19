@@ -503,7 +503,10 @@ async function aplicarUniaoSeguraOperacional(){
   if(fila.length)throw Error('Há movimentações locais pendentes; envie ou resolva antes da união.');
   if(baseBruta!==null&&!Array.isArray(JSON.parse(baseBruta)))throw Error('Estado-base inválido.');
   const snap=await lerHistoricoMovimentosCompleto(auth.currentUser.uid);
-  const movs=snap.docs.map(d=>({id:d.id,...d.data()})).filter(d=>!String(d.id).startsWith('teste_')&&!String(d.id).startsWith('offline_')&&!String(d.id).startsWith('lab_')&&(!String(d.item?.sku||'').startsWith('TESTE-')||['TESTE-SYNC-01','TESTE-OFFLINE-01'].includes(String(d.item?.sku||'').toUpperCase().replace(/\s+/g,''))));
+  const {CHAVE_FECHAMENTOS,filtrarMovimentosJaFechados}=await import('./marcos-romaneios-fechados.mjs');
+  const fechamentosBrutos=JSON.parse(localStorage.getItem(CHAVE_FECHAMENTOS)||'[]');
+  if(!Array.isArray(fechamentosBrutos))throw Error('Marcadores de romaneios encerrados inválidos; nenhuma entrada foi recebida.');
+  const movs=filtrarMovimentosJaFechados(snap.docs.map(d=>({id:d.id,...d.data()})),fechamentosBrutos).filter(d=>!String(d.id).startsWith('teste_')&&!String(d.id).startsWith('offline_')&&!String(d.id).startsWith('lab_')&&(!String(d.item?.sku||'').startsWith('TESTE-')||['TESTE-SYNC-01','TESTE-OFFLINE-01'].includes(String(d.item?.sku||'').toUpperCase().replace(/\s+/g,''))));
   movs.sort((a,b)=>String(a.criadoEm||'').localeCompare(String(b.criadoEm||''))||String(a.id).localeCompare(String(b.id)));
   const chave=x=>JSON.stringify([x?.data,x?.sku,x?.destino,x?.palete,x?.loteCompleto,x?.lote,x?.postura,x?.caixas,x?.observacoes]);
   const grupos=new Map(),falhas=[];
