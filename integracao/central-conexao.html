@@ -548,11 +548,13 @@ async function aplicarUniaoSeguraOperacional(){
   // O histórico legado pode conter edições sem estado anterior. Não bloqueie
   // a chegada de inclusões independentes com trajetória íntegra por registroId.
   // Esta via complementar não mexe no estoque, na fila ou nas exclusões.
-  if(falhas.length){
+  if(falhas.length||!entradas.length){
    const {recuperarPaletesRemotosSeguros}=await import('./recuperar-paletes-remotos.mjs');
    const seguros=recuperarPaletesRemotosSeguros(movs,entradas);
-   if(!seguros.remotos.length)
-    throw Error('Histórico com '+falhas.length+' inconsistência(s), sem entradas seguras para receber. Nenhum palete foi criado. Consulte o diagnóstico.');
+   if(!seguros.remotos.length){
+    saida.textContent='Nenhuma entrada remota com sequência completa e verificável disponível. '+seguros.incertos.length+' histórico(s) aguardam revisão; nenhum palete ou saldo alterado.';
+    return;
+   }
    const idsExistentes=new Set(entradas.map(x=>String(x.registroId||'')).filter(Boolean));
    if(seguros.remotos.some(x=>idsExistentes.has(String(x.registroId))))
     throw Error('ID remoto já utilizado localmente; dados preservados.');
