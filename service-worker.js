@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v283-limpeza-vazia";
+const CACHE_NAME = "romaneio-2-0-cache-v284-sync-usuarios";
 
 const FILES_TO_CACHE = [
   "./inicio.html",
@@ -15,6 +15,7 @@ const FILES_TO_CACHE = [
   "./integracao/direcao-sincronizacao.mjs",
   "./integracao/reconciliar-pendencias-baixadas.mjs",
   "./integracao/substituicao-estoque-total.mjs",
+  "./integracao/recuperar-paletes-remotos.mjs",
   "./vendor/LICENSE-zxing.txt",
   "./qr-parser.js",
   "./manifest.json",
