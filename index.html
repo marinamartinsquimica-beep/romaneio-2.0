@@ -272,7 +272,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.84</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.85</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
 <div class="romaneio-backup-actions" style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button class="desktop-backup-action" type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Pendências de sincronização</button><button class="desktop-backup-action" type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button><button class="mobile-sync-action" type="button" onclick="sincronizarRomaneioCelular()" style="width:auto;background:#5CDCF2;color:#254D69;font-weight:800;font-size:13px;padding:10px 18px;border-radius:12px;border:2px solid #254D69">SINCRONIZAR</button></div>
 <section class="dashboard"><div class="metric"><div class="ico">📋</div><div><b id="dashRegistros">0</b><span id="dashRegistrosLabel">Registros totais</span></div></div><div class="metric"><div class="ico">📦</div><div><b id="dashCaixas">0</b><span id="dashCaixasLabel">Caixas totais</span></div></div><div class="metric"><div class="ico">🧱</div><div><b id="dashPaletes">0</b><span id="dashPaletesLabel">Paletes totais</span></div></div><div class="metric"><div class="ico">📍</div><div><b id="dashDestinos">0</b><span id="dashDestinosLabel">Destinos totais</span></div></div><div class="metric"><div class="ico">🕒</div><div><b id="dashUltimo">--</b><span>Último registro</span></div></div></section>
@@ -391,7 +391,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.84";
+const APP_VERSION = "2.0.85";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -2325,8 +2325,17 @@ async function reiniciarEntradas() {
       await confirmarRaiar('Existem '+lerFilaMovimentos().length+' movimento(s) aguardando sincronização neste computador. Sincronize antes de apagar um romaneio com entradas. Nenhum dado foi excluído.');
       return;
     }
-    // Guardar snapshot recuperável antes de qualquer exclusão local.
-    try{await salvarHistoricoFechamento();}catch(e){alert(e.message);return;}
+    // Guardar snapshot recuperável e marcador de IDs já removidos ANTES de
+    // limpar. A sincronização não deve reimportar eventos anteriores à limpeza.
+    try{
+      await salvarHistoricoFechamento();
+      const {CHAVE_FECHAMENTOS,registrarFechamento}=await import('./integracao/marcos-romaneios-fechados.mjs');
+      if(!dispositivoCelular&&Array.isArray(entradasAtuais)&&entradasAtuais.length){
+        const anteriores=lerJsonLocalStorage(CHAVE_FECHAMENTOS,[]);
+        const fechamentos=registrarFechamento(entradasAtuais,Array.isArray(anteriores)?anteriores:[]);
+        localStorage.setItem(CHAVE_FECHAMENTOS,JSON.stringify(fechamentos));
+      }
+    }catch(e){alert('Limpeza cancelada: não foi possível preservar a proteção contra importação repetida. '+e.message);return;}
 
     // Exclusão no celular gera aviso de baixa. No computador, somente limpeza local.
     if(dispositivoCelular){
