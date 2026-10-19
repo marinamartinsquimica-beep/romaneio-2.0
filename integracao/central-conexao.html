@@ -545,7 +545,35 @@ async function aplicarUniaoSeguraOperacional(){
     const anterior=retirar(mov.antes,mov.id);if(anterior)adicionar(mov.item,anterior.origem);
    }else falhas.push(mov.id+': tipo desconhecido');
   }
-  if(falhas.length)throw Error('Sequência inconsistente: '+falhas.slice(0,3).join('; '));
+  // O histórico legado pode conter edições sem estado anterior. Não bloqueie
+  // a chegada de inclusões independentes com trajetória íntegra por registroId.
+  // Esta via complementar não mexe no estoque, na fila ou nas exclusões.
+  if(falhas.length){
+   const {recuperarPaletesRemotosSeguros}=await import('./recuperar-paletes-remotos.mjs');
+   const seguros=recuperarPaletesRemotosSeguros(movs,entradas);
+   if(!seguros.remotos.length)
+    throw Error('Histórico com '+falhas.length+' inconsistência(s), sem entradas seguras para receber. Nenhum palete foi criado. Consulte o diagnóstico.');
+   const idsExistentes=new Set(entradas.map(x=>String(x.registroId||'')).filter(Boolean));
+   if(seguros.remotos.some(x=>idsExistentes.has(String(x.registroId))))
+    throw Error('ID remoto já utilizado localmente; dados preservados.');
+   if(localStorage.getItem('entradas')!==entradasBrutas||
+      localStorage.getItem('romaneio2_movimentos_pendentes_v1')!==filaBruta||
+      localStorage.getItem(baseChave)!==baseBruta)
+    throw Error('Os dados locais mudaram; tente sincronizar novamente.');
+   const proximo=[...entradas,...seguros.remotos];
+   // A cópia de segurança da união já foi preservada no início da operação.
+   if(!uniaoAutomaticaEmAndamento&&!window.confirm(
+      'Receber '+seguros.remotos.length+' palete(s) com histórico íntegro? '+
+      seguros.incertos.length+' registros continuam em revisão. Nenhuma baixa será executada.'))return;
+   localStorage.setItem('entradas',JSON.stringify(proximo));
+   localStorage.setItem(baseChave,JSON.stringify(proximo));
+   backupUniaoNestaSessao=false;
+   if(uniaoAutomaticaEmAndamento)localStorage.removeItem(CHAVE_BACKUP_AUTOMATICO);
+   saida.textContent='SINCRONIZAÇÃO PARCIAL SEGURA: '+seguros.remotos.length+
+    ' entrada(s) recuperada(s) no computador; '+seguros.incertos.length+
+    ' identificador(es) aguardam revisão. Estoque e fila intactos.';
+   return;
+  }
   const existentes=new Map();
   for(const e of entradas){const k=chave(e);existentes.set(k,(existentes.get(k)||0)+1);}
   const extras=[];
