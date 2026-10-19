@@ -91,7 +91,7 @@ function observar(uid,ambienteId=null){
       const tr=table.createTHead().insertRow();
       for(const label of ['SKU','Lote completo','Situação','Embalado (CX)','PariPassu (CX)','Diferença (CX)']){const th=document.createElement('th');th.textContent=label;tr.appendChild(th)}
       const body=table.createTBody();const fmt=n=>Number(n).toLocaleString('pt-BR',{maximumFractionDigits:3});
-      for(const x of r.conformesItens){const row=body.insertRow();for(const value of [x.sku,x.lote,'OK',fmt(x.saldo),fmt(x.paripassu),fmt(Math.max(0,x.saldo-x.paripassu))]){const td=row.insertCell();td.textContent=String(value)}}
+      for(const x of r.conformesItens){const row=body.insertRow();const excedente=Number(x.excedenteParipassu||0);for(const value of [x.sku,x.lote,excedente>1e-9?'Excedente no PariPassu':'OK',fmt(x.saldo),fmt(x.paripassu),excedente>1e-9?'+'+fmt(excedente):'0']){const td=row.insertCell();td.textContent=String(value)}}
       wrap.append(table);details.append(wrap);ok.append(details);
     }
 
