@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {conferirEstoques} from './conferencia-estoques.mjs';
+const x=(sku,lote,saldo)=>({sku,lote,saldo});
+test('PariPassu superior aparece como excedente e nao gera pendencia',()=>{const r=conferirEstoques([x('5008','L1',17)],[x('5008','L1',50)]);assert.equal(r.pendencias.length,0);assert.equal(r.conformes,1);assert.equal(r.conformesItens[0].excedenteParipassu,33)});
+test('PariPassu igual mostra zero excedente sem alerta',()=>{const r=conferirEstoques([x('5008','L1',26)],[x('5008','L1',26)]);assert.equal(r.conformesItens[0].excedenteParipassu,0);assert.equal(r.pendencias.length,0)});
+test('PariPassu inferior continua pendencia e aviso',()=>{const r=conferirEstoques([x('5008','L1',31)],[x('5008','L1',20)]);assert.equal(r.pendencias.length,1);assert.equal(r.pendencias[0].diferenca,11)});
+test('saldo zero no Embalado continua desconsiderado',()=>{const r=conferirEstoques([x('11796','L2',0)],[x('11796','L2',30)]);assert.equal(r.conferidos,0);assert.equal(r.conformes,0);assert.equal(r.pendencias.length,0)});
+test('UI informa excedente apenas na lista OK, sem usar contagem de avisos',()=>{const ui=readFileSync(new URL('./estoques-firebase-ui.mjs',import.meta.url),'utf8');assert.match(ui,/Excedente no PariPassu/);assert.match(ui,/\+'\+fmt\(excedente\)/);assert.match(ui,/if\(r\.pendencias\.length\)mostrarAvisoParipassu/);});
