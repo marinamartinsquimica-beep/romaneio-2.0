@@ -1,5 +1,22 @@
 // Exportação PariPassu: aba "1. Estoque". Quantidade = ovos, Qtd. Caixas não é saldo confiável.
 const normalizar=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
+
+// Reconhece tanto o formato histórico "(120)" quanto a exportação
+// "(CAIXA 120 UN.)". O número do estojo (ex.: ESTOJO 10) não
+// corresponde à quantidade de ovos da caixa logística.
+export function lerOvosPorCaixaProduto(produto){
+ const titulo=normalizar(produto);
+ const declarados=[
+  ...titulo.matchAll(/\(\s*CAIXA\s*[:\-]?\s*(\d+)\s*(?:UN(?:\.|IDADES?)?|UND\.?|OVOS?)?\s*\)/g),
+  ...titulo.matchAll(/\(\s*(\d+)\s*\)/g)
+ ].map(m=>Number(m[1]));
+ if(!declarados.length)return null;
+ if(declarados.some(q=>!Number.isSafeInteger(q)||q<=0))return null;
+ if(new Set(declarados).size>1)
+  throw Error('Capacidades de caixa divergentes no produto: '+String(produto)+'. Confira o cadastro PariPassu.');
+ return declarados[0];
+}
+
 export function extrairParipassu(linhas){
  const cab=linhas.findIndex(l=>l.some(v=>normalizar(v)==='TIPO PRODUTO')&&l.some(v=>normalizar(v)==='QUANTIDADE')&&l.some(v=>normalizar(v)==='LOTE'));
  if(cab<0)throw Error('Cabeçalho PariPassu não encontrado: Tipo Produto, Lote e Quantidade.');
@@ -9,12 +26,12 @@ export function extrairParipassu(linhas){
   if(linha.every(v=>String(v??'').trim()===''))continue;
   const produto=String(linha[iProduto]??'').trim(),lote=String(linha[iLote]??'').trim();
   if(/INDUSTRI/i.test(normalizar(produto))){industriais++;continue;}
-  const skuMatch=produto.match(/^(\d+)\s*-/),ovosCaixaMatch=produto.match(/\(\s*(\d+)\s*\)/);
-  if(!skuMatch||!ovosCaixaMatch||Number(ovosCaixaMatch[1])<=0){semSku++;if(naoIdentificados.length<5)naoIdentificados.push(produto);continue;}
+  const skuMatch=produto.match(/^(\d+)\s*-/),ovosPorCaixa=lerOvosPorCaixaProduto(produto);
+  if(!skuMatch||!ovosPorCaixa){semSku++;if(naoIdentificados.length<5)naoIdentificados.push(produto);continue;}
   if(!lote)throw Error('Lote ausente em produto '+skuMatch[1]+'.');
   const bruto=linha[iOvos],ovos=Number(String(bruto??'').trim().replace(',','.'));
   if(String(bruto??'').trim()===''||!Number.isSafeInteger(ovos)||ovos<0)throw Error('Quantidade de ovos inválida no SKU '+skuMatch[1]+' e lote '+lote+'.');
-  const sku=skuMatch[1],ovosPorCaixa=Number(ovosCaixaMatch[1]),postura=iPostura<0?'':String(linha[iPostura]??'').trim();
+  const sku=skuMatch[1],postura=iPostura<0?'':String(linha[iPostura]??'').trim();
   const rastro=iRastro<0?'':String(linha[iRastro]??'').trim();
   if(rastro){
    const anteriorRastro=rastros.get(rastro);
