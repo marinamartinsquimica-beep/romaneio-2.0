@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v281-conciliacao-pendencias";
+const CACHE_NAME = "romaneio-2-0-cache-v282-paripassu-caixa-un";
 
 const FILES_TO_CACHE = [
   "./inicio.html",
