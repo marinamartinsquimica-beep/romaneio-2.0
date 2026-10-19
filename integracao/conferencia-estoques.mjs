@@ -14,10 +14,13 @@ function consolidar(itens){
 }
 export function conferirEstoques(embalado,paripassu){
  const e=consolidar(embalado),p=consolidar(paripassu),pendencias=[],conformesItens=[];
- for(const [k,a] of e){const b=p.get(k);
+ for(const [k,a] of e){
+  // Saldo zerado é histórico do Embalado, não demanda saldo no PariPassu.
+  if(a.saldo===0)continue;
+  const b=p.get(k);
  if(!b)pendencias.push({...a,tipo:'ausente_paripassu',embalado:a.saldo,paripassu:0,diferenca:a.saldo});
  else if(b.saldo+1e-9<a.saldo)pendencias.push({...a,tipo:'saldo_insuficiente_paripassu',embalado:a.saldo,paripassu:b.saldo,diferenca:a.saldo-b.saldo});
  else conformesItens.push({...a,paripassu:b.saldo});}
  pendencias.sort((a,b)=>a.sku.localeCompare(b.sku,'pt-BR')||a.lote.localeCompare(b.lote,'pt-BR'));
- return {conferidos:e.size,conformes:conformesItens.length,conformesItens,pendencias};
+ return {conferidos:[...e.values()].filter(x=>x.saldo>0).length,conformes:conformesItens.length,conformesItens,pendencias};
 }
