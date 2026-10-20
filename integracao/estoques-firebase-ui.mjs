@@ -129,8 +129,6 @@ function observar(uid,ambienteId=null){
    };
    const movimentos=await lerColecao('movimentos');
    if(auth.currentUser?.uid!==uid)return;
-   const outrosAutores=movimentos.some(m=>m.autorUid&&m.autorUid!==uid);
-   if(!outrosAutores){window.__paletesDeOutrosUsuarios=[];window.operadorAtualizarPainel?.();return;}
    const expedicoes=await lerColecao('expedicoes');
    const {paletesOutrosUsuarios}=await import('./painel-paletes-outros-usuarios.mjs');
    const {CHAVE_FECHAMENTOS}=await import('./marcos-romaneios-fechados.mjs');
@@ -141,6 +139,9 @@ function observar(uid,ambienteId=null){
     movimentos,uidAtual:uid,entradasLocais:locais,fechamentos,expedicoes
    });
    if(auth.currentUser?.uid!==uid||ambienteAtual?.ambienteId!==ambienteId)return;
+   window.__reservasCompartilhadas=paletesOutrosUsuarios({
+    movimentos,uidAtual:uid,entradasLocais:[],fechamentos,expedicoes,incluirProprios:true
+   }).remotos;
    window.__paletesDeOutrosUsuarios=resultado.remotos;
    window.operadorAtualizarPainel?.();
   }catch(e){
@@ -151,7 +152,7 @@ function observar(uid,ambienteId=null){
    if(refazerConsulta){refazerConsulta=false;void atualizarPaletesCompartilhados();}
   }
  }
- window.__paletesDeOutrosUsuarios=[];
+ window.__paletesDeOutrosUsuarios=[];window.__reservasCompartilhadas=null;
  window.atualizarConsultaCompartilhada=atualizarPaletesCompartilhados;
  const aoReconectar=()=>void atualizarPaletesCompartilhados();
  const aoRetornar=()=>{if(!document.hidden)void atualizarPaletesCompartilhados();};
@@ -171,7 +172,7 @@ function observar(uid,ambienteId=null){
    renderizarDestinosExcluidos(snapshot.docs.map(d=>d.data()));
  },err=>{const alvo=$('listaDestinosExcluidos');if(alvo){const p=document.createElement('p');p.textContent='Histórico remoto indisponível: '+err.message+'. As exclusões locais e a fila não foram descartadas.';alvo.append(p)}}));
 }
-onAuthStateChanged(auth,async u=>{unsub.forEach(f=>f());unsub=[];ambienteAtual=null;usuarioAtual=u?.uid||null;window.__paletesDeOutrosUsuarios=[];window.operadorAtualizarPainel?.();versoes={embalado:'',paripassu:''};if(!u){mostrar('Faça login na Central de Conexão para compartilhar os estoques.');return;}try{const vinculo=await resolverAmbienteUsuario({db,uid:u.uid});if(usuarioAtual!==u.uid)return;ambienteAtual=vinculo;observar(u.uid,vinculo.ambienteId);}catch(e){if(usuarioAtual!==u.uid)return;mostrar('Sincronização suspensa: '+e.message);}});
+onAuthStateChanged(auth,async u=>{unsub.forEach(f=>f());unsub=[];ambienteAtual=null;usuarioAtual=u?.uid||null;window.__paletesDeOutrosUsuarios=[];window.__reservasCompartilhadas=null;window.operadorAtualizarPainel?.();versoes={embalado:'',paripassu:''};if(!u){mostrar('Faça login na Central de Conexão para compartilhar os estoques.');return;}try{const vinculo=await resolverAmbienteUsuario({db,uid:u.uid});if(usuarioAtual!==u.uid)return;ambienteAtual=vinculo;observar(u.uid,vinculo.ambienteId);}catch(e){if(usuarioAtual!==u.uid)return;mostrar('Sincronização suspensa: '+e.message);}});
 $('etapa4Arquivo')?.addEventListener('change',async()=>{const arquivo=$('etapa4Arquivo')?.files?.[0];if(!arquivo||$('etapa4Tipo')?.value!=='embalado')return;try{await importar(arquivo,'embalado');await guardarModeloEmbalado(arquivo);window.__etapa4ArquivoEmbalado=arquivo;mostrar('Modelo de Estoque Embalado preservado neste navegador. Publique para sincronizar os saldos no sistema.')}catch(err){mostrar('Arquivo não preservado: '+err.message)}});
 $('etapa4Publicar')?.addEventListener('click',async()=>{
  const b=$('etapa4Publicar');b.disabled=true;

@@ -13,7 +13,7 @@ const linha=(palete,destino,sku,caixas)=>{
  cells[3].textContent=palete;cells[7].textContent=String(caixas);
  return {cells};
 };
-function simular(linhas){
+function simular(linhas,compartilhados=[]){
  const tbody={rows:[],replaceChildren(){this.rows=[]},insertRow(){
   const tr={cells:[],insertCell(){const c={textContent:'',colSpan:1,appendChild(x){this.button=x}};this.cells.push(c);return c}};
   this.rows.push(tr);return tr;
@@ -28,7 +28,7 @@ function simular(linhas){
   createElement:()=>({type:'',textContent:'',addEventListener(){}})
  };
  runInNewContext(codigo+'\noperadorAtualizarPainel();',{
-  document,renderizarRomaneiosCompartilhados(){},mostrarExpedicoesExcluidasOperador(){},obterRomaneiosDestino(){return [{nome:'A'}]},
+  window:{__paletesDeOutrosUsuarios:compartilhados},lerJsonLocalStorage(){return []},document,renderizarRomaneiosCompartilhados(){},mostrarExpedicoesExcluidasOperador(){},obterRomaneiosDestino(){return [{nome:'A'}]},
   lerFilaMovimentos(){return []},atualizarResumoReservaTeste(){},operadorAtualizarCardsEstoque(){},
   operadorVoltarRomaneios(){}
  });
@@ -55,4 +55,12 @@ test('estado vazio usa cinco colunas',()=>{
  const r=simular([]);
  assert.equal(r.tbody.rows.length,1);
  assert.equal(r.tbody.rows[0].cells[0].colSpan,5);
+});
+
+test('cards e lista do operador incluem os mesmos paletes compartilhados',()=>{
+ const r=simular([],[{registroId:'a',palete:'1',destino:'ANGELONI',sku:'3829',caixas:156},{registroId:'b',palete:'2',destino:'SHOPPER',sku:'5008',caixas:129}]);
+ assert.equal(r.ids.get('opPaletes').textContent,2);
+ assert.equal(r.ids.get('opCaixas').textContent,'285');
+ assert.equal(r.tbody.rows.length,2);
+ assert.equal(r.tbody.rows[0].cells[4].button.textContent,'Consulta compartilhada');
 });

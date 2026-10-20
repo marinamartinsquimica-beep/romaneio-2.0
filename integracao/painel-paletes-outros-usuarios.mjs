@@ -4,7 +4,7 @@ import {recuperarPaletesRemotosSeguros} from './recuperar-paletes-remotos.mjs';
 import {identidadeExpedicaoBaixa} from './baixa-transacional.mjs';
 import {filtrarMovimentosJaFechados} from './marcos-romaneios-fechados.mjs';
 const id=x=>String(x??'').trim();
-export function paletesOutrosUsuarios({movimentos,uidAtual,entradasLocais=[],fechamentos=[],expedicoes=[]}){
+export function paletesOutrosUsuarios({movimentos,uidAtual,entradasLocais=[],fechamentos=[],expedicoes=[],incluirProprios=false}){
  if(!uidAtual||!Array.isArray(movimentos)||!Array.isArray(entradasLocais)||
     !Array.isArray(fechamentos)||!Array.isArray(expedicoes))throw Error('Consulta compartilhada inválida.');
  const autores=new Map();
@@ -19,7 +19,7 @@ export function paletesOutrosUsuarios({movimentos,uidAtual,entradasLocais=[],fec
  const baixadas=new Set(expedicoes.filter(x=>x?.estado==='BAIXA_CONCLUIDA').map(x=>id(x.id)).filter(Boolean));
  const remotos=conferidos.remotos.filter(x=>{
   const autor=autores.get(id(x.registroId));
-  if(!autor||autor===uidAtual)return false;
+  if(!autor||(!incluirProprios&&autor===uidAtual))return false;
   if(baixadas.has(identidadeExpedicaoBaixa(x,true).id))return false;
   return true;
  });

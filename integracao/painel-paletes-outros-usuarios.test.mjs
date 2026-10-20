@@ -50,3 +50,13 @@ test('código do painel não altera a sincronização local nem o armazenamento 
  assert.match(html,/btn.addEventListener\('click',\(\)=>abrirConsultaCompartilhada\(d.destino,d.palete\)\)/);
  assert.doesNotMatch(html,/btn.textContent='Consulta compartilhada';btn.disabled=true/);
 });
+test('reserva do ambiente inclui próprios e outros, sem alterar consulta do mesmo login',()=>{
+ const movimentos=[inclusao(p('a')),inclusao({...p('b'),palete:'13'},'marina')];
+ const r=paletesOutrosUsuarios({movimentos,uidAtual:'marina',incluirProprios:true});
+ assert.equal(r.remotos.length,2);
+ assert.equal(consulta(movimentos).remotos.length,1);
+ const baixada=identidadeExpedicaoBaixa(p('a'),true).id;
+ const semBaixada=paletesOutrosUsuarios({movimentos,uidAtual:'marina',incluirProprios:true,expedicoes:[{id:baixada,estado:'BAIXA_CONCLUIDA'}]});
+ assert.equal(semBaixada.remotos.length,1);
+ assert.equal(semBaixada.remotos[0].registroId,'b');
+});
