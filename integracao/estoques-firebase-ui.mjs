@@ -152,10 +152,20 @@ function observar(uid,ambienteId=null){
   }
  }
  window.__paletesDeOutrosUsuarios=[];
+ window.atualizarConsultaCompartilhada=atualizarPaletesCompartilhados;
+ const aoReconectar=()=>void atualizarPaletesCompartilhados();
+ const aoRetornar=()=>{if(!document.hidden)void atualizarPaletesCompartilhados();};
+ window.addEventListener('online',aoReconectar);
+ document.addEventListener('visibilitychange',aoRetornar);
+ unsub.push(()=>{window.removeEventListener('online',aoReconectar);document.removeEventListener('visibilitychange',aoRetornar);if(window.atualizarConsultaCompartilhada===atualizarPaletesCompartilhados)delete window.atualizarConsultaCompartilhada;});
+ void atualizarPaletesCompartilhados();
+ unsub.push(onSnapshot(collection(db,...raiz,'expedicoes'),snapshot=>{
+  if(!snapshot.metadata.fromCache)void atualizarPaletesCompartilhados();
+ },e=>mostrar('Consulta compartilhada: '+e.message)));
  unsub.push(onSnapshot(query(collection(db,...raiz,'movimentos'),orderBy('criadoEm','desc'),limit(1)),snapshot=>{
   if(snapshot.metadata.fromCache)return;
   void atualizarPaletesCompartilhados();
- },()=>{}));
+ },e=>mostrar('Consulta compartilhada: '+e.message)));
  renderizarDestinosExcluidos();
  unsub.push(onSnapshot(query(collection(db,...raiz,'movimentos'),orderBy('criadoEm','desc'),limit(50)),snapshot=>{
    renderizarDestinosExcluidos(snapshot.docs.map(d=>d.data()));

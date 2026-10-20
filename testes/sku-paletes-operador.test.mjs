@@ -28,7 +28,7 @@ function simular(linhas){
   createElement:()=>({type:'',textContent:'',addEventListener(){}})
  };
  runInNewContext(codigo+'\noperadorAtualizarPainel();',{
-  document,mostrarExpedicoesExcluidasOperador(){},obterRomaneiosDestino(){return [{nome:'A'}]},
+  document,renderizarRomaneiosCompartilhados(){},mostrarExpedicoesExcluidasOperador(){},obterRomaneiosDestino(){return [{nome:'A'}]},
   lerFilaMovimentos(){return []},atualizarResumoReservaTeste(){},operadorAtualizarCardsEstoque(){},
   operadorVoltarRomaneios(){}
  });
