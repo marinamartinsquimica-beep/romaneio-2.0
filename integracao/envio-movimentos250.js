@@ -5,9 +5,9 @@ import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
  */
 import {initializeApp,getApps,getApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getFirestore,doc,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-import {criarPublicadorMovimentos} from './publicador-firestore.js?v=2.0.95';
-import {criarSincronizadorFila} from './sincronizador-fila.js?v=2.0.95';
+import {getFirestore,doc,getDocFromServer,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {criarPublicadorMovimentos} from './publicador-firestore.js?v=2.0.96';
+import {criarSincronizadorFila} from './sincronizador-fila.js?v=2.0.96';
 const config={apiKey:'AIzaSyCCy5uY1eAFQE9Vhykr7xNNayDtk_B-Hy4',authDomain:'romaneio-2-0-homologacao.firebaseapp.com',projectId:'romaneio-2-0-homologacao',storageBucket:'romaneio-2-0-homologacao.firebasestorage.app',messagingSenderId:'357381847782',appId:'1:357381847782:web:59ad8365c033bba8e79927'};
 exigirFirebaseHomologacao(config);
 const app=getApps().length?getApp():initializeApp(config),auth=getAuth(app),db=getFirestore(app);
@@ -35,3 +35,15 @@ export async function sincronizarMovimentos250(){
  return sincronizador.executar();
 }
 export function estadoSincronizacao250(){return {habilitado,autenticado:!!auth.currentUser,pendentes:ler().length,erros:erros.slice(-10)};}
+
+export async function regularizarIdentificacaoPendencias({dispositivoId,guardarBackup}){
+ if(!navigator.onLine)throw Error('Sem internet. A identificação não foi alterada.');
+ await auth.authStateReady();const uid=auth.currentUser?.uid;
+ if(!uid)throw Error('Reconecte pela Central de Conexão antes de regularizar.');
+ const vinculo=await resolverAmbienteUsuario({db,uid});
+ const validarSessao=()=>{if(auth.currentUser?.uid!==uid)throw Error('Sessão alterada; fila preservada.');};
+ const {regularizarIdentificacaoFila}=await import('./regularizar-identificacao-fila.mjs?v=2.0.96');
+ return regularizarIdentificacaoFila({dispositivoId,ler,gravar,guardarBackup,validarSessao,
+  consultarServidor:async id=>{validarSessao();return (await getDocFromServer(doc(db,'romaneio_ambientes',vinculo.ambienteId,'movimentos',id))).exists();}
+ });
+}

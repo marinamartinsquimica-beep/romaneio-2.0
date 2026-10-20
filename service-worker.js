@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v295-envio-e-diagnostico-coordenados";
+const CACHE_NAME = "romaneio-2-0-cache-v296-regularizar-identificacao-pendente";
 
 const FILES_TO_CACHE = [
   "./inicio.html",
@@ -13,6 +13,7 @@ const FILES_TO_CACHE = [
   "./integracao/baixa-transacional.mjs",
   "./integracao/filtro-expedicoes-baixadas.mjs",
   "./integracao/direcao-sincronizacao.mjs",
+  "./integracao/regularizar-identificacao-fila.mjs?v=2.0.96",
   "./integracao/reconciliar-pendencias-baixadas.mjs",
   "./integracao/substituicao-estoque-total.mjs",
   "./integracao/recuperar-paletes-remotos.mjs",

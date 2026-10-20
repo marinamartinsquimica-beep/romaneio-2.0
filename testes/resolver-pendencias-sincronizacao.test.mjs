@@ -17,3 +17,11 @@ test('envio confirmado atualiza a janela e informa conclusão',async()=>{const r
 test('envio parcial mantém as pendências e permite tentar novamente',async()=>{const r=await executar({restantes:1});assert.equal(r.fila.length,1);assert.match(r.mensagem.textContent,/1 movimentação/);assert.equal(r.botao.disabled,false)});
 test('falha de acesso preserva fila e orienta Central de Conexão',async()=>{const r=await executar({falhar:true});assert.deepEqual(r.fila,[{id:'a'},{id:'b'}]);assert.match(r.mensagem.textContent,/Permissão negada.*Central de Conexão/)});
 test('offline não tenta enviar nem remove eventos',async()=>{const r=await executar({online:false});assert.equal(r.chamadas,0);assert.equal(r.fila.length,2);assert.match(r.mensagem.textContent,/Sem internet/)});
+test('janela regulariza identificação com cópia antes de iniciar envio',async()=>{
+ let fila=[{id:'evento0001',dispositivoId:''}];const etapas=[],mensagem={textContent:''},botao={};
+ const guardarBackup=async()=>{etapas.push('copia')};
+ const c={navigator:{onLine:true},lerFilaMovimentos:()=>fila,localStorage:{getItem:()=> 'aparelho-original',setItem(){}},DISPOSITIVO_MOVIMENTOS_KEY:'dispositivo',guardarBackupIdentificacaoFila:guardarBackup,atualizarIndicadorFilaMovimentos(){},operadorAtualizarPainel(){},consultarFilaMovimentos(){},document:{getElementById:()=>mensagem}};
+ runInNewContext(source,c);
+ const r=await c.resolverPendenciasSincronizacao(botao,mensagem,async()=>({async regularizarIdentificacaoPendencias({dispositivoId,guardarBackup}){assert.equal(dispositivoId,'aparelho-original');await guardarBackup();fila=[{...fila[0],dispositivoId}];etapas.push('regularizou');return {corrigidos:1}},async sincronizarMovimentos250(){assert.equal(fila[0].dispositivoId,'aparelho-original');etapas.push('enviou');fila=[];return {confirmados:1}}}));
+ assert.equal(r,true);assert.deepEqual(etapas,['copia','regularizou','enviou']);assert.match(mensagem.textContent,/confirmadas/);
+});
