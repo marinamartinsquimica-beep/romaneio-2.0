@@ -47,5 +47,6 @@ test('código do painel não altera a sincronização local nem o armazenamento 
  assert.match(secao,/paletesOutrosUsuarios\(/);
  assert.doesNotMatch(secao,/localStorage\.setItem\('entradas'/);
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
- assert.match(html,/if\(d\.compartilhado\)\{btn\.textContent='Consulta compartilhada';btn\.disabled=true/);
+ assert.match(html,/btn.addEventListener\('click',\(\)=>abrirConsultaCompartilhada\(d.destino,d.palete\)\)/);
+ assert.doesNotMatch(html,/btn.textContent='Consulta compartilhada';btn.disabled=true/);
 });
