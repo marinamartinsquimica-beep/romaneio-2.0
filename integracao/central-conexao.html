@@ -1225,7 +1225,8 @@ async function lerHistoricoMovimentosCompleto(uid){
  const registros=[],vistos=new Set(),ref=collection(db,...raizOperacional(uid),'movimentos');let ultimo=null;
  while(true){
   const partes=[ref,orderBy('criadoEm','desc'),...(ultimo?[startAfter(ultimo)]:[]),limit(500)];
-  const snap=await getDocs(query(...partes));
+  // Recepção exige confirmação do servidor; getDocs poderia responder só do cache.
+  const snap=await getDocsFromServer(query(...partes));
   if(snap.metadata.fromCache)throw Error('Histórico remoto somente em cache; dados locais preservados.');
   for(const docSnap of snap.docs){if(vistos.has(docSnap.id))throw Error('Identificador duplicado no histórico remoto');vistos.add(docSnap.id);registros.push(docSnap);}
   if(snap.size<500)return {docs:registros,size:registros.length,metadata:{fromCache:false}};
