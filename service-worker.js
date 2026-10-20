@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v288-comunicacao-operadores";
+const CACHE_NAME = "romaneio-2-0-cache-v289-painel-multiusuario";
 
 const FILES_TO_CACHE = [
   "./inicio.html",
@@ -17,6 +17,7 @@ const FILES_TO_CACHE = [
   "./integracao/substituicao-estoque-total.mjs",
   "./integracao/recuperar-paletes-remotos.mjs",
   "./integracao/marcos-romaneios-fechados.mjs",
+  "./integracao/painel-paletes-outros-usuarios.mjs",
   "./vendor/LICENSE-zxing.txt",
   "./qr-parser.js",
   "./manifest.json",

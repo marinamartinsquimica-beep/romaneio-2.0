@@ -3,7 +3,7 @@ import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
 import {guardarModeloEmbalado} from './modelo-estoque-persistente.mjs';
 import {initializeApp,getApp,getApps} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getFirestore,doc,getDocFromServer,collection,query,orderBy,limit,onSnapshot,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {getFirestore,doc,getDocFromServer,getDocsFromServer,startAfter,collection,query,orderBy,limit,onSnapshot,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {publicarEstoqueOficial} from './publicacao-estoques.mjs';
 import {conferirEstoques} from './conferencia-estoques.mjs';
 const config={apiKey:'AIzaSyCCy5uY1eAFQE9Vhykr7xNNayDtk_B-Hy4',authDomain:'romaneio-2-0-homologacao.sistemaapp.com',projectId:'romaneio-2-0-homologacao',storageBucket:'romaneio-2-0-homologacao.sistemastorage.app',messagingSenderId:'357381847782',appId:'1:357381847782:web:59ad8365c033bba8e79927'};
@@ -105,12 +105,63 @@ function observar(uid,ambienteId=null){
    mostrar('sistema conectado — '+tipo+': '+(d?.itens?.length??0)+' lotes; versão '+(versoes[tipo]||'não importada'));
   },e=>mostrar('sistema: '+e.message)));
  }
+ // Somente consulta no painel de outro usuário autorizado do MESMO ambiente.
+ // O fluxo de recepção da própria conta não é modificado.
+ let atualizacaoPaletes=0,emConsulta=false,refazerConsulta=false;
+ async function atualizarPaletesCompartilhados(){
+  if(emConsulta){refazerConsulta=true;return;}
+  emConsulta=true;
+  try{
+   if(auth.currentUser?.uid!==uid||ambienteAtual?.ambienteId!==ambienteId)return;
+   if(!navigator.onLine)return;
+   const lerColecao=async(nome)=>{
+    const todos=[];let ultimo=null;
+    for(let pagina=0;pagina<100;pagina++){
+     const consulta=ultimo
+      ?query(collection(db,...raiz,nome),orderBy('__name__'),startAfter(ultimo),limit(200))
+      :query(collection(db,...raiz,nome),orderBy('__name__'),limit(200));
+     const dados=await getDocsFromServer(consulta);
+     todos.push(...dados.docs.map(x=>({id:x.id,...x.data()})));
+     if(dados.size<200)return todos;
+     ultimo=dados.docs[dados.docs.length-1];
+    }
+    throw Error('Histórico compartilhado excedeu o limite seguro de leitura.');
+   };
+   const movimentos=await lerColecao('movimentos');
+   if(auth.currentUser?.uid!==uid)return;
+   const outrosAutores=movimentos.some(m=>m.autorUid&&m.autorUid!==uid);
+   if(!outrosAutores){window.__paletesDeOutrosUsuarios=[];window.operadorAtualizarPainel?.();return;}
+   const expedicoes=await lerColecao('expedicoes');
+   const {paletesOutrosUsuarios}=await import('./painel-paletes-outros-usuarios.mjs');
+   const {CHAVE_FECHAMENTOS}=await import('./marcos-romaneios-fechados.mjs');
+   const locais=JSON.parse(localStorage.getItem('entradas')||'[]');
+   const fechamentos=JSON.parse(localStorage.getItem(CHAVE_FECHAMENTOS)||'[]');
+   if(!Array.isArray(locais)||!Array.isArray(fechamentos))throw Error('Histórico local inválido: consulta suspensa.');
+   const resultado=paletesOutrosUsuarios({
+    movimentos,uidAtual:uid,entradasLocais:locais,fechamentos,expedicoes
+   });
+   if(auth.currentUser?.uid!==uid||ambienteAtual?.ambienteId!==ambienteId)return;
+   window.__paletesDeOutrosUsuarios=resultado.remotos;
+   window.operadorAtualizarPainel?.();
+  }catch(e){
+   const aviso=$('etapa4FirebaseStatus');
+   if(aviso)aviso.textContent='Consulta de paletes compartilhados indisponível: '+e.message+'. Os romaneios locais não foram alterados.';
+  }finally{
+   emConsulta=false;
+   if(refazerConsulta){refazerConsulta=false;void atualizarPaletesCompartilhados();}
+  }
+ }
+ window.__paletesDeOutrosUsuarios=[];
+ unsub.push(onSnapshot(query(collection(db,...raiz,'movimentos'),orderBy('criadoEm','desc'),limit(1)),snapshot=>{
+  if(snapshot.metadata.fromCache)return;
+  void atualizarPaletesCompartilhados();
+ },()=>{}));
  renderizarDestinosExcluidos();
  unsub.push(onSnapshot(query(collection(db,...raiz,'movimentos'),orderBy('criadoEm','desc'),limit(50)),snapshot=>{
    renderizarDestinosExcluidos(snapshot.docs.map(d=>d.data()));
  },err=>{const alvo=$('listaDestinosExcluidos');if(alvo){const p=document.createElement('p');p.textContent='Histórico remoto indisponível: '+err.message+'. As exclusões locais e a fila não foram descartadas.';alvo.append(p)}}));
 }
-onAuthStateChanged(auth,async u=>{unsub.forEach(f=>f());unsub=[];ambienteAtual=null;usuarioAtual=u?.uid||null;versoes={embalado:'',paripassu:''};if(!u){mostrar('Faça login na Central de Conexão para compartilhar os estoques.');return;}try{const vinculo=await resolverAmbienteUsuario({db,uid:u.uid});if(usuarioAtual!==u.uid)return;ambienteAtual=vinculo;observar(u.uid,vinculo.ambienteId);}catch(e){if(usuarioAtual!==u.uid)return;mostrar('Sincronização suspensa: '+e.message);}});
+onAuthStateChanged(auth,async u=>{unsub.forEach(f=>f());unsub=[];ambienteAtual=null;usuarioAtual=u?.uid||null;window.__paletesDeOutrosUsuarios=[];window.operadorAtualizarPainel?.();versoes={embalado:'',paripassu:''};if(!u){mostrar('Faça login na Central de Conexão para compartilhar os estoques.');return;}try{const vinculo=await resolverAmbienteUsuario({db,uid:u.uid});if(usuarioAtual!==u.uid)return;ambienteAtual=vinculo;observar(u.uid,vinculo.ambienteId);}catch(e){if(usuarioAtual!==u.uid)return;mostrar('Sincronização suspensa: '+e.message);}});
 $('etapa4Arquivo')?.addEventListener('change',async()=>{const arquivo=$('etapa4Arquivo')?.files?.[0];if(!arquivo||$('etapa4Tipo')?.value!=='embalado')return;try{await importar(arquivo,'embalado');await guardarModeloEmbalado(arquivo);window.__etapa4ArquivoEmbalado=arquivo;mostrar('Modelo de Estoque Embalado preservado neste navegador. Publique para sincronizar os saldos no sistema.')}catch(err){mostrar('Arquivo não preservado: '+err.message)}});
 $('etapa4Publicar')?.addEventListener('click',async()=>{
  const b=$('etapa4Publicar');b.disabled=true;

@@ -272,7 +272,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.88</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.89</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
 <div class="romaneio-backup-actions" style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button class="desktop-backup-action" type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Pendências de sincronização</button><button class="desktop-backup-action" type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button><button class="mobile-sync-action" type="button" onclick="sincronizarRomaneioCelular()" style="width:auto;background:#5CDCF2;color:#254D69;font-weight:800;font-size:13px;padding:10px 18px;border-radius:12px;border:2px solid #254D69">SINCRONIZAR</button></div>
 <section class="dashboard"><div class="metric"><div class="ico">📋</div><div><b id="dashRegistros">0</b><span id="dashRegistrosLabel">Registros totais</span></div></div><div class="metric"><div class="ico">📦</div><div><b id="dashCaixas">0</b><span id="dashCaixasLabel">Caixas totais</span></div></div><div class="metric"><div class="ico">🧱</div><div><b id="dashPaletes">0</b><span id="dashPaletesLabel">Paletes totais</span></div></div><div class="metric"><div class="ico">📍</div><div><b id="dashDestinos">0</b><span id="dashDestinosLabel">Destinos totais</span></div></div><div class="metric"><div class="ico">🕒</div><div><b id="dashUltimo">--</b><span>Último registro</span></div></div></section>
@@ -391,7 +391,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.88";
+const APP_VERSION = "2.0.89";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -3165,8 +3165,24 @@ function operadorAtualizarPainel(){
    if(sku)atual.skus.add(sku);
    atual.caixas+=cx;paletes.set(chave,atual);
  });
+ // Complemento de consulta: paletes com autor diferente da conta atual,
+ // mas pertencentes ao mesmo ambiente e com histórico íntegro no servidor.
+ // Não insere linhas na tabela de romaneios local.
+ const compartilhados=typeof window!=='undefined'&&Array.isArray(window.__paletesDeOutrosUsuarios)?window.__paletesDeOutrosUsuarios:[];
+ const idsLocais=compartilhados.length?new Set(lerJsonLocalStorage('entradas',[]).map(x=>String(x.registroId||'')).filter(Boolean)):new Set();
+ for(const remoto of compartilhados){
+  if(remoto.registroId&&idsLocais.has(String(remoto.registroId)))continue;
+  const palete=String(remoto.palete||'').trim(),destino=String(remoto.destino||'').trim(),sku=String(remoto.sku||'').trim();
+  if(!palete||!destino||!sku)continue;
+  const chave=destino.toLocaleLowerCase('pt-BR')+'|'+palete;
+  const atual=paletes.get(chave)||{palete,destino,skus:new Set(),caixas:0,compartilhado:true};
+  atual.skus.add(sku);atual.caixas+=Number(remoto.caixas)||0;
+  if(!paletes.has(chave))atual.compartilhado=true;
+  paletes.set(chave,atual);caixas+=Number(remoto.caixas)||0;
+ }
+ const destinosTotal=new Set([...destinos.map(x=>String(x.destino||x.nome||'').toLocaleLowerCase('pt-BR')),...[...paletes.values()].map(x=>x.destino.toLocaleLowerCase('pt-BR'))]);
  const pendentes=typeof lerFilaMovimentos==='function'?lerFilaMovimentos().length:0;
- document.getElementById('opDestinos').textContent=destinos.length;
+ document.getElementById('opDestinos').textContent=compartilhados.length?destinosTotal.size:destinos.length;
  document.getElementById('opPaletes').textContent=paletes.size;
  document.getElementById('opCaixas').textContent=caixas.toLocaleString('pt-BR');
  document.getElementById('opPendentes').textContent=pendentes;
@@ -3176,7 +3192,9 @@ function operadorAtualizarPainel(){
    const tr=tbody.insertRow();
    [d.palete,d.destino||'Sem destino',[...d.skus].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true})).join(', ')||'—',d.caixas.toLocaleString('pt-BR')].forEach(v=>{const td=tr.insertCell();td.textContent=v});
    const td=tr.insertCell();const btn=document.createElement('button');btn.type='button';btn.textContent='Conferir';
-   btn.addEventListener('click',()=>operadorVoltarRomaneios());td.appendChild(btn);
+   if(d.compartilhado){btn.textContent='Consulta compartilhada';btn.disabled=true;btn.title='Palete lançado por outro usuário. Consulte sem editar neste dispositivo.';}
+   else btn.addEventListener('click',()=>operadorVoltarRomaneios());
+   td.appendChild(btn);
  });
  if(typeof atualizarResumoReservaTeste==='function')atualizarResumoReservaTeste();
  operadorAtualizarCardsEstoque();
