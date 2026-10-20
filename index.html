@@ -281,7 +281,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.94</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.95</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
 <div class="romaneio-backup-actions" style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button class="desktop-backup-action" type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Pendências de sincronização</button><button class="desktop-backup-action" type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button><button class="mobile-sync-action" type="button" onclick="sincronizarRomaneioCelular()" style="width:auto;background:#5CDCF2;color:#254D69;font-weight:800;font-size:13px;padding:10px 18px;border-radius:12px;border:2px solid #254D69">SINCRONIZAR</button></div>
 <section class="dashboard"><div class="metric"><div class="ico">📋</div><div><b id="dashRegistros">0</b><span id="dashRegistrosLabel">Registros totais</span></div></div><div class="metric"><div class="ico">📦</div><div><b id="dashCaixas">0</b><span id="dashCaixasLabel">Caixas totais</span></div></div><div class="metric"><div class="ico">🧱</div><div><b id="dashPaletes">0</b><span id="dashPaletesLabel">Paletes totais</span></div></div><div class="metric"><div class="ico">📍</div><div><b id="dashDestinos">0</b><span id="dashDestinosLabel">Destinos totais</span></div></div><div class="metric"><div class="ico">🕒</div><div><b id="dashUltimo">--</b><span>Último registro</span></div></div></section>
@@ -400,7 +400,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.94";
+const APP_VERSION = "2.0.95";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -751,7 +751,7 @@ async function apagarDestino(destino) {
     }
     salvarLocalStorage();
     // As exclusões individuais já entram na fila durável do Firebase. Não geram baixa de estoque.
-    if(navigator.onLine){import('./integracao/envio-movimentos250.js').then(m=>m.sincronizarMovimentos250()).catch(err=>console.warn('Exclusão preservada na fila; sincronização pendente',err));}
+    if(navigator.onLine){import('./integracao/envio-movimentos250.js?v=2.0.95').then(m=>m.sincronizarMovimentos250()).catch(err=>console.warn('Exclusão preservada na fila; sincronização pendente',err));}
     alert(`Destino ${nomeDestino} apagado. As entradas dos demais Destinos foram mantidas.`);
 }
 
@@ -1785,6 +1785,19 @@ function consolidarPendenciasLocais(fila){
   }
   return [...grupos.values()].filter(x=>Math.abs(x.delta)>0.000001).sort((a,b)=>String(a.sku).localeCompare(String(b.sku)));
 }
+function diagnosticarFormatoEnvio(op){
+ const m=[],it=op?.item;
+ if(!op||!/^[a-zA-Z0-9_-]{8,160}$/.test(op.id||''))m.push('ID fora do formato aceito');
+ if(!['inclusao','edicao','exclusao'].includes(op?.tipo))m.push('Tipo de operação inválido');
+ if(typeof op?.dispositivoId!=='string'||!op.dispositivoId.length||op.dispositivoId.length>160)m.push('Identificação do aparelho ausente ou inválida');
+ if(typeof it?.sku!=='string'||!it.sku.trim()||it.sku.length>100)m.push('SKU deve ser texto preenchido (até 100 caracteres)');
+ if(typeof it?.loteCompleto!=='string'||!it.loteCompleto.trim()||it.loteCompleto.length>150)m.push('Lote completo deve ser texto preenchido (até 150 caracteres)');
+ if(!((Number.isInteger(it?.caixas)&&it.caixas>0&&it.caixas<=1000000)||(typeof it?.caixas==='string'&&/^[1-9][0-9]{0,5}$/.test(it.caixas))))m.push('Quantidade de caixas fora do formato aceito');
+ if(op?.tipo==='edicao'&&(!op.antes||typeof op.antes!=='object'||Array.isArray(op.antes)))m.push('Edição sem estado anterior válido');
+ if(typeof op?.criadoEm!=='string'||!op.criadoEm.length||op.criadoEm.length>40)m.push('Data do movimento ausente ou inválida');
+ return m;
+}
+
 function consultarFilaMovimentos(){
   const fila=lerFilaMovimentos();
   const tipos={inclusao:0,edicao:0,exclusao:0};
@@ -1876,10 +1889,10 @@ function consultarFilaMovimentos(){
     resultado.appendChild(aviso);
   }
   secao.appendChild(resultado);
-  import('./integracao/protocolo-movimentos.js').then(({motivosFormatoOperacional})=>{
+  {
    const ids=new Set(),revisoes=[];
    for(const mov of fila){
-    const motivos=[...motivosFormatoOperacional(mov),...(checagem.revisao.find(x=>x.mov===mov)?.motivos||[])];
+    const motivos=[...diagnosticarFormatoEnvio(mov),...(checagem.revisao.find(x=>x.mov===mov)?.motivos||[])];
     if(ids.has(mov?.id))motivos.push('ID repetido na fila');ids.add(mov?.id);
     if(motivos.length)revisoes.push({mov,motivos:[...new Set(motivos)]});
    }
@@ -1887,7 +1900,7 @@ function consultarFilaMovimentos(){
    numeros.textContent='Prontas para envio: '+(fila.length-revisoes.length)+' · Necessitam conferência: '+revisoes.length;
    resultado.replaceChildren(tituloValidacao,numeros);
    for(const {mov,motivos} of revisoes){const aviso=document.createElement('p');aviso.textContent='Palete '+String(mov?.item?.palete||'—')+' · SKU '+String(mov?.item?.sku||'—')+': '+motivos.join('; ');aviso.style.color='#8a422b';resultado.appendChild(aviso);}
-  }).catch(()=>{numeros.textContent+=' · Diagnóstico detalhado indisponível. Abra a Central de Conexão.';});
+  }
   const confirmacoes=classificarConfirmacaoMovimentos();
   const status=document.createElement("div");
   status.style.cssText="border:1px solid #d8e7ec;border-radius:12px;padding:12px;margin-top:12px;font-size:13px;line-height:1.6";
@@ -1909,7 +1922,7 @@ function consultarFilaMovimentos(){
   painel.appendChild(nota);
   const mensagem=document.createElement('p');mensagem.id='resultadoResolverPendencias';mensagem.setAttribute('role','status');mensagem.style.cssText='font-size:14px;color:#254D69;line-height:1.5';
   mensagem.textContent=fila.length?'Envie as pendências por este botão. Se houver erro de acesso, use a Central de Conexão.':'Nenhum envio pendente neste aparelho.';
-  const tentar=document.createElement('button');tentar.type='button';tentar.textContent='SINCRONIZAR PENDÊNCIAS AGORA';tentar.disabled=!fila.length;
+  const tentar=document.createElement('button');tentar.id='sincronizarPendenciasModal';tentar.type='button';tentar.textContent='SINCRONIZAR PENDÊNCIAS AGORA';tentar.disabled=!fila.length;
   tentar.style.cssText='background:#254D69;color:#fff;margin:8px 0;min-height:44px';
   tentar.onclick=()=>resolverPendenciasSincronizacao(tentar,mensagem);
   const conexao=document.createElement('a');conexao.href='integracao/central-conexao.html';conexao.textContent='ABRIR CENTRAL DE CONEXÃO';conexao.style.cssText='display:block;color:#254D69;margin:10px 0;font-weight:700';
@@ -1925,7 +1938,7 @@ function consultarFilaMovimentos(){
   botao.focus();
 }
 
-async function resolverPendenciasSincronizacao(botao,mensagem,carregar=()=>import('./integracao/envio-movimentos250.js')){
+async function resolverPendenciasSincronizacao(botao,mensagem,carregar=()=>import('./integracao/envio-movimentos250.js?v=2.0.95')){
  botao.disabled=true;mensagem.textContent='Enviando pendências. Aguarde a confirmação do sistema.';
  try{
   if(!navigator.onLine)throw Error('Sem internet. Reconecte este aparelho e tente novamente.');
@@ -1937,10 +1950,12 @@ async function resolverPendenciasSincronizacao(botao,mensagem,carregar=()=>impor
    const descricao=String(f.mensagem||f.motivo||f.codigo||'Motivo não informado').replace(/Firebase|Firestore/gi,'sistema');
    return 'Palete '+String(it.palete||'—')+' · SKU '+String(it.sku||'—')+': '+descricao;
   });
-  mensagem.textContent=restantes?restantes+' movimentação(ões) continuam pendentes. Nada foi descartado. '+(causas.length?causas.join(' | '):'O sistema não confirmou o envio. Verifique os motivos na validação da fila abaixo.'):'Pendências enviadas e confirmadas pelo sistema.';
+  mensagem.textContent=restantes?restantes+' movimentação(ões) continuam pendentes. Nada foi descartado. '+(causas.length?causas.join(' | '):'O sistema não confirmou o envio. Consulte a validação do formato de envio nesta janela.'):'Pendências enviadas e confirmadas pelo sistema.';
+  return restantes===0;
  }catch(e){
   const detalhe=String(e?.message||e).replace(/Firebase/gi,'sistema');
   mensagem.textContent='Não foi possível concluir: '+detalhe+' A fila permanece preservada. Confira o acesso pela Central de Conexão e tente novamente.';
+  return false;
  }finally{
   atualizarIndicadorFilaMovimentos();operadorAtualizarPainel();
   const restantes=lerFilaMovimentos().length;botao.disabled=!restantes;
@@ -1984,7 +1999,7 @@ function salvarLocalStorage() {
         registrarCopiaSegurancaOffline(dados);
     registrarMovimentosLocais(dados);
     // Envia a fila durável em segundo plano: cada operação só sai após confirmação do Firebase.
-    if (navigator.onLine) import('./integracao/envio-movimentos250.js')
+    if (navigator.onLine) import('./integracao/envio-movimentos250.js?v=2.0.95')
       .then(m=>m.sincronizarMovimentos250())
       .catch(e=>console.warn('Movimentações preservadas para próximo envio:',e));
     try { window.dispatchEvent(new CustomEvent("romaneio:entradas-salvas", {detail:{quantidade:dados.length}})); } catch(e) { console.warn("Evento de sincronização indisponível",e); }
@@ -3330,7 +3345,7 @@ async function sincronizarRomaneioCelular(){
  if(botao)botao.disabled=true;
  try {
   if(!navigator.onLine)throw Error('Sem internet. Os registros estão preservados para o próximo envio.');
-  const {sincronizarMovimentos250}=await import('./integracao/envio-movimentos250.js');
+  const {sincronizarMovimentos250}=await import('./integracao/envio-movimentos250.js?v=2.0.95');
   await sincronizarMovimentos250();
   localStorage.setItem('romaneio2_solicitar_sincronizacao_v1',String(Date.now()));
   const qtd=lerFilaMovimentos().length;
@@ -3350,8 +3365,11 @@ async function operadorSincronizarAgora(){
  if(botao){botao.disabled=true;botao.textContent='SINCRONIZANDO...';}
  try{
   await window.atualizarConsultaCompartilhada?.();
-  const enviado=await sincronizarRomaneioCelular();
-  if(!enviado)throw Error('Envio não confirmado; fila preservada.');
+  if(lerFilaMovimentos().length){
+   consultarFilaMovimentos();
+   const enviado=await resolverPendenciasSincronizacao(document.getElementById('sincronizarPendenciasModal'),document.getElementById('resultadoResolverPendencias'));
+   if(!enviado){if(botao)botao.textContent='PENDÊNCIAS — CONSULTE A JANELA';return;}
+  }
   localStorage.setItem('romaneio2_solicitar_sincronizacao_v1',String(Date.now()));
   if(botao)botao.textContent='SINCRONIZANDO...';
   await new Promise(resolve=>setTimeout(resolve,1800));

@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v294-confirmacao-e-diagnostico-fila";
+const CACHE_NAME = "romaneio-2-0-cache-v295-envio-e-diagnostico-coordenados";
 
 const FILES_TO_CACHE = [
   "./inicio.html",
@@ -48,7 +48,7 @@ self.addEventListener("fetch", event => {
 
   if (url.pathname.endsWith("/version.json") || url.pathname.endsWith("/service-worker.js") || url.pathname.includes("/integracao/") || req.mode === "navigate") {
     event.respondWith(
-      fetch(req).then(resp => {
+      fetch(req, {cache:"no-cache"}).then(resp => {
         if (resp.ok) {
           const copy = resp.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(req, copy)).catch(() => {});
