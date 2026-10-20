@@ -271,6 +271,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 /* Consulta compartilhada ocupa uma linha inteira da área de romaneios. */
 @media(max-width:767px){#romaneiosCompartilhados{display:none!important}}
 #abaTotal>#romaneiosCompartilhados{grid-column:1/-1;width:100%;min-width:0}
+#romaneiosCompartilhados .consulta-compartilhada-todos{background:#254D69;color:#fff;border:2px solid #254D69;margin:10px 0;min-height:44px}
 #romaneiosCompartilhados .table-container{width:100%;overflow-x:auto}
 #opTabelaDestinos{overflow-wrap:anywhere}
 #painelOperadorDesktop #opTabelaDestinos td,#painelOperadorDesktop #opTabelaDestinos th{white-space:normal}
@@ -280,7 +281,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.92</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.93</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
 <div class="romaneio-backup-actions" style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button class="desktop-backup-action" type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Pendências de sincronização</button><button class="desktop-backup-action" type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button><button class="mobile-sync-action" type="button" onclick="sincronizarRomaneioCelular()" style="width:auto;background:#5CDCF2;color:#254D69;font-weight:800;font-size:13px;padding:10px 18px;border-radius:12px;border:2px solid #254D69">SINCRONIZAR</button></div>
 <section class="dashboard"><div class="metric"><div class="ico">📋</div><div><b id="dashRegistros">0</b><span id="dashRegistrosLabel">Registros totais</span></div></div><div class="metric"><div class="ico">📦</div><div><b id="dashCaixas">0</b><span id="dashCaixasLabel">Caixas totais</span></div></div><div class="metric"><div class="ico">🧱</div><div><b id="dashPaletes">0</b><span id="dashPaletesLabel">Paletes totais</span></div></div><div class="metric"><div class="ico">📍</div><div><b id="dashDestinos">0</b><span id="dashDestinosLabel">Destinos totais</span></div></div><div class="metric"><div class="ico">🕒</div><div><b id="dashUltimo">--</b><span>Último registro</span></div></div></section>
@@ -288,7 +289,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 
 <section id="painelOperadorDesktop" class="operator-panel" aria-label="Painel do operador de estoque">
  <div class="operator-hero"><h2>Operação de estoque</h2><p>Conferência de romaneios e acompanhamento do estoque</p></div>
- <div class="operator-section-tabs" role="tablist" aria-label="Áreas do operador"><button id="opTabVisao" type="button" class="active" role="tab" aria-selected="true" onclick="operadorSelecionarAba('visao')">VISÃO GERAL</button><button id="opTabEstoque" type="button" role="tab" aria-selected="false" onclick="operadorSelecionarAba('estoque')">ESTOQUE COMPLETO</button><button id="opTabImportacao" type="button" role="tab" aria-selected="false" onclick="operadorSelecionarAba('importacao')">IMPORTAR PLANILHAS</button><button id="opTabMovimentos" type="button" role="tab" aria-selected="false" onclick="operadorSelecionarAba('movimentos')">BAIXA E AJUSTE</button><button id="opTabParipassu" type="button" role="tab" aria-selected="false" onclick="operadorSelecionarAba('paripassu')">CONFERÊNCIA PARIPASSU</button><div class="operator-side-actions"><div class="operator-toolbar operator-toolbar-side"><button type="button" onclick="operadorVoltarRomaneios()">ABRIR ROMANEIOS</button><button type="button" onclick="operadorVerPendencias()">PENDÊNCIAS DE SINCRONIZAÇÃO</button><button type="button" class="operator-yellow" onclick="operadorSincronizarAgora()">SINCRONIZAR AGORA</button><button type="button" class="operator-outline" onclick="operadorAbrirEstoque()">VER ESTOQUE</button></div></div></div><div id="opVisaoGeral" role="tabpanel"><div class="operator-metrics"><div class="operator-metric"><span>Destinos com romaneios</span><strong id="opDestinos">0</strong></div><div class="operator-metric"><span>Paletes registrados</span><strong id="opPaletes">0</strong></div><div class="operator-metric"><span>Caixas registradas</span><strong id="opCaixas">0</strong></div><div class="operator-metric"><span>Envios pendentes neste aparelho</span><strong id="opPendentes">0</strong><small>Inclusões, edições ou exclusões na fila local.</small><button type="button" class="operator-outline" onclick="operadorVerPendencias()">VER DETALHES</button></div></div>
+ <div class="operator-section-tabs" role="tablist" aria-label="Áreas do operador"><button id="opTabVisao" type="button" class="active" role="tab" aria-selected="true" onclick="operadorSelecionarAba('visao')">VISÃO GERAL</button><button id="opTabEstoque" type="button" role="tab" aria-selected="false" onclick="operadorSelecionarAba('estoque')">ESTOQUE COMPLETO</button><button id="opTabImportacao" type="button" role="tab" aria-selected="false" onclick="operadorSelecionarAba('importacao')">IMPORTAR PLANILHAS</button><button id="opTabMovimentos" type="button" role="tab" aria-selected="false" onclick="operadorSelecionarAba('movimentos')">BAIXA E AJUSTE</button><button id="opTabParipassu" type="button" role="tab" aria-selected="false" onclick="operadorSelecionarAba('paripassu')">CONFERÊNCIA PARIPASSU</button><div class="operator-side-actions"><div class="operator-toolbar operator-toolbar-side"><button type="button" onclick="operadorVoltarRomaneios()">ABRIR ROMANEIOS</button><button type="button" onclick="operadorVerPendencias()">PENDÊNCIAS DE SINCRONIZAÇÃO</button><button type="button" class="operator-yellow" onclick="operadorSincronizarAgora()">SINCRONIZAR AGORA</button><button type="button" class="operator-outline" onclick="operadorAbrirEstoque()">VER ESTOQUE</button></div></div></div><div id="opVisaoGeral" role="tabpanel"><div class="operator-metrics"><div class="operator-metric"><span>Destinos com romaneios</span><strong id="opDestinos">0</strong></div><div class="operator-metric"><span>Paletes registrados</span><strong id="opPaletes">0</strong></div><div class="operator-metric"><span>Caixas registradas</span><strong id="opCaixas">0</strong></div><div class="operator-metric"><span>Envios pendentes neste aparelho</span><strong id="opPendentes">0</strong><small>Inclusões, edições ou exclusões na fila local.</small></div></div>
  <div class="operator-metrics"><div class="operator-metric"><span>Caixas no estoque</span><strong id="opEstoqueCaixas">—</strong></div><div class="operator-metric"><span>SKUs distintos no estoque</span><strong id="opEstoqueSkus">—</strong></div></div>
  <section class="operator-pending" id="historicoDestinosExcluidos" style="margin-bottom:12px"><h3>Destinos removidos do celular — aguardando baixa no computador</h3><p>Estes paletes já foram apagados no celular. Permanecem somente no computador para conferência e baixa; não são paletes ativos no celular.</p><div id="listaDestinosExcluidos"></div></section><div id="etapa4ResumoVisao" role="status" aria-live="polite" style="padding:10px 14px;margin:12px 0;background:#fff;border-left:4px solid #5CDCF2;border-radius:6px">Conferência PariPassu: aguardando os dois estoques.</div><div class="operator-workspace"><div class="operator-box"><h3>Paletes registrados</h3><div style="overflow-x:auto"><table class="operator-table"><thead><tr><th>Palete</th><th>Destino</th><th>SKU</th><th>Caixas</th><th>Ação</th></tr></thead><tbody id="opTabelaDestinos"></tbody></table></div><p class="operator-status">As correções serão feitas pelas funções atuais do romaneio até a etapa de edição e histórico ser concluída.</p></div><div class="operator-box"><h3>Controle de estoque</h3><p id="opResumoEstoque" class="operator-status">Consulta local disponível após importação de uma cópia do estoque.</p><div class="operator-pending"><h4>Pendências de conferência</h4><p id="opPendenciasEstoqueResumo">Consulte o estoque compartilhado para verificar as entradas.</p><button type="button" onclick="operadorSelecionarAba('estoque');document.getElementById('pendenciasConferenciaEstoque')?.scrollIntoView({behavior:'smooth',block:'start'})">VER PENDÊNCIAS</button></div><div class="operator-note">Baixa e ajuste disponíveis na aba própria. A alteração do estoque compartilhado ocorre somente após a publicação do Excel atualizado.</div><p id="opUltimaConsulta" class="operator-status"></p></div></div>
 <section class="operator-box" id="operadorHistoricoFechamentos" aria-label="Histórico de romaneios encerrados"><details id="historicoFechamentosRecolhivel"><summary class="historico-fechamentos-resumo"><span>Histórico de romaneios encerrados</span><span id="quantidadeHistoricoFechamentos" class="historico-fechamentos-total"></span></summary><p class="operator-status">Cópias anteriores preservadas neste dispositivo, sem alterar o estoque. Baixe o Excel antes de apagar um histórico que deseje guardar.</p><div id="historicoFechamentos"></div></details></section>
@@ -399,7 +400,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.92";
+const APP_VERSION = "2.0.93";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -1879,21 +1880,28 @@ function consultarFilaMovimentos(){
   const status=document.createElement("div");
   status.style.cssText="border:1px solid #d8e7ec;border-radius:12px;padding:12px;margin-top:12px;font-size:13px;line-height:1.6";
   const tituloStatus=document.createElement("strong");
-  tituloStatus.textContent="Confirmação de recebimento (integração futura)";
+  tituloStatus.textContent="Confirmação de recebimento";
   status.appendChild(tituloStatus);
   const estados=document.createElement("p");
   estados.textContent="Pendentes: "+confirmacoes.contagem.pendente+" · Recebidas: "+confirmacoes.contagem.recebida+" · Conflitos: "+confirmacoes.contagem.conflito+" · Inválidas: "+confirmacoes.contagem.invalida;
   estados.style.margin="8px 0";
   status.appendChild(estados);
   const explicacaoStatus=document.createElement("p");
-  explicacaoStatus.textContent="Sem conexão com o SharePoint. Estar online não confirma recebimento; somente um recibo verificável do destino poderá alterar o estado.";
+  explicacaoStatus.textContent="Estar online não confirma o envio. Use a ação abaixo para enviar a fila; somente movimentos confirmados pelo sistema são retirados dela.";
   explicacaoStatus.style.cssText="font-size:12px;color:#456578;margin:0";
   status.appendChild(explicacaoStatus);
   secao.appendChild(status);
   const nota=document.createElement("p");
-  nota.textContent="Nenhuma movimentação foi enviada ao SharePoint ou baixada do estoque.";
+  nota.textContent="Esta consulta não envia movimentos nem efetua baixa de estoque.";
   nota.style.cssText="margin:18px 0;color:#456578;font-size:13px;line-height:1.5";
   painel.appendChild(nota);
+  const mensagem=document.createElement('p');mensagem.id='resultadoResolverPendencias';mensagem.setAttribute('role','status');mensagem.style.cssText='font-size:14px;color:#254D69;line-height:1.5';
+  mensagem.textContent=fila.length?'Envie as pendências por este botão. Se houver erro de acesso, use a Central de Conexão.':'Nenhum envio pendente neste aparelho.';
+  const tentar=document.createElement('button');tentar.type='button';tentar.textContent='SINCRONIZAR PENDÊNCIAS AGORA';tentar.disabled=!fila.length;
+  tentar.style.cssText='background:#254D69;color:#fff;margin:8px 0;min-height:44px';
+  tentar.onclick=()=>resolverPendenciasSincronizacao(tentar,mensagem);
+  const conexao=document.createElement('a');conexao.href='integracao/central-conexao.html';conexao.textContent='ABRIR CENTRAL DE CONEXÃO';conexao.style.cssText='display:block;color:#254D69;margin:10px 0;font-weight:700';
+  painel.append(mensagem,tentar,conexao);
   const botao=document.createElement("button");
   botao.type="button";
   botao.textContent="OK";
@@ -1903,6 +1911,24 @@ function consultarFilaMovimentos(){
   fundo.appendChild(painel);
   document.body.appendChild(fundo);
   botao.focus();
+}
+
+async function resolverPendenciasSincronizacao(botao,mensagem,carregar=()=>import('./integracao/envio-movimentos250.js')){
+ botao.disabled=true;mensagem.textContent='Enviando pendências. Aguarde a confirmação do sistema.';
+ try{
+  if(!navigator.onLine)throw Error('Sem internet. Reconecte este aparelho e tente novamente.');
+  const envio=await carregar();await envio.sincronizarMovimentos250();
+  const restantes=lerFilaMovimentos().length;
+  mensagem.textContent=restantes?restantes+' movimentação(ões) continuam pendentes. Nada foi descartado. Verifique a conexão e o acesso pela Central de Conexão.':'Pendências enviadas e confirmadas pelo sistema.';
+ }catch(e){
+  const detalhe=String(e?.message||e).replace(/Firebase/gi,'sistema');
+  mensagem.textContent='Não foi possível concluir: '+detalhe+' A fila permanece preservada. Confira o acesso pela Central de Conexão e tente novamente.';
+ }finally{
+  atualizarIndicadorFilaMovimentos();operadorAtualizarPainel();
+  const restantes=lerFilaMovimentos().length;botao.disabled=!restantes;
+  const texto=mensagem.textContent;consultarFilaMovimentos();
+  const atual=document.getElementById('resultadoResolverPendencias');if(atual)atual.textContent=texto;
+ }
 }
 
 window.addEventListener("load",()=>{
@@ -3262,7 +3288,7 @@ function renderizarRomaneiosCompartilhados(){
  const titulo=document.createElement('h2');titulo.textContent='Romaneios compartilhados';
  const nota=document.createElement('p');nota.textContent='Registros recebidos de outros usuários do mesmo ambiente. Consulta atualizada automaticamente.';
  secao.append(titulo,nota);
- if(filtroConsultaCompartilhada){const todos=document.createElement('button');todos.type='button';todos.textContent='Ver todos os compartilhados';todos.onclick=()=>{filtroConsultaCompartilhada=null;renderizarRomaneiosCompartilhados();};secao.append(todos);}
+ if(filtroConsultaCompartilhada){const todos=document.createElement('button');todos.type='button';todos.className='consulta-compartilhada-todos';todos.textContent='Ver todos os compartilhados';todos.onclick=()=>{filtroConsultaCompartilhada=null;renderizarRomaneiosCompartilhados();};secao.append(todos);}
  const visiveis=registros.filter(x=>!filtroConsultaCompartilhada||(String(x.destino||'')===filtroConsultaCompartilhada.destino&&String(x.palete||'')===filtroConsultaCompartilhada.palete));
  const wrap=document.createElement('div');wrap.className='table-container';
  const tabela=document.createElement('table');tabela.className='operator-table';
