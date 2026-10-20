@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v2100-menos-consultas-sem-migracao";
+const CACHE_NAME = "romaneio-2-0-cache-v2101-sincronizacao-por-eventos";
 
 const FILES_TO_CACHE = [
   "./inicio.html",
@@ -11,7 +11,7 @@ const FILES_TO_CACHE = [
   "./integracao/modelo-estoque-persistente.mjs",
   "./integracao/controle-leituras-automaticas.mjs?v=2.0.99",
   "./integracao/erro-publicacao-estoque.mjs?v=2.0.99",
-  "./integracao/estoques-firebase-ui.mjs?v=2.0.100",
+  "./integracao/estoques-firebase-ui.mjs?v=2.0.101",
   "./integracao/baixa-transacional.mjs",
   "./integracao/filtro-expedicoes-baixadas.mjs",
   "./integracao/direcao-sincronizacao.mjs",

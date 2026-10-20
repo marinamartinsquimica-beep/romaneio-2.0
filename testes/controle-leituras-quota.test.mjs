@@ -21,7 +21,7 @@ test('limite remoto e espaço do navegador têm orientações distintas, sem apa
 });
 test('controle limita somente leituras automáticas; envio permanece antes do limitador',()=>{
  const html=readFileSync(new URL('../integracao/central-conexao.html',import.meta.url),'utf8');
- const ciclo=html.slice(html.indexOf('async function cicloAutomatico(){'),html.indexOf("window.addEventListener('online',()=>{void cicloAutomatico();"));
+ const ciclo=html.slice(html.indexOf('async function cicloAutomatico(){'),html.indexOf("window.addEventListener('online',()=>{"));
  assert.ok(ciclo.indexOf('await enviarFilaAutomaticamente()')<ciclo.indexOf('controleLeiturasAutomaticas.deveConsultar'));
  assert.match(ciclo,/localStorage.getItem\('romaneio2_solicitar_sincronizacao_v1'\)/);
  assert.match(ciclo,/if\(receberEntradasNoAparelho\(\)\)await receberAutomaticamente\(\)/);

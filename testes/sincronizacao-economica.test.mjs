@@ -8,14 +8,14 @@ const ui=readFileSync(new URL('../integracao/estoques-firebase-ui.mjs',import.me
 function simular(desktop){
  let tempo=1000000;const contagem={envios:0,recepcoes:0,expedicoes:0,consolidacoes:0};
  const dados=new Map([['entradas','[{"registroId":"preservado"}]'],['romaneio2_movimentos_pendentes_v1','[]'],['romaneio2_historico_fechamentos_v1','[{"id":"historico-preservado"}]']]);
- const fonte=html.slice(html.indexOf('let cicloEmAndamento=false,'),html.indexOf("window.addEventListener('online',()=>{void cicloAutomatico();"));
- const c={Date:{now:()=>tempo},JSON,auth:{currentUser:{uid:'marina'}},navigator:{onLine:true},escopoOperacionalPronto:true,ambienteOperacional:{ambienteId:'sala-ovos'},ultimaAssinaturaRemota:'mov1',localStorage:{getItem:k=>dados.get(k)||null,setItem:()=>{throw Error('Agendamento não deve gravar dados')},removeItem:()=>{throw Error('Agendamento não deve apagar dados')}},lerOperacional:()=>[],criarControleLeituras:()=>criarControleLeituras({agora:()=>tempo}),enviarFilaAutomaticamente:async()=>contagem.envios++,consolidarBaseLegada:async()=>contagem.consolidacoes++,receberEntradasNoAparelho:()=>desktop,receberAutomaticamente:async()=>contagem.recepcoes++,sincronizarExpedicoesCompartilhadas:async()=>contagem.expedicoes++,$:()=>({textContent:''})};
+ const fonte=html.slice(html.indexOf('let cicloEmAndamento=false,'),html.indexOf("window.addEventListener('online',()=>{"));
+ const c={Date:{now:()=>tempo},JSON,auth:{currentUser:{uid:'marina'}},navigator:{onLine:true},escopoOperacionalPronto:true,ambienteOperacional:{ambienteId:'sala-ovos'},ultimaAssinaturaRemota:'mov1',localStorage:{getItem:k=>dados.get(k)||null,setItem:()=>{throw Error('Agendamento não deve gravar dados')},removeItem:()=>{throw Error('Agendamento não deve apagar dados')}},lerOperacional:()=>[],criarControleLeituras:opcoes=>criarControleLeituras({...opcoes,agora:()=>tempo}),queueMicrotask,enviarFilaAutomaticamente:async()=>contagem.envios++,consolidarBaseLegada:async()=>contagem.consolidacoes++,receberEntradasNoAparelho:()=>desktop,receberAutomaticamente:async()=>contagem.recepcoes++,sincronizarExpedicoesCompartilhadas:async()=>contagem.expedicoes++,$:()=>({textContent:''})};
  runInNewContext(fonte,c);
  return {c,contagem,dados,avancar:t=>{tempo=t},async hora(){for(let s=0;s<3600;s+=5){tempo=1000000+s*1000;await c.cicloAutomatico();}}};
 }
-test('computador sem novidades: 12 consultas de expedições por hora, preservando dados e envio',async()=>{
+test('computador consulta na carga inicial e não repete por tempo, preservando dados e envio',async()=>{
  const a=simular(true),antes=JSON.stringify([...a.dados]);await a.hora();
- assert.equal(a.contagem.expedicoes,12);assert.equal(a.contagem.recepcoes,12);assert.equal(a.contagem.envios,720);
+ assert.equal(a.contagem.expedicoes,1);assert.equal(a.contagem.recepcoes,1);assert.equal(a.contagem.envios,720);
  assert.equal(JSON.stringify([...a.dados]),antes);
 });
 test('celular sem consultas de recepção, expedições ou consolidação; envio permanece',async()=>{
@@ -40,7 +40,7 @@ test('celular não cria assinatura de movimentos e guarda adicional impede exped
 });
 test('aviso de expedição exige mesma origem, janela, conta e ambiente; consulta servidor continua obrigatória',async()=>{
  const a=simular(true);await a.c.cicloAutomatico();let listener;const parent={};Object.assign(a.c,{window:{parent,addEventListener:(_nome,fn)=>{listener=fn}},location:{origin:'https://romaneio.example'}});
- const fonte=html.slice(html.indexOf("window.addEventListener('message',e=>{\n if(e.origin!==location.origin||e.source!==window.parent"),html.indexOf('setInterval(()=>{if(navigator.onLine)void cicloAutomatico();},5000);'));
+ const fonte=html.slice(html.indexOf("window.addEventListener('message',e=>{\n if(e.origin!==location.origin||e.source!==window.parent"),html.indexOf('// Repetir somente envios'));
  runInNewContext(fonte,a.c);
  const msg={origin:a.c.location.origin,source:parent,data:{origem:'romaneio-expedicoes-alteradas',uid:'marina',ambienteId:'sala-ovos'}};
  listener({...msg,origin:'https://outro.example'});listener({...msg,data:{...msg.data,uid:'outra'}});listener({...msg,data:{...msg.data,ambienteId:'outro'}});assert.equal(a.contagem.expedicoes,1);
@@ -52,5 +52,27 @@ test('consultas simultâneas do painel são agrupadas sem perder uma alteração
  let proximo=0,consultas=0;const timers=new Map();const c={clearTimeout:id=>timers.delete(id),setTimeout:fn=>{timers.set(++proximo,fn);return proximo},unsub:[],atualizarPaletesCompartilhados:()=>consultas++};runInNewContext(trecho,c);
  c.agendarConsultaCompartilhada();c.agendarConsultaCompartilhada();c.agendarConsultaCompartilhada();assert.equal(timers.size,1);[...timers.values()][0]();assert.equal(consultas,1);
  assert.match(ui,/if\(refazerConsulta\)\{refazerConsulta=false;void atualizarPaletesCompartilhados\(\);\}/);
- assert.match(ui,/Date.now\(\)-ultimaConsultaPaletes>=300000/);
+ assert.doesNotMatch(ui,/Date.now\(\)-ultimaConsultaPaletes/);
+});
+test('sem eventos, passar um dia não dispara novas consultas',async()=>{
+ const a=simular(true);await a.c.cicloAutomatico();a.avancar(1000000+86400000);await a.c.cicloAutomatico();
+ assert.equal(a.contagem.recepcoes,1);assert.equal(a.contagem.expedicoes,1);
+});
+test('reconexão força conferência mesmo com os mesmos dados remotos',async()=>{
+ const a=simular(true);await a.c.cicloAutomatico();let listener;Object.assign(a.c,{window:{addEventListener:(_tipo,fn)=>{listener=fn}}});
+ const linha=html.split('\n').find(l=>l.startsWith("window.addEventListener('online',()=>{revisaoReconexao++"));
+ runInNewContext(linha,a.c);listener();await new Promise(resolve=>setImmediate(resolve));assert.equal(a.contagem.recepcoes,2);assert.equal(a.contagem.expedicoes,2);
+});
+test('mudança recebida durante uma consulta é processada ao terminar, sem esperar temporizador',async()=>{
+ const a=simular(true);let liberar;const espera=new Promise(resolve=>{liberar=resolve});let primeira=true;
+ a.c.receberAutomaticamente=async()=>{a.contagem.recepcoes++;if(primeira){primeira=false;await espera;}};
+ const inicial=a.c.cicloAutomatico();await new Promise(resolve=>setImmediate(resolve));
+ a.c.ultimaAssinaturaRemota='mudou-durante-consulta';await a.c.cicloAutomatico();liberar();await inicial;await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(a.contagem.recepcoes,2);
+});
+test('temporizador não inicia leitura; apenas tenta enviar fila pendente',()=>{
+ assert.doesNotMatch(html,/setInterval\([^\n]*cicloAutomatico/);
+ assert.match(html,/setInterval\([^\n]*enviarFilaAutomaticamente/);
+ const inicio=html.indexOf("document.addEventListener('visibilitychange',()=>{");const linha=html.slice(inicio,html.indexOf('\n',inicio));
+ assert.doesNotMatch(linha,/cicloAutomatico/);
 });
