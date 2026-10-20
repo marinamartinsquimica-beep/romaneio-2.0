@@ -47,9 +47,11 @@ test('fila de movimentos não condiciona sincronização das expedições',()=>{
  const pos=central.indexOf('async function cicloAutomatico()');
  const trecho=central.slice(pos,central.indexOf("window.addEventListener('online'",pos));
  assert.match(trecho,/await enviarFilaAutomaticamente\(\)/);
- assert.match(trecho,/if\(Date\.now\(\)-ultimaConsultaExpedicoes>=30000\)\{/);
+ assert.match(trecho,/if\(receberEntradasNoAparelho\(\)&&controleExpedicoesAutomaticas.deveConsultar\(assinaturaExpedicoes\)\)\{/);
  assert.match(trecho,/await sincronizarExpedicoesCompartilhadas\(\)/);
- assert.ok(trecho.indexOf('await sincronizarExpedicoesCompartilhadas()')>trecho.indexOf('if(!lerOperacional().length){'));
+ const blocoExpedicoes=trecho.slice(trecho.indexOf('const assinaturaExpedicoes='));
+ assert.doesNotMatch(blocoExpedicoes,/lerOperacional/);
+ assert.match(blocoExpedicoes,/await sincronizarExpedicoesCompartilhadas\(\)/);
  assert.ok(trecho.includes("if(receberEntradasNoAparelho())await receberAutomaticamente()"));
 });
 test('paginação completa consulta servidor, em vez de truncar expedições em 50',()=>{
