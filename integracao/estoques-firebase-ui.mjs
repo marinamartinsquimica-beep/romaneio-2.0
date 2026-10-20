@@ -137,7 +137,7 @@ function observar(uid,ambienteId=null){
    const movimentos=await lerColecao('movimentos');
    if(auth.currentUser?.uid!==uid)return;
    const expedicoes=await lerColecao('expedicoes');
-   const {paletesOutrosUsuarios}=await import('./painel-paletes-outros-usuarios.mjs');
+   const {paletesOutrosUsuarios}=await import('./painel-paletes-outros-usuarios.mjs?v=2.0.97');
    const {CHAVE_FECHAMENTOS}=await import('./marcos-romaneios-fechados.mjs');
    const locais=JSON.parse(localStorage.getItem('entradas')||'[]');
    const fechamentos=JSON.parse(localStorage.getItem(CHAVE_FECHAMENTOS)||'[]');

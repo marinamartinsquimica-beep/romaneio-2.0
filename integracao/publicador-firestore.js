@@ -2,7 +2,7 @@
  * Coleção dedicada a movimentos; nenhuma escrita no estoque oficial.
  * Não habilitar em produção sem regras de segurança e testes ponta a ponta.
  */
-import {prepararLoteMovimentos,reconciliarConfirmacoes} from './protocolo-movimentos.js?v=2.0.96';
+import {prepararLoteMovimentos,reconciliarConfirmacoes} from './protocolo-movimentos.js?v=2.0.97';
 const canonico=x=>JSON.stringify(x,(_,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a.localeCompare(b))):v);
 export function criarPublicadorMovimentos({transacionar,referencia,registrarErro,obterUsuario}){
  if([transacionar,referencia,registrarErro,obterUsuario].some(fn=>typeof fn!=='function'))throw new TypeError('Dependências ausentes');

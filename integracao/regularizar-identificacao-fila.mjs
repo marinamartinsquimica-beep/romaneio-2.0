@@ -1,6 +1,6 @@
 // Reparo exclusivo do metadado do aparelho remetente em eventos ainda não publicados.
 // Nenhuma alteração de ID, item, estado anterior, autor, estoque ou permissões.
-import {motivosFormatoOperacional} from './protocolo-movimentos.js?v=2.0.96';
+import {motivosFormatoOperacional} from './protocolo-movimentos.js?v=2.0.97';
 const dispositivoValido=x=>typeof x==='string'&&x.length>0&&x.length<=160;
 export async function regularizarIdentificacaoFila({dispositivoId,ler,gravar,consultarServidor,guardarBackup,validarSessao}){
  if(!dispositivoValido(dispositivoId))throw Error('Identificação do aparelho remetente inválida.');

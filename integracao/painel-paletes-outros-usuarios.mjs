@@ -1,3 +1,4 @@
+import {romaneioBaixado} from './recepcao-romaneios-ativos.mjs?v=2.0.97';
 // Projeção somente leitura de paletes de OUTROS usuários do mesmo ambiente.
 // Não grava em 'entradas', não mexe no fluxo celular ↔ computador da mesma conta.
 import {recuperarPaletesRemotosSeguros} from './recuperar-paletes-remotos.mjs';
@@ -20,7 +21,7 @@ export function paletesOutrosUsuarios({movimentos,uidAtual,entradasLocais=[],fec
  const remotos=conferidos.remotos.filter(x=>{
   const autor=autores.get(id(x.registroId));
   if(!autor||(!incluirProprios&&autor===uidAtual))return false;
-  if(baixadas.has(identidadeExpedicaoBaixa(x,true).id))return false;
+  if(baixadas.has(identidadeExpedicaoBaixa(x,true).id)||romaneioBaixado(x,expedicoes))return false;
   return true;
  });
  return {remotos,incertos:conferidos.incertos};

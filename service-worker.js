@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v296-regularizar-identificacao-pendente";
+const CACHE_NAME = "romaneio-2-0-cache-v297-recepcao-somente-romaneios-atuais";
 
 const FILES_TO_CACHE = [
   "./inicio.html",
@@ -13,12 +13,13 @@ const FILES_TO_CACHE = [
   "./integracao/baixa-transacional.mjs",
   "./integracao/filtro-expedicoes-baixadas.mjs",
   "./integracao/direcao-sincronizacao.mjs",
-  "./integracao/regularizar-identificacao-fila.mjs?v=2.0.96",
+  "./integracao/regularizar-identificacao-fila.mjs?v=2.0.97",
   "./integracao/reconciliar-pendencias-baixadas.mjs",
   "./integracao/substituicao-estoque-total.mjs",
   "./integracao/recuperar-paletes-remotos.mjs",
   "./integracao/marcos-romaneios-fechados.mjs",
   "./integracao/painel-paletes-outros-usuarios.mjs",
+  "./integracao/recepcao-romaneios-ativos.mjs?v=2.0.97",
   "./vendor/LICENSE-zxing.txt",
   "./qr-parser.js",
   "./manifest.json",

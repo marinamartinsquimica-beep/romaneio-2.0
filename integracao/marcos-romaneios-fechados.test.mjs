@@ -40,5 +40,5 @@ test('o aplicativo grava marcadores antes de limpar e verifica antes da união',
  const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  const central=readFileSync(new URL('./central-conexao.html',import.meta.url),'utf8');
  assert.ok(index.indexOf('localStorage.setItem(CHAVE_FECHAMENTOS')<index.indexOf('localStorage.removeItem("entradas")'));
- assert.match(central,/const movs=filtrarMovimentosJaFechados\(snap\.docs\.map/);
+ assert.match(central,/const movs=filtrarEventosBaixados\(filtrarMovimentosJaFechados\(movimentosRecepcao,fechamentosBrutos\),expedicoesRecepcao\)/);
 });
