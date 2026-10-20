@@ -41,7 +41,7 @@ test('marcador local de fechamento impede reimportação da expedição antiga',
 test('código do painel não altera a sincronização local nem o armazenamento de entradas',()=>{
  const ui=readFileSync(new URL('./estoques-firebase-ui.mjs',import.meta.url),'utf8');
  const inicio=ui.indexOf('async function atualizarPaletesCompartilhados()');
- const fim=ui.indexOf('window.__paletesDeOutrosUsuarios=[];',inicio);
+ const fim=ui.indexOf('window.__paletesDeOutrosUsuarios=resultado.remotos;',inicio);
  const secao=ui.slice(inicio,fim);
  assert.match(secao,/getDocsFromServer\(consulta\)/);
  assert.match(secao,/paletesOutrosUsuarios\(/);
