@@ -115,7 +115,12 @@ function observar(uid,ambienteId=null){
   window.operadorAtualizarPainel?.();
   return;
  }
- let atualizacaoPaletes=0,emConsulta=false,refazerConsulta=false;
+ let atualizacaoPaletes=0,ultimaConsultaPaletes=0,emConsulta=false,refazerConsulta=false;
+ function agendarConsultaCompartilhada(){
+  clearTimeout(atualizacaoPaletes);
+  atualizacaoPaletes=setTimeout(()=>{atualizacaoPaletes=0;void atualizarPaletesCompartilhados();},150);
+ }
+ unsub.push(()=>clearTimeout(atualizacaoPaletes));
  async function atualizarPaletesCompartilhados(){
   if(emConsulta){refazerConsulta=true;return;}
   emConsulta=true;
@@ -151,6 +156,7 @@ function observar(uid,ambienteId=null){
     movimentos,uidAtual:uid,entradasLocais:[],fechamentos,expedicoes,incluirProprios:true
    }).remotos;
    window.__paletesDeOutrosUsuarios=resultado.remotos;
+   ultimaConsultaPaletes=Date.now();
    window.operadorAtualizarPainel?.();
   }catch(e){
    const aviso=$('etapa4FirebaseStatus');
@@ -162,18 +168,25 @@ function observar(uid,ambienteId=null){
  }
  window.__paletesDeOutrosUsuarios=[];window.__reservasCompartilhadas=null;
  window.atualizarConsultaCompartilhada=atualizarPaletesCompartilhados;
- const aoReconectar=()=>void atualizarPaletesCompartilhados();
- const aoRetornar=()=>{if(!document.hidden)void atualizarPaletesCompartilhados();};
+ const aoReconectar=()=>agendarConsultaCompartilhada();
+ const aoRetornar=()=>{if(!document.hidden){
+  if(Date.now()-ultimaConsultaPaletes>=300000)agendarConsultaCompartilhada();
+  else window.operadorAtualizarPainel?.();
+ }};
  window.addEventListener('online',aoReconectar);
  document.addEventListener('visibilitychange',aoRetornar);
  unsub.push(()=>{window.removeEventListener('online',aoReconectar);document.removeEventListener('visibilitychange',aoRetornar);if(window.atualizarConsultaCompartilhada===atualizarPaletesCompartilhados)delete window.atualizarConsultaCompartilhada;});
- void atualizarPaletesCompartilhados();
+ agendarConsultaCompartilhada();
  unsub.push(onSnapshot(collection(db,...raiz,'expedicoes'),snapshot=>{
-  if(!snapshot.metadata.fromCache)void atualizarPaletesCompartilhados();
+  if(snapshot.metadata.fromCache)return;
+  agendarConsultaCompartilhada();
+  document.getElementById('romaneioSincronizacaoAutomatica')?.contentWindow?.postMessage({
+   origem:'romaneio-expedicoes-alteradas',uid,ambienteId
+  },location.origin);
  },e=>mostrar('Consulta compartilhada: '+e.message)));
  unsub.push(onSnapshot(query(collection(db,...raiz,'movimentos'),orderBy('criadoEm','desc'),limit(1)),snapshot=>{
   if(snapshot.metadata.fromCache)return;
-  void atualizarPaletesCompartilhados();
+  agendarConsultaCompartilhada();
  },e=>mostrar('Consulta compartilhada: '+e.message)));
  renderizarDestinosExcluidos();
  unsub.push(onSnapshot(query(collection(db,...raiz,'movimentos'),orderBy('criadoEm','desc'),limit(50)),snapshot=>{
