@@ -1,3 +1,4 @@
+import {permiteReceberPaletes} from './direcao-sincronizacao.mjs';
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
 import {guardarModeloEmbalado} from './modelo-estoque-persistente.mjs';
@@ -107,6 +108,12 @@ function observar(uid,ambienteId=null){
  }
  // Somente consulta no painel de outro usuário autorizado do MESMO ambiente.
  // O fluxo de recepção da própria conta não é modificado.
+ if(!permiteReceberPaletes({userAgent:navigator.userAgent,mobile:navigator.userAgentData?.mobile,
+   platform:navigator.platform,touchPoints:navigator.maxTouchPoints})||window.matchMedia('(max-width:767px)').matches){
+  window.__paletesDeOutrosUsuarios=[];window.__reservasCompartilhadas=null;
+  window.operadorAtualizarPainel?.();
+  return;
+ }
  let atualizacaoPaletes=0,emConsulta=false,refazerConsulta=false;
  async function atualizarPaletesCompartilhados(){
   if(emConsulta){refazerConsulta=true;return;}

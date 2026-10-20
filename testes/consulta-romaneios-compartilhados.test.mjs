@@ -37,3 +37,18 @@ test('consulta abre palete, mostra todos e atualiza sem alterar entradas locais'
 test('mesmo login sem projeção adicional mantém consulta oculta',()=>{
  const {context:c,secao}=ambiente();c.window.__paletesDeOutrosUsuarios=[];c.renderizarRomaneiosCompartilhados();assert.equal(secao().hidden,true);
 });
+
+test('celular não cria consulta, mesmo recebendo dados em memória e tentando abrir palete',()=>{
+ const {context:c,secao}=ambiente();c.navigator={userAgent:'Android Mobile'};
+ c.renderizarRomaneiosCompartilhados();c.abrirConsultaCompartilhada('A','1');
+ assert.equal(secao(),undefined);
+});
+test('iPad em modo desktop não mostra a consulta do operador',()=>{
+ const {context:c,secao}=ambiente();c.navigator={userAgent:'Mozilla',platform:'MacIntel',maxTouchPoints:5};
+ c.renderizarRomaneiosCompartilhados();assert.equal(secao(),undefined);
+});
+test('tela pequena oculta e limpa consulta já criada',()=>{
+ const {context:c,secao}=ambiente();c.renderizarRomaneiosCompartilhados();
+ c.window.matchMedia=()=>({matches:true});c.renderizarRomaneiosCompartilhados();
+ assert.equal(secao().hidden,true);assert.equal(secao().children.length,0);
+});
