@@ -2,6 +2,7 @@ import {permiteReceberPaletes} from './direcao-sincronizacao.mjs';
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
 import {guardarModeloEmbalado} from './modelo-estoque-persistente.mjs';
+import {descreverErroPublicacao} from './erro-publicacao-estoque.mjs?v=2.0.99';
 import {initializeApp,getApp,getApps} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {getFirestore,doc,getDocFromServer,getDocsFromServer,startAfter,collection,query,orderBy,limit,onSnapshot,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
@@ -195,7 +196,7 @@ $('etapa4Publicar')?.addEventListener('click',async()=>{
   const r=await publicarEstoqueOficial({db,uid:u.uid,tipo,dados:{tipo,nome:file.name,versao,itens},versaoEsperada:versoes[tipo],doc,runTransaction,autorizado:true,ambienteId:ambienteAtual?.ambienteId||null});
   if(tipo==='embalado'){try{await guardarModeloEmbalado(file)}catch(err){mostrar('Publicado no sistema, mas a cópia local do Excel não foi preservada: '+err.message);return;}}
   mostrar('Publicado no sistema: '+r.quantidadeLotes+' lotes, versão '+r.versao);
- }catch(e){mostrar('Publicação não concluída: '+e.message)}finally{b.disabled=false}
+ }catch(e){mostrar('Publicação não concluída: '+descreverErroPublicacao(e))}finally{b.disabled=false}
 });
 
 

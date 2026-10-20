@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v298-historico-confirmado-no-servidor";
+const CACHE_NAME = "romaneio-2-0-cache-v299-controle-leituras-automaticas";
 
 const FILES_TO_CACHE = [
   "./inicio.html",
@@ -9,6 +9,8 @@ const FILES_TO_CACHE = [
   "./integracao/excel-modelo-etapa4.mjs",
   "./integracao/baixa-modelo-aprovado.mjs",
   "./integracao/modelo-estoque-persistente.mjs",
+  "./integracao/controle-leituras-automaticas.mjs?v=2.0.99",
+  "./integracao/erro-publicacao-estoque.mjs?v=2.0.99",
   "./integracao/estoques-firebase-ui.mjs",
   "./integracao/baixa-transacional.mjs",
   "./integracao/filtro-expedicoes-baixadas.mjs",
