@@ -885,8 +885,10 @@ let envioAutomaticoAgendado=false;
 async function enviarFilaAutomaticamente(){
  if(envioAutomaticoAgendado||envioRealEmAndamento||!navigator.onLine||!auth.currentUser)return;
  envioAutomaticoAgendado=true;
+ let haviaPendencias=false;
  try{
   const fila=lerOperacional();
+  haviaPendencias=fila.length>0;
   if(!fila.length)return;
   const ids=new Set();
   if(fila.some(op=>{if(!validarOperacional(op)||ids.has(op.id))return true;ids.add(op.id);return false;})){
@@ -896,7 +898,12 @@ async function enviarFilaAutomaticamente(){
   $('prepararEnvioReal').click();
   if(preparacaoReal&&$('confirmarEnvioReal').disabled===false)await confirmarEnvioRealOperacional();
  }catch(e){$('estadoEnvioReal').textContent='Sincronização automática adiada: '+(e.message||String(e));}
- finally{envioAutomaticoAgendado=false;status();}
+ finally{
+  envioAutomaticoAgendado=false;status();
+  // Confirmação de envio também é uma ação: liberar o recebimento que aguardava
+  // a fila, inclusive quando o servidor já possuía os mesmos movimentos.
+  if(haviaPendencias&&!lerOperacional().length)queueMicrotask(()=>void cicloAutomatico());
+ }
 }
 // Consolidação inicial única de registros legados, sem ação diária do operador.
 // Usa a coleção de movimentos já autorizada pelo Firebase; nunca baixa estoque.

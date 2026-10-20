@@ -76,3 +76,11 @@ test('temporizador não inicia leitura; apenas tenta enviar fila pendente',()=>{
  const inicio=html.indexOf("document.addEventListener('visibilitychange',()=>{");const linha=html.slice(inicio,html.indexOf('\n',inicio));
  assert.doesNotMatch(linha,/cicloAutomatico/);
 });
+test('confirmar fila já existente no servidor libera recepção sem depender de novo evento remoto',async()=>{
+ const fila=[{id:'ja-existente'}];let retomadas=0;
+ const elementos={prepararEnvioReal:{click(){c.preparacaoReal={}}},confirmarEnvioReal:{disabled:false},estadoEnvioReal:{textContent:''}};
+ const c={envioAutomaticoAgendado:false,envioRealEmAndamento:false,navigator:{onLine:true},auth:{currentUser:{uid:'marina'}},lerOperacional:()=>fila,validarOperacional:()=>true,preparacaoReal:null,confirmarEnvioRealOperacional:async()=>{fila.pop()},$:id=>elementos[id],status:()=>{},queueMicrotask,cicloAutomatico:()=>retomadas++};
+ const fonte=html.slice(html.indexOf('async function enviarFilaAutomaticamente(){'),html.indexOf('// Consolidação inicial única'));
+ runInNewContext(fonte,c);await c.enviarFilaAutomaticamente();await new Promise(resolve=>setImmediate(resolve));assert.equal(retomadas,1);
+ await c.enviarFilaAutomaticamente();await new Promise(resolve=>setImmediate(resolve));assert.equal(retomadas,1);
+});
