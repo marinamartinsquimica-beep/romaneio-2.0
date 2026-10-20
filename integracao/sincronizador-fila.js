@@ -25,7 +25,7 @@ export function criarSincronizadorFila({ler,gravar,publicador,avisar}){
    const restante=atual.filter(x=>confirmados.get(x?.id)!==assinatura(x));
    gravar(restante);
    avisar({confirmados:atual.length-restante.length,pendentes:restante.length,rejeitados:resultado.rejeitados||[]});
-   return {confirmados:atual.length-restante.length,pendentes:restante.length};
+   return {confirmados:atual.length-restante.length,pendentes:restante.length,falhas:(resultado.confirmacoes||[]).filter(x=>x.confirmado!==true),rejeitados:resultado.rejeitados||[]};
   })().finally(()=>{emAndamento=null});
   return emAndamento;
  }

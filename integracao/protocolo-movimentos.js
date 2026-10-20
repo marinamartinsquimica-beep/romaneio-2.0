@@ -33,3 +33,17 @@ export function reconciliarConfirmacoes(fila,confirmacoes){
 export function validarRegistroRemoto(registro){
  return Boolean(registro&&typeof registro.id==='string'&&ID.test(registro.id)&&TIPOS.has(registro.tipo)&&registro.item&&typeof registro.item==='object'&&(! (registro.tipo==='edicao')||registro.antes));
 }
+
+// Diagnóstico com os mesmos limites já exigidos pela Central; não altera eventos.
+export function motivosFormatoOperacional(op){
+ const m=[],it=op?.item;
+ if(!op||!ID.test(op.id||''))m.push('ID fora do formato aceito');
+ if(!TIPOS.has(op?.tipo))m.push('Tipo de operação inválido');
+ if(typeof op?.dispositivoId!=='string'||!op.dispositivoId.length||op.dispositivoId.length>160)m.push('Identificação do aparelho ausente ou inválida');
+ if(typeof it?.sku!=='string'||!it.sku.trim()||it.sku.length>100)m.push('SKU deve ser texto preenchido (até 100 caracteres)');
+ if(typeof it?.loteCompleto!=='string'||!it.loteCompleto.trim()||it.loteCompleto.length>150)m.push('Lote completo deve ser texto preenchido (até 150 caracteres)');
+ if(!((Number.isInteger(it?.caixas)&&it.caixas>0&&it.caixas<=1000000)||(typeof it?.caixas==='string'&&/^[1-9][0-9]{0,5}$/.test(it.caixas))))m.push('Quantidade de caixas fora do formato aceito');
+ if(op?.tipo==='edicao'&&(!op.antes||typeof op.antes!=='object'||Array.isArray(op.antes)))m.push('Edição sem estado anterior válido');
+ if(typeof op?.criadoEm!=='string'||!op.criadoEm.length||op.criadoEm.length>40)m.push('Data do movimento ausente ou inválida');
+ return m;
+}

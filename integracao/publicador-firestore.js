@@ -3,6 +3,7 @@
  * Não habilitar em produção sem regras de segurança e testes ponta a ponta.
  */
 import {prepararLoteMovimentos,reconciliarConfirmacoes} from './protocolo-movimentos.js';
+const canonico=x=>JSON.stringify(x,(_,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a.localeCompare(b))):v);
 export function criarPublicadorMovimentos({transacionar,referencia,registrarErro,obterUsuario}){
  if([transacionar,referencia,registrarErro,obterUsuario].some(fn=>typeof fn!=='function'))throw new TypeError('Dependências ausentes');
  async function publicar(fila,{limite=50}={}){
@@ -20,7 +21,7 @@ export function criarPublicadorMovimentos({transacionar,referencia,registrarErro
      const conteudo={id:op.id,autorUid:usuario.uid,dispositivoId:String(op.dispositivoId||''),tipo:op.tipo,item:op.item,antes:op.antes||null,criadoEm:String(op.criadoEm||'')};
      if(anterior.exists()){
       const remoto=anterior.data();
-      if(JSON.stringify(remoto)!==JSON.stringify(conteudo))throw new Error('Conflito: mesmo ID com conteúdo diferente');
+      if(canonico(remoto)!==canonico(conteudo))throw new Error('Conflito: mesmo ID com conteúdo diferente');
       return 'ja_existia';
      }
      tx.set(ref,conteudo);
@@ -28,8 +29,9 @@ export function criarPublicadorMovimentos({transacionar,referencia,registrarErro
     });
     confirmacoes.push({id:op.id,confirmado:true,estado});
    }catch(e){
-    registrarErro({id:op.id,mensagem:String(e?.message||e)});
-    confirmacoes.push({id:op.id,confirmado:false});
+    const falha={id:op.id,mensagem:String(e?.message||e),codigo:String(e?.code||'')};
+    registrarErro(falha);
+    confirmacoes.push({...falha,confirmado:false});
    }
   }
   const reconciliado=reconciliarConfirmacoes(fila,confirmacoes);

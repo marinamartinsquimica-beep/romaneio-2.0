@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v293-pendencias-e-paletes-operador";
+const CACHE_NAME = "romaneio-2-0-cache-v294-confirmacao-e-diagnostico-fila";
 
 const FILES_TO_CACHE = [
   "./inicio.html",
