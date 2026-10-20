@@ -3168,8 +3168,8 @@ function operadorAtualizarPainel(){
  // Complemento de consulta: paletes com autor diferente da conta atual,
  // mas pertencentes ao mesmo ambiente e com histórico íntegro no servidor.
  // Não insere linhas na tabela de romaneios local.
- const compartilhados=Array.isArray(window.__paletesDeOutrosUsuarios)?window.__paletesDeOutrosUsuarios:[];
- const idsLocais=new Set(lerJsonLocalStorage('entradas',[]).map(x=>String(x.registroId||'')).filter(Boolean));
+ const compartilhados=typeof window!=='undefined'&&Array.isArray(window.__paletesDeOutrosUsuarios)?window.__paletesDeOutrosUsuarios:[];
+ const idsLocais=compartilhados.length?new Set(lerJsonLocalStorage('entradas',[]).map(x=>String(x.registroId||'')).filter(Boolean)):new Set();
  for(const remoto of compartilhados){
   if(remoto.registroId&&idsLocais.has(String(remoto.registroId)))continue;
   const palete=String(remoto.palete||'').trim(),destino=String(remoto.destino||'').trim(),sku=String(remoto.sku||'').trim();
