@@ -289,7 +289,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 <p style="color:#334155">Os arquivos são publicados como consulta compartilhada. A publicação substitui somente a versão compartilhada no sistema; nenhuma planilha é alterada automaticamente.</p>
 <label for="etapa4Tipo">Estoque</label><select id="etapa4Tipo"><option value="embalado">Estoque Embalado</option><option value="paripassu">Estoque PariPassu</option></select>
 <label for="etapa4Arquivo">Planilha atualizada</label><input type="file" id="etapa4Arquivo" accept=".xlsx,.xls">
-<button type="button" id="etapa4Publicar">PUBLICAR ESTOQUE NO sistema</button>
+<button type="button" id="etapa4Publicar">PUBLICAR ESTOQUE COMPARTILHADO</button>
 <p id="etapa4FirebaseStatus" role="status">Aguardando conexão autenticada.</p>
 
 </section>
@@ -3236,7 +3236,7 @@ async function operadorSincronizarAgora(){
   const enviado=await sincronizarRomaneioCelular();
   if(!enviado)throw Error('Envio não confirmado; fila preservada.');
   localStorage.setItem('romaneio2_solicitar_sincronizacao_v1',String(Date.now()));
-  if(botao)botao.textContent='CONSULTANDO sistema...';
+  if(botao)botao.textContent='SINCRONIZANDO...';
   await new Promise(resolve=>setTimeout(resolve,1800));
   if(typeof operadorAtualizarPainel==='function')operadorAtualizarPainel();
   if(botao)botao.textContent='SINCRONIZAÇÃO SOLICITADA';
