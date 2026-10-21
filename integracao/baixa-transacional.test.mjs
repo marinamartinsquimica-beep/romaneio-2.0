@@ -138,3 +138,39 @@ test('baixa parcial transacional desconta apenas saldos disponíveis e preserva 
  assert.deepEqual(m.estoqueAtual().itens.slice(0,3).map(x=>x.saldo),[0,0,0]);
  assert.ok(m.expedicoes().every(x=>x.estado==='BAIXA_CONCLUIDA'));
 });
+
+// Reproduz referências válidas com representação pública opaca (SDK/adaptador).
+test('referências opacas distintas não geram falsa duplicidade de expedições',async()=>{
+ const m=memoria(),caminhos=new WeakMap();
+ const doc=(...partes)=>{const real=m.doc(...partes),ref={};caminhos.set(ref,real.path);return ref;};
+ const runTransaction=(db,fn)=>m.runTransaction(db,tx=>fn({
+  get:ref=>tx.get({path:caminhos.get(ref)}),
+  set:(ref,dados)=>tx.set({path:caminhos.get(ref)},dados),
+  update:(ref,dados)=>tx.update({path:caminhos.get(ref)},dados)
+ }));
+ const r=await registrarBaixaTransacional({...args(m),doc,runTransaction});
+ assert.equal(r.baixadas,30);assert.equal(r.naoBaixadas,7);
+ assert.equal(m.estoqueAtual().itens[0].saldo,26);
+ assert.equal(m.expedicoes().length,2);
+ await assert.rejects(registrarBaixaTransacional({...args(m),doc,runTransaction}),/estoque mudou|já baixada/i);
+ assert.equal(m.estoqueAtual().itens[0].saldo,26);
+});
+test('identidade realmente repetida continua bloqueada antes de qualquer transação, com paletes identificados',async()=>{
+ const m=memoria();
+ await assert.rejects(registrarBaixaTransacional(args(m,[reg[0],{...reg[0],caixas:7}],{aplicados:parcial.aplicados,pendencias:[{id:'r2',sku:reg[0].sku,lote:reg[0].lote,caixas:7}]})),e=>{
+  assert.match(e.message,/identificadores repetidos/);assert.match(e.message,/palete 1/);assert.match(e.message,/SKU 5008/);return true;
+ });
+ assert.equal(m.transacoes,0);
+});
+test('baixa total sintética de 31 paletes e 9 destinos: 2625 menos 1950 resulta em 675, com 39 sem baixa',async()=>{
+ const registros=Array.from({length:31},(_,i)=>({registroId:'reg-expedicao-'+i,destino:'Destino '+i%9,palete:String(i+1),sku:'SKU'+i,loteCompleto:'LOTE'+i,caixas:i===30?189:60}));
+ const estoque=registros.map((x,i)=>({sku:x.sku,lote:x.loteCompleto,saldo:i===30?150:60}));estoque.push({sku:'OUTRO',lote:'ESTOQUE',saldo:675});
+ const resultado={aplicados:registros.map((x,i)=>({id:'r'+i,sku:x.sku,lote:x.loteCompleto,caixas:i===30?150:60})),pendencias:[{id:'r30',sku:'SKU30',lote:'LOTE30',caixas:39}]};
+ const m=memoria({estoque}),r=await registrarBaixaTransacional(args(m,registros,resultado));
+ assert.equal(registros.reduce((a,x)=>a+x.caixas,0),1989);
+ assert.equal(r.baixadas,1950);assert.equal(r.naoBaixadas,39);
+ assert.equal(m.estoqueAtual().itens.reduce((a,x)=>a+x.saldo,0),675);
+ assert.equal(m.expedicoes().filter(x=>x.estado==='BAIXA_CONCLUIDA').length,31);
+ await assert.rejects(registrarBaixaTransacional(args(m,registros,resultado)),/estoque mudou|já baixada/i);
+ assert.equal(m.estoqueAtual().itens.reduce((a,x)=>a+x.saldo,0),675);
+});

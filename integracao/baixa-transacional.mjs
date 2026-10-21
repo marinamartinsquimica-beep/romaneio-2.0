@@ -29,10 +29,19 @@ export async function registrarBaixaTransacional({db,doc,runTransaction,uid,ambi
      throw Error('Romaneio incompleto. Confira destino, SKU, lote e caixas.');
    if(ativos&&!String(x.registroId||'').trim())throw Error('Palete sem identificador único. Sincronize o romaneio antes da baixa.');
    const {origemId,id}=identidadeExpedicaoBaixa(x,ativos);
-   return {registro:x,origemId,ref:doc(db,...raiz,'expedicoes',id)};
+   return {registro:x,origemId,id,ref:doc(db,...raiz,'expedicoes',id)};
  });
- if(new Set(movimentacoes.map(x=>x.ref.path||String(x.ref))).size!==movimentacoes.length)
-   throw Error('Expedições com identificadores repetidos. Nenhum saldo alterado.');
+ // A identidade pertence ao contrato da baixa, não à representação do SDK.
+ // Referências sem path público podem ter o mesmo String(ref) genérico.
+ const porIdentificador=new Map();
+ for(const m of movimentacoes){
+   const anterior=porIdentificador.get(m.id);
+   if(anterior){
+     const descrever=x=>'destino '+x.destino+', palete '+x.palete+', SKU '+x.sku+', '+x.caixas+' CX';
+     throw Error('Expedições com identificadores repetidos: '+m.id+' ('+descrever(anterior.registro)+' / '+descrever(m.registro)+'). Nenhum saldo alterado.');
+   }
+   porIdentificador.set(m.id,m);
+ }
  const quantidades=new Map(),solicitadas=new Map();
  for(const x of registros){const k=chave(x);solicitadas.set(k,(solicitadas.get(k)||0)+Number(x.caixas));}
  for(const x of [...aplicados,...pendencias]){

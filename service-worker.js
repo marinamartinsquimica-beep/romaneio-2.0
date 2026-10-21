@@ -1,8 +1,8 @@
-const CACHE_NAME = "romaneio-2-0-cache-v2103-limite-consultas";
+const CACHE_NAME = "romaneio-2-0-cache-v2104-identidade-baixa";
 
 const FILES_TO_CACHE = [
-  "./integracao/colecao-incremental.mjs?v=2.0.103",
-  "./integracao/retencao-historicos.mjs?v=2.0.103",
+  "./integracao/colecao-incremental.mjs?v=2.0.104",
+  "./integracao/retencao-historicos.mjs?v=2.0.104",
   "./inicio.html",
   "./export-utils.js",
   "./jsQR.js",
@@ -13,8 +13,9 @@ const FILES_TO_CACHE = [
   "./integracao/modelo-estoque-persistente.mjs",
   "./integracao/controle-leituras-automaticas.mjs?v=2.0.99",
   "./integracao/erro-publicacao-estoque.mjs?v=2.0.99",
-  "./integracao/estoques-firebase-ui.mjs?v=2.0.103",
+  "./integracao/estoques-firebase-ui.mjs?v=2.0.104",
   "./integracao/baixa-transacional.mjs",
+  "./integracao/baixa-transacional.mjs?v=2.0.104",
   "./integracao/filtro-expedicoes-baixadas.mjs",
   "./integracao/direcao-sincronizacao.mjs",
   "./integracao/regularizar-identificacao-fila.mjs?v=2.0.97",

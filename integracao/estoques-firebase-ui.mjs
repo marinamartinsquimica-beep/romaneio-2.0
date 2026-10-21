@@ -1,4 +1,4 @@
-import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.103';
+import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.104';
 import {permiteReceberPaletes} from './direcao-sincronizacao.mjs';
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
@@ -221,7 +221,7 @@ window.registrarBaixaConferida=async ({resultado,versaoInicial,destino,registros
  if(!usuario||!ambienteAtual?.ambienteId||!ambienteAtual?.permissoes?.prepararBaixa)
    throw Error('Operador sem acesso à baixa de estoque.');
  if(!navigator.onLine)throw Error('É necessário estar online.');
- const {registrarBaixaTransacional}=await import('./baixa-transacional.mjs');
+ const {registrarBaixaTransacional}=await import('./baixa-transacional.mjs?v=2.0.104');
  return registrarBaixaTransacional({
    db,doc,runTransaction,uid:usuario.uid,ambienteId:ambienteAtual.ambienteId,
    resultado,versaoInicial,destino,registros
