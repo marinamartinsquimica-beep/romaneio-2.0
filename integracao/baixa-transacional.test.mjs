@@ -194,3 +194,22 @@ test('comprovante pendente com dez caixas não pode ser reutilizado para vinte',
  await assert.rejects(registrarBaixaTransacional(args(m,[linha,{...linha}],{aplicados:[{sku:linha.sku,lote:linha.lote,caixas:20}],pendencias:[]})),/difere do agrupamento/);
  assert.equal(m.estoqueAtual().itens[0].saldo,56);
 });
+
+test('excluído recebido sem expedição pré-cadastrada conclui cadastro e baixa nas duas fases',async()=>{
+ const m=memoria();const r={...reg[0],movimentoExclusaoId:'exclusao-celular'};
+ const resultado={aplicados:[{sku:r.sku,lote:r.lote,caixas:30}],pendencias:[]};
+ const a={...args(m,[r],resultado),destino:'A'};
+ await registrarBaixaTransacional(a);
+ assert.equal(m.estoqueAtual().itens[0].saldo,26);
+ assert.equal(m.expedicoes()[0].estado,'BAIXA_CONCLUIDA');
+ assert.equal(m.expedicoes()[0].origemId,'exclusao-celular');
+ await assert.rejects(registrarBaixaTransacional({...a,versaoInicial:m.estoqueAtual().versao}),/já baixada|já concluída/);
+ assert.equal(m.estoqueAtual().itens[0].saldo,26);
+});
+test('baixa anterior à exclusão impede criar segundo desconto',async()=>{
+ const {identidadeExpedicaoBaixa}=await import('./baixa-transacional.mjs');
+ const m=memoria(),r={...reg[0],movimentoExclusaoId:'exclusao-posterior'};
+ m.docs.set('romaneio_ambientes/homologacao_romaneio20/expedicoes/'+identidadeExpedicaoBaixa(reg[0],true).id,{...reg[0],estado:'BAIXA_CONCLUIDA'});
+ await assert.rejects(registrarBaixaTransacional({...args(m,[r],{aplicados:[{sku:r.sku,lote:r.lote,caixas:30}],pendencias:[]}),destino:'A'}),/baixa anterior/);
+ assert.equal(m.estoqueAtual().itens[0].saldo,56);assert.equal(m.expedicoes().length,1);
+});

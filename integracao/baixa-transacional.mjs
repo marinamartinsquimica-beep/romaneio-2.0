@@ -50,6 +50,15 @@ export async function registrarBaixaTransacional({db,doc,runTransaction,uid,ambi
    }
    porIdentificador.set(m.id,m);movimentacoes.push(m);
  }
+ // A baixa pode cadastrar a expedição recebida antes do ciclo da Central.
+ // Conferir também a identidade anterior, usada antes da exclusão no celular.
+ const anteriores=movimentacoes.filter(m=>m.registro.movimentoExclusaoId&&m.registro.registroId).map(m=>{
+  const anterior=identidadeExpedicaoBaixa({...m.registro,movimentoExclusaoId:''},true);
+  return doc(db,...raiz,'expedicoes',anterior.id);
+ });
+ const conferirAnteriores=async tx=>{
+  for(const ref of anteriores){const snap=await tx.get(ref);if(snap.exists())throw Error('Este romaneio possui uma baixa anterior concluída ou em andamento. Prepare novamente a conferência antes de continuar.');}
+ };
  const quantidades=new Map(),solicitadas=new Map();
  for(const x of registros){const k=chave(x);solicitadas.set(k,(solicitadas.get(k)||0)+Number(x.caixas));}
  for(const x of [...aplicados,...pendencias]){
@@ -82,8 +91,9 @@ export async function registrarBaixaTransacional({db,doc,runTransaction,uid,ambi
        if(antigo.origemId&&antigo.origemId!==m.origemId)throw Error('Identidade de expedição divergente.');
        if(m.registro.linhasBaixa&&(Number(antigo.caixas)!==Number(m.registro.caixas)||conteudoCanonico(antigo.linhasBaixa)!==conteudoCanonico(m.registro.linhasBaixa)))
          throw Error('Comprovante pendente difere do agrupamento atual. Nenhum saldo alterado.');
-     }else if(!ativos)throw Error('Expedição excluída ainda não sincronizada no Firebase.');
+     }else if(!ativos&&!(String(m.registro.movimentoExclusaoId||'').trim()&&String(m.registro.registroId||'').trim()))throw Error('Expedição excluída sem identificação de sincronização. Sincronize antes de confirmar a baixa.');
    }
+   await conferirAnteriores(tx);
    const criadoEm=new Date().toISOString();
    for(const {m,snap} of snaps)if(!snap.exists())tx.set(m.ref,{
      ...m.registro,origemId:m.origemId,estado:'PENDENTE_BAIXA',criadoEm,autorUid:uid
@@ -96,6 +106,7 @@ export async function registrarBaixaTransacional({db,doc,runTransaction,uid,ambi
    for(const m of movimentacoes)snaps.push({m,snap:await tx.get(m.ref)});
    if(snaps.some(({snap})=>!snap.exists()||snap.data().estado!=='PENDENTE_BAIXA'))
      throw Error('Expedição ausente ou já concluída. Não repetir a baixa.');
+   await conferirAnteriores(tx);
    const saldos=new Map();
    for(const x of estoque.itens){
      const k=chave(x);
