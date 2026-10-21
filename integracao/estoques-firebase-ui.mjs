@@ -1,5 +1,5 @@
-import {registroBaixadoNoEstoque} from './status-baixa-romaneio.mjs?v=2.0.107';
-import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.107';
+import {registroBaixadoNoEstoque} from './status-baixa-romaneio.mjs?v=2.0.108';
+import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.108';
 import {permiteReceberPaletes} from './direcao-sincronizacao.mjs';
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
@@ -216,7 +216,7 @@ window.filtrarExpedicoesParaBaixa=async ({destino,registros})=>{
  if(!usuario||!ambienteAtual?.ambienteId||!ambienteAtual?.permissoes?.prepararBaixa)
   throw Error('Conecte um operador autorizado ao sistema antes de preparar a baixa.');
  if(!navigator.onLine)throw Error('A baixa exige consulta online ao sistema.');
- const {filtrarExpedicoesJaBaixadas}=await import('./filtro-expedicoes-baixadas.mjs?v=2.0.107');
+ const {filtrarExpedicoesJaBaixadas}=await import('./filtro-expedicoes-baixadas.mjs?v=2.0.108');
  const raiz=['romaneio_ambientes',ambienteAtual.ambienteId,'expedicoes'];
  return filtrarExpedicoesJaBaixadas({
   registros,destino,
@@ -234,7 +234,7 @@ window.registrarBaixaConferida=async ({resultado,versaoInicial,destino,registros
    throw Error('Operador sem acesso à baixa de estoque.');
  if(!navigator.onLine)throw Error('É necessário estar online.');
  const ambienteId=ambienteAtual.ambienteId;
- const {registrarBaixaTransacional}=await import('./baixa-transacional.mjs?v=2.0.107');
+ const {registrarBaixaTransacional}=await import('./baixa-transacional.mjs?v=2.0.108');
  const confirmada=await registrarBaixaTransacional({
    db,doc,runTransaction,uid:usuario.uid,ambienteId,
    resultado,versaoInicial,destino,registros
