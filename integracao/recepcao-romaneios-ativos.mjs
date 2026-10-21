@@ -21,13 +21,11 @@ export function filtrarEventosBaixados(movimentos,expedicoes){
 }
 export function separarEncerradosLocais({registros,movimentos,expedicoes,fechamentos=[]}){
  if(![registros,movimentos,expedicoes,fechamentos].every(Array.isArray))throw Error('Conferência de encerramento inválida.');
- const excluidos=new Set(movimentos.filter(m=>m.tipo==='exclusao').map(m=>id(m.item?.registroId||m.antes?.registroId)).filter(Boolean));
  const atuais=[],encerrados=[];
  for(const registro of registros){
-  const rid=id(registro.registroId);
   const marcador=filtrarMovimentosJaFechados([{item:registro,criadoEm:'1970-01-01T00:00:00.001Z'}],fechamentos).length===0;
-  const exclusao=rid?excluidos.has(rid):movimentos.some(m=>m.tipo==='exclusao'&&!id(m.item?.registroId)&&identidadeFisica(m.item)===identidadeFisica(registro));
-  (romaneioBaixado(registro,expedicoes)&&(exclusao||marcador)?encerrados:atuais).push(registro);
+  // Exclusão no celular não encerra a cópia de conferência do computador.
+  (romaneioBaixado(registro,expedicoes)&&marcador?encerrados:atuais).push(registro);
  }
  return {atuais,encerrados};
 }

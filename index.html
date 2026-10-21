@@ -281,7 +281,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.106</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.107</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
 <div class="romaneio-backup-actions" style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button class="desktop-backup-action" type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Pendências de sincronização</button><button class="desktop-backup-action" type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button><button class="mobile-sync-action" type="button" onclick="sincronizarRomaneioCelular()" style="width:auto;background:#5CDCF2;color:#254D69;font-weight:800;font-size:13px;padding:10px 18px;border-radius:12px;border:2px solid #254D69">SINCRONIZAR</button></div>
 <section class="dashboard"><div class="metric"><div class="ico">📋</div><div><b id="dashRegistros">0</b><span id="dashRegistrosLabel">Registros totais</span></div></div><div class="metric"><div class="ico">📦</div><div><b id="dashCaixas">0</b><span id="dashCaixasLabel">Caixas totais</span></div></div><div class="metric"><div class="ico">🧱</div><div><b id="dashPaletes">0</b><span id="dashPaletesLabel">Paletes totais</span></div></div><div class="metric"><div class="ico">📍</div><div><b id="dashDestinos">0</b><span id="dashDestinosLabel">Destinos totais</span></div></div><div class="metric"><div class="ico">🕒</div><div><b id="dashUltimo">--</b><span>Último registro</span></div></div></section>
@@ -400,7 +400,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.106";
+const APP_VERSION = "2.0.107";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -804,6 +804,9 @@ function renderizarRomaneiosDestino() {
             nome.textContent = `Palete ${numero}`;
             const quantidade = document.createElement("span");
             quantidade.textContent = `${caixas} caixas`;
+            const registrosPalete=lerJsonLocalStorage('entradas',[]).filter(r=>String(r.destino||'').trim().toLocaleLowerCase('pt-BR')===String(item.nome).trim().toLocaleLowerCase('pt-BR')&&String(r.palete)===String(numero));
+            const baixadas=registrosPalete.filter(r=>typeof window.romaneioPossuiBaixaConfirmada==='function'&&window.romaneioPossuiBaixaConfirmada(r)).length;
+            if(baixadas){quantidade.textContent+=' • '+(baixadas===registrosPalete.length?'ROMANEIO BAIXADO ESTOQUE':'BAIXA PARCIAL DO ROMANEIO');quantidade.style.color='#a83232';}
             descricao.append(nome, quantidade);
             const adicionar = document.createElement("button");
             adicionar.className = "btn-blue";
@@ -3257,6 +3260,7 @@ function operadorAtualizarPainel(){
  const linhas=[...document.querySelectorAll('#tabela tbody tr')];
  const paletes=new Map();
  let caixas=0;
+ const baixado=r=>typeof window.romaneioPossuiBaixaConfirmada==='function'&&window.romaneioPossuiBaixaConfirmada(r);
  linhas.forEach(l=>{
    const palete=String(l.cells[3]?.textContent||'').trim();
    const destino=String(l.cells[2]?.textContent||'').trim();
@@ -3265,8 +3269,10 @@ function operadorAtualizarPainel(){
    caixas+=cx;
    if(!palete)return;
    const chave=destino.toLocaleLowerCase('pt-BR')+'|'+palete;
-   const atual=paletes.get(chave)||{palete,destino,skus:new Set(),caixas:0};
+   const atual=paletes.get(chave)||{palete,destino,skus:new Set(),caixas:0,linhas:0,baixadas:0};
    if(sku)atual.skus.add(sku);
+   atual.linhas++;
+   if(baixado({registroId:l.dataset?.registroId,data:l.cells[0]?.textContent,sku,destino,palete,loteCompleto:l.cells[4]?.textContent,lote:l.cells[5]?.textContent,postura:l.cells[6]?.textContent,caixas:cx}))atual.baixadas++;
    atual.caixas+=cx;paletes.set(chave,atual);
  });
  // Complemento de consulta: paletes com autor diferente da conta atual,
@@ -3279,7 +3285,8 @@ function operadorAtualizarPainel(){
   const palete=String(remoto.palete||'').trim(),destino=String(remoto.destino||'').trim(),sku=String(remoto.sku||'').trim();
   if(!palete||!destino||!sku)continue;
   const chave=destino.toLocaleLowerCase('pt-BR')+'|'+palete;
-  const atual=paletes.get(chave)||{palete,destino,skus:new Set(),caixas:0,compartilhado:true};
+  const atual=paletes.get(chave)||{palete,destino,skus:new Set(),caixas:0,linhas:0,baixadas:0,compartilhado:true};
+  atual.linhas++;if(baixado(remoto))atual.baixadas++;
   atual.skus.add(sku);atual.caixas+=Number(remoto.caixas)||0;
   if(!paletes.has(chave))atual.compartilhado=true;
   paletes.set(chave,atual);caixas+=Number(remoto.caixas)||0;
@@ -3298,6 +3305,7 @@ function operadorAtualizarPainel(){
    const td=tr.insertCell();const btn=document.createElement('button');btn.type='button';btn.textContent='Conferir';
    if(d.compartilhado){btn.textContent='Consulta compartilhada';btn.title='Abrir os registros compartilhados deste palete.';btn.addEventListener('click',()=>abrirConsultaCompartilhada(d.destino,d.palete));}
    else btn.addEventListener('click',()=>operadorVoltarRomaneios());
+   if(d.baixadas){btn.textContent=d.baixadas===d.linhas?'ROMANEIO BAIXADO ESTOQUE':'BAIXA PARCIAL DO ROMANEIO';btn.setAttribute('style','color:#a83232;border-color:#bf4747');btn.title='Conferir romaneio preservado no computador. A baixa já está registrada.';}
    td.appendChild(btn);
  });
  if(typeof atualizarResumoReservaTeste==='function')atualizarResumoReservaTeste();
@@ -3414,7 +3422,7 @@ window.matchMedia('(max-width:767px)').addEventListener('change',event=>{if(even
 (function(){
  const central=document.createElement('iframe');
  central.id='romaneioSincronizacaoAutomatica';
- central.src='./integracao/central-conexao.html?estado=2_0_106';
+ central.src='./integracao/central-conexao.html?estado=2_0_107';
  central.title='Sincronização automática do Romaneio';
  central.tabIndex=-1;
  central.setAttribute('aria-hidden','true');
@@ -3516,7 +3524,7 @@ btn?.addEventListener('click',async()=>{
  }catch(e){resumo.textContent='Conferência não realizada: '+e.message;}finally{btn.disabled=false;}
 });
 </script>
-<script type="module" src="./integracao/estoques-firebase-ui.mjs?v=2.0.106"></script>
+<script type="module" src="./integracao/estoques-firebase-ui.mjs?v=2.0.107"></script>
 <script type="module">
 import {prepararBaixa,prepararAjuste} from './integracao/operacoes-estoque.mjs';
 let resultadoEtapa4=null;
@@ -3807,7 +3815,7 @@ document.getElementById('etapa4Preparar')?.addEventListener('click',async()=>{
 </script>
 
 <script type="module">
-import {expirarHistoricosLocais} from './integracao/retencao-historicos.mjs?v=2.0.106';
+import {expirarHistoricosLocais} from './integracao/retencao-historicos.mjs?v=2.0.107';
 let retencaoEmAndamento=false;
 async function aplicarRetencaoHistoricos(){
  if(retencaoEmAndamento)return;

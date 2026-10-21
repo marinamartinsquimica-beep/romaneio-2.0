@@ -28,7 +28,7 @@ a{color:#156e9b;font-weight:700}
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {motivosFormatoOperacional} from './protocolo-movimentos.js?v=2.0.97';
 import {permiteReceberPaletes} from './direcao-sincronizacao.mjs';
-import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.106';
+import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.107';
 import {criarControleLeituras} from './controle-leituras-automaticas.mjs?v=2.0.99';
 import {initializeApp,getApps,getApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,setPersistence,browserLocalPersistence} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
@@ -557,7 +557,7 @@ async function aplicarUniaoSeguraOperacional(){
    }
   };
   if(auth.currentUser?.uid!==uidRecepcao)throw Error('Sessão alterada durante a consulta de baixas.');
-  const {filtrarEventosBaixados,separarEncerradosLocais,identidadeHistoricoEncerrados}=await import('./recepcao-romaneios-ativos.mjs?v=2.0.97');
+  const {filtrarEventosBaixados,separarEncerradosLocais,identidadeHistoricoEncerrados}=await import('./recepcao-romaneios-ativos.mjs?v=2.0.107');
   const movimentosRecepcao=snap.docs.map(d=>({id:d.id,...d.data()}));
   const encerramento=separarEncerradosLocais({registros:entradas,movimentos:movimentosRecepcao,expedicoes:expedicoesRecepcao,fechamentos:fechamentosBrutos});
   if(encerramento.encerrados.length){
@@ -1010,7 +1010,7 @@ async function sincronizarExpedicoesCompartilhadasInterno(){
  const recebidas=await lerExpedicoesParaRecepcao(auth.currentUser.uid);
  const docs=new Map(recebidas.map(x=>[x.id,x]));
  // Aplicar prova de baixa ANTES de considerar cadastrar pendência nova.
- const {reconciliarPendenciasJaBaixadas}=await import('./reconciliar-pendencias-baixadas.mjs?v=2.0.106');
+ const {reconciliarPendenciasJaBaixadas}=await import('./reconciliar-pendencias-baixadas.mjs?v=2.0.107');
  const buscarBaixa=async id=>{
   if(docs.has(id))return docs.get(id);
   const snap=await getDocFromServer(doc(db,...raiz,'expedicoes',id));

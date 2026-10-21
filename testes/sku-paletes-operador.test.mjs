@@ -13,7 +13,7 @@ const linha=(palete,destino,sku,caixas)=>{
  cells[3].textContent=palete;cells[7].textContent=String(caixas);
  return {cells};
 };
-function simular(linhas,compartilhados=[]){
+function simular(linhas,compartilhados=[],confirmar=()=>false){
  const tbody={rows:[],replaceChildren(){this.rows=[]},insertRow(){
   const tr={cells:[],insertCell(){const c={textContent:'',colSpan:1,appendChild(x){this.button=x}};this.cells.push(c);return c}};
   this.rows.push(tr);return tr;
@@ -25,10 +25,10 @@ function simular(linhas,compartilhados=[]){
  const document={
   querySelectorAll:selector=>selector==='#tabela tbody tr'?linhas:[],
   getElementById:id=>ids.get(id)||null,
-  createElement:()=>({type:'',textContent:'',addEventListener(){}})
+  createElement:()=>({type:'',textContent:'',addEventListener(){},setAttribute(k,v){this[k]=v}})
  };
  runInNewContext(codigo+'\noperadorAtualizarPainel();',{
-  window:{__paletesDeOutrosUsuarios:compartilhados},lerJsonLocalStorage(){return []},document,renderizarRomaneiosCompartilhados(){},mostrarExpedicoesExcluidasOperador(){},obterRomaneiosDestino(){return [{nome:'A'}]},
+  window:{__paletesDeOutrosUsuarios:compartilhados,romaneioPossuiBaixaConfirmada:confirmar},lerJsonLocalStorage(){return []},document,renderizarRomaneiosCompartilhados(){},mostrarExpedicoesExcluidasOperador(){},obterRomaneiosDestino(){return [{nome:'A'}]},
   lerFilaMovimentos(){return []},atualizarResumoReservaTeste(){},operadorAtualizarCardsEstoque(){},
   operadorVoltarRomaneios(){}
  });
@@ -63,4 +63,15 @@ test('cards e lista do operador incluem os mesmos paletes compartilhados',()=>{
  assert.equal(r.ids.get('opCaixas').textContent,'285');
  assert.equal(r.tbody.rows.length,2);
  assert.equal(r.tbody.rows[0].cells[4].button.textContent,'Consulta compartilhada');
+});
+
+test('palete confirmado recebe identificação de baixa sem perder a linha e quantidade',()=>{
+ const r=simular([linha('1','TESTE','3938',30)],[],()=>true);
+ assert.equal(r.tbody.rows.length,1);
+ assert.equal(r.tbody.rows[0].cells[3].textContent,'30');
+ assert.equal(r.tbody.rows[0].cells[4].button.textContent,'ROMANEIO BAIXADO ESTOQUE');
+});
+test('palete com parte confirmada mostra baixa parcial',()=>{
+ const r=simular([linha('1','TESTE','3938',30),linha('1','TESTE','5002',10)],[],r=>r.sku==='3938');
+ assert.equal(r.tbody.rows[0].cells[4].button.textContent,'BAIXA PARCIAL DO ROMANEIO');
 });

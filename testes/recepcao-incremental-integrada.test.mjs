@@ -46,14 +46,14 @@ test('união usa a base recebida para incluir e editar, sem getDocs adicionais',
  a.publicar('movimentos',[mov('inclusao','m1',incluir),mov('edicao','m2',alterado,incluir)]);
  await a.c.aplicarUniaoSeguraOperacional();const resultado=JSON.parse(a.dados.get('entradas'));assert.equal(resultado.length,1);assert.equal(resultado[0].caixas,20);
 });
-test('baixa e exclusão comprovadas arquivam o antigo, permitindo novo no mesmo destino',async()=>{
+test('baixa e exclusão preservam palete conferido e permitem novo no mesmo destino',async()=>{
  const novo={...incluir,registroId:'registro-novo',palete:'2'};const a=ambiente({entradas:[incluir]});
  a.publicar('movimentos',[mov('inclusao','m1',incluir),mov('exclusao','m2',incluir),mov('inclusao','m3',novo)]);
  a.publicar('expedicoes',[{id:identidadeExpedicaoBaixa(incluir,true).id,origemId:'ativo_'+incluir.registroId,registroId:incluir.registroId,estado:'BAIXA_CONCLUIDA'}]);
- await a.c.aplicarUniaoSeguraOperacional();assert.equal(JSON.parse(a.dados.get('entradas')).length,0);
- assert.equal(JSON.parse(a.dados.get('romaneio2_historico_fechamentos_v1')).length,1);
+ await a.c.aplicarUniaoSeguraOperacional();assert.deepEqual(JSON.parse(a.dados.get('entradas')).map(x=>x.registroId).sort(),[incluir.registroId,novo.registroId].sort());
+ assert.equal(a.dados.has('romaneio2_historico_fechamentos_v1'),false);
  a.c.backupUniaoNestaSessao=true;await a.c.aplicarUniaoSeguraOperacional();
- assert.deepEqual(JSON.parse(a.dados.get('entradas')).map(x=>x.registroId),['registro-novo']);
+ assert.deepEqual(JSON.parse(a.dados.get('entradas')).map(x=>x.registroId).sort(),[incluir.registroId,novo.registroId].sort());
 });
 test('fila pendente impede união; exclusão sem baixa mantém registro no computador',async()=>{
  const a=ambiente({entradas:[incluir]});a.publicar('movimentos',[mov('inclusao','m1',incluir),mov('exclusao','m2',incluir)]);a.publicar('expedicoes',[]);

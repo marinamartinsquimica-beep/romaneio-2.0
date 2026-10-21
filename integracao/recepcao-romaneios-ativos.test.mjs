@@ -11,9 +11,9 @@ test('baixa por exclusão reconhece registro antigo sem bloquear novo palete no 
  assert.equal(romaneioBaixado(antigo,expedicoes),true);assert.equal(romaneioBaixado(atual,expedicoes),false);
  const eventos=filtrarEventosBaixados(movimentos,expedicoes);assert.deepEqual(eventos,[movimentos[2]]);
 });
-test('Taeque baixado e excluído é separado do ativo para preservar em histórico',()=>{
+test('baixa seguida de exclusão no celular mantém cópia local até encerramento pelo operador',()=>{
  const r=separarEncerradosLocais({registros:[antigo,atual,outro],movimentos,expedicoes});
- assert.deepEqual(r.encerrados,[antigo]);assert.deepEqual(r.atuais,[atual,outro]);
+ assert.deepEqual(r.encerrados,[]);assert.deepEqual(r.atuais,[antigo,atual,outro]);
 });
 test('somente excluir sem baixa mantém registro para baixa pendente no desktop',()=>{
  const r=separarEncerradosLocais({registros:[antigo],movimentos,expedicoes:[]});assert.deepEqual(r.atuais,[antigo]);assert.equal(r.encerrados.length,0);
