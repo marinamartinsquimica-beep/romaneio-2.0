@@ -116,5 +116,5 @@ export async function registrarBaixaTransacional({db,doc,runTransaction,uid,ambi
      estado:'BAIXA_CONCLUIDA',baixaConfirmadaEm:agora,confirmadoPor:uid
    });
  });
- return {baixadas,naoBaixadas,versao:novaVersao};
+ return {baixadas,naoBaixadas,versao:novaVersao,comprovantes:movimentacoes.map(m=>({...m.registro,id:m.id,origemId:m.origemId,estado:'BAIXA_CONCLUIDA',confirmadoPor:uid}))};
 }

@@ -1,4 +1,5 @@
-import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.105';
+import {registroBaixadoNoEstoque} from './status-baixa-romaneio.mjs?v=2.0.106';
+import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.106';
 import {permiteReceberPaletes} from './direcao-sincronizacao.mjs';
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
@@ -13,6 +14,17 @@ const config={apiKey:'AIzaSyCCy5uY1eAFQE9Vhykr7xNNayDtk_B-Hy4',authDomain:'roman
 exigirFirebaseHomologacao(config);
 const app=getApps().length?getApp():initializeApp(config),auth=getAuth(app),db=getFirestore(app);
 let unsub=[],versoes={embalado:'',paripassu:''},ambienteAtual=null,usuarioAtual=null;
+window.__comprovantesBaixaConfirmados=[];
+window.romaneioPossuiBaixaConfirmada=registro=>registroBaixadoNoEstoque(registro,window.__comprovantesBaixaConfirmados||[]);
+function atualizarComprovantesBaixa(comprovantes){
+ const anteriores=window.__comprovantesBaixaConfirmados||[];
+ const mapa=new Map(anteriores.map(x=>[x.id||x.origemId||x.registroId,x]));
+ for(const x of comprovantes)if(x.estado==='BAIXA_CONCLUIDA')mapa.set(x.id||x.origemId||x.registroId,x);
+ window.__comprovantesBaixaConfirmados=[...mapa.values()];
+ for(const nome of ['renderizarPendenciasConferenciaEstoque','atualizarResumoReservaTeste','renderizarEstoqueCompletoTeste','operadorAtualizarPainel']){
+  try{window[nome]?.();}catch(e){console.warn('Baixa confirmada; atualização visual pendente: '+e.message);}
+ }
+}
 const $=id=>document.getElementById(id),mostrar=(s)=>{const el=$('etapa4FirebaseStatus');if(el)el.textContent=s};
 const N=x=>String(x??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
 function lerEmbalado(linhas){
@@ -168,7 +180,7 @@ function observar(uid,ambienteId=null){
  });
  const expedicoesRecebidas=criarColecaoIncremental({
   assinar:(ok,erro)=>assinar('expedicoes',ok,erro),online:()=>navigator.onLine,aoErro:erroRecepcao,
-  aoMudar:()=>agendarConsultaCompartilhada()
+  aoMudar:snapshot=>{atualizarComprovantesBaixa(snapshot.docs.map(d=>({id:d.id,...d.data()})));agendarConsultaCompartilhada();}
  });
  const aoOffline=()=>{movimentosRecebidos.invalidar();expedicoesRecebidas.invalidar();};
  const reiniciarRecepcao=()=>{movimentosRecebidos.reconectar();expedicoesRecebidas.reconectar();};
@@ -176,7 +188,7 @@ function observar(uid,ambienteId=null){
  unsub.push(()=>{movimentosRecebidos.parar();expedicoesRecebidas.parar();window.removeEventListener('offline',aoOffline);window.removeEventListener('online',reiniciarRecepcao);});
  agendarConsultaCompartilhada();
 }
-onAuthStateChanged(auth,async u=>{unsub.forEach(f=>f());unsub=[];ambienteAtual=null;usuarioAtual=u?.uid||null;window.__paletesDeOutrosUsuarios=[];window.__reservasCompartilhadas=null;window.operadorAtualizarPainel?.();versoes={embalado:'',paripassu:''};if(!u){mostrar('Faça login na Central de Conexão para compartilhar os estoques.');return;}try{const vinculo=await resolverAmbienteUsuario({db,uid:u.uid});if(usuarioAtual!==u.uid)return;ambienteAtual=vinculo;observar(u.uid,vinculo.ambienteId);}catch(e){if(usuarioAtual!==u.uid)return;mostrar('Sincronização suspensa: '+e.message);}});
+onAuthStateChanged(auth,async u=>{unsub.forEach(f=>f());unsub=[];ambienteAtual=null;usuarioAtual=u?.uid||null;window.__comprovantesBaixaConfirmados=[];window.__paletesDeOutrosUsuarios=[];window.__reservasCompartilhadas=null;window.operadorAtualizarPainel?.();versoes={embalado:'',paripassu:''};if(!u){mostrar('Faça login na Central de Conexão para compartilhar os estoques.');return;}try{const vinculo=await resolverAmbienteUsuario({db,uid:u.uid});if(usuarioAtual!==u.uid)return;ambienteAtual=vinculo;observar(u.uid,vinculo.ambienteId);}catch(e){if(usuarioAtual!==u.uid)return;mostrar('Sincronização suspensa: '+e.message);}});
 $('etapa4Arquivo')?.addEventListener('change',async()=>{const arquivo=$('etapa4Arquivo')?.files?.[0];if(!arquivo||$('etapa4Tipo')?.value!=='embalado')return;try{await importar(arquivo,'embalado');await guardarModeloEmbalado(arquivo);window.__etapa4ArquivoEmbalado=arquivo;mostrar('Modelo de Estoque Embalado preservado neste navegador. Publique para sincronizar os saldos no sistema.')}catch(err){mostrar('Arquivo não preservado: '+err.message)}});
 $('etapa4Publicar')?.addEventListener('click',async()=>{
  const b=$('etapa4Publicar');b.disabled=true;
@@ -204,7 +216,7 @@ window.filtrarExpedicoesParaBaixa=async ({destino,registros})=>{
  if(!usuario||!ambienteAtual?.ambienteId||!ambienteAtual?.permissoes?.prepararBaixa)
   throw Error('Conecte um operador autorizado ao sistema antes de preparar a baixa.');
  if(!navigator.onLine)throw Error('A baixa exige consulta online ao sistema.');
- const {filtrarExpedicoesJaBaixadas}=await import('./filtro-expedicoes-baixadas.mjs?v=2.0.105');
+ const {filtrarExpedicoesJaBaixadas}=await import('./filtro-expedicoes-baixadas.mjs?v=2.0.106');
  const raiz=['romaneio_ambientes',ambienteAtual.ambienteId,'expedicoes'];
  return filtrarExpedicoesJaBaixadas({
   registros,destino,
@@ -221,11 +233,14 @@ window.registrarBaixaConferida=async ({resultado,versaoInicial,destino,registros
  if(!usuario||!ambienteAtual?.ambienteId||!ambienteAtual?.permissoes?.prepararBaixa)
    throw Error('Operador sem acesso à baixa de estoque.');
  if(!navigator.onLine)throw Error('É necessário estar online.');
- const {registrarBaixaTransacional}=await import('./baixa-transacional.mjs?v=2.0.105');
- return registrarBaixaTransacional({
-   db,doc,runTransaction,uid:usuario.uid,ambienteId:ambienteAtual.ambienteId,
+ const ambienteId=ambienteAtual.ambienteId;
+ const {registrarBaixaTransacional}=await import('./baixa-transacional.mjs?v=2.0.106');
+ const confirmada=await registrarBaixaTransacional({
+   db,doc,runTransaction,uid:usuario.uid,ambienteId,
    resultado,versaoInicial,destino,registros
  });
+ if(auth.currentUser?.uid===usuario.uid&&ambienteAtual?.ambienteId===ambienteId)atualizarComprovantesBaixa(confirmada.comprovantes||[]);
+ return confirmada;
 };
 
 // Confirmação protegida da substituição integral do Estoque Embalado.

@@ -281,7 +281,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.105</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.106</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
 <div class="romaneio-backup-actions" style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button class="desktop-backup-action" type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Pendências de sincronização</button><button class="desktop-backup-action" type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button><button class="mobile-sync-action" type="button" onclick="sincronizarRomaneioCelular()" style="width:auto;background:#5CDCF2;color:#254D69;font-weight:800;font-size:13px;padding:10px 18px;border-radius:12px;border:2px solid #254D69">SINCRONIZAR</button></div>
 <section class="dashboard"><div class="metric"><div class="ico">📋</div><div><b id="dashRegistros">0</b><span id="dashRegistrosLabel">Registros totais</span></div></div><div class="metric"><div class="ico">📦</div><div><b id="dashCaixas">0</b><span id="dashCaixasLabel">Caixas totais</span></div></div><div class="metric"><div class="ico">🧱</div><div><b id="dashPaletes">0</b><span id="dashPaletesLabel">Paletes totais</span></div></div><div class="metric"><div class="ico">📍</div><div><b id="dashDestinos">0</b><span id="dashDestinosLabel">Destinos totais</span></div></div><div class="metric"><div class="ico">🕒</div><div><b id="dashUltimo">--</b><span>Último registro</span></div></div></section>
@@ -400,7 +400,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.105";
+const APP_VERSION = "2.0.106";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -2877,6 +2877,7 @@ function reservasAtuaisTeste(ignorarIndice) {
   const totais=new Map();
   Array.from(document.querySelectorAll("#tabela tbody tr")).forEach((linha,i)=>{
     if (i===ignorarIndice || linha.dataset.reservaTeste!=="1") return;
+    if(window.romaneioPossuiBaixaConfirmada?.({...dadosDaLinhaRomaneio(linha),registroId:linha.dataset.registroId}))return;
     const chave=chaveReservaTeste(linha.cells[1].textContent,linha.cells[4].textContent);
     totais.set(chave,(totais.get(chave)||0)+Number(linha.cells[7].textContent||0));
   });
@@ -2969,32 +2970,38 @@ function renderizarPendenciasConferenciaEstoque(){
  lista.replaceChildren();
  if(!window.estoqueTesteConsulta){lista.textContent="Importe uma cópia do estoque para conferir.";if(contador)contador.textContent="—";if(resumo)resumo.textContent="Aguardando consulta do estoque compartilhado.";return;}
  const saldos=new Map();for(const x of window.estoqueTesteConsulta.values()){const k=chaveReservaTeste(x.sku,x.lote);saldos.set(k,(saldos.get(k)||0)+Number(x.saldo||0))}
+ const concluidos=lerExpedicoesPendentes().filter(x=>x.estado==='BAIXA_CONCLUIDA');
+ const linhaBaixada=linha=>{
+  const registro={registroId:linha.dataset?.registroId,data:linha.cells[0]?.textContent,sku:linha.cells[1]?.textContent,destino:linha.cells[2]?.textContent,palete:linha.cells[3]?.textContent,loteCompleto:linha.cells[4]?.textContent,lote:linha.cells[5]?.textContent,postura:linha.cells[6]?.textContent,caixas:Number(linha.cells[7]?.textContent)};
+  if(window.romaneioPossuiBaixaConfirmada?.(registro))return true;
+  return concluidos.some(x=>(!registro.registroId||String(x.registroId||'')===String(registro.registroId))&&
+   String(x.destino||'').trim()===String(registro.destino||'').trim()&&String(x.palete||'').trim()===String(registro.palete||'').trim()&&
+   chaveReservaTeste(x.sku,x.loteCompleto||x.lote)===chaveReservaTeste(registro.sku,registro.loteCompleto)&&Number(x.caixas)===registro.caixas);
+ };
  const grupos=new Map();
  for(const linha of document.querySelectorAll("#tabela tbody tr")){
   const sku=linha.cells[1]?.textContent.trim()||"",lote=linha.cells[4]?.textContent.trim()||"",postura=linha.cells[6]?.textContent.trim()||"",cx=Number(linha.cells[7]?.textContent)||0;
   const chave=chaveReservaTeste(sku,lote);
-  if(!grupos.has(chave))grupos.set(chave,{chave,sku,lote,posturas:new Set(),caixas:0,linhas:[]});
-  const grupo=grupos.get(chave);grupo.caixas+=cx;if(postura)grupo.posturas.add(postura);grupo.linhas.push(linha);
+  if(!grupos.has(chave))grupos.set(chave,{chave,sku,lote,posturas:new Set(),caixas:0,caixasPendentes:0,linhas:[]});
+  const grupo=grupos.get(chave);grupo.caixas+=cx;if(!linhaBaixada(linha))grupo.caixasPendentes+=cx;if(postura)grupo.posturas.add(postura);grupo.linhas.push(linha);
  }
  const pendencias=[...grupos.values()].filter(g=>!saldos.has(g.chave)||g.caixas>saldos.get(g.chave));
- const chavesPendentes=new Set(pendencias.map(x=>x.chave));
+ const abertas=pendencias.filter(p=>p.linhas.some(l=>!linhaBaixada(l))&&(!saldos.has(p.chave)||p.caixasPendentes>saldos.get(p.chave)));
+ const chavesPendentes=new Set(abertas.map(x=>x.chave));
  for(const linha of document.querySelectorAll("#tabela tbody tr.raiar-linha-pendente")) {
   const chave=chaveReservaTeste(linha.cells[1]?.textContent||"",linha.cells[4]?.textContent||"");
   if(!chavesPendentes.has(chave)){linha.classList.remove("raiar-linha-pendente");linha.removeAttribute("aria-current")}
  }
- if(contador)contador.textContent=String(pendencias.length);
- if(resumo)resumo.textContent=pendencias.length?pendencias.length+" divergência(s) em aberto neste dispositivo. Confira na aba ESTOQUE COMPLETO.":"Nenhuma divergência identificada nas entradas deste dispositivo.";
+ if(contador)contador.textContent=String(abertas.length);
+ if(resumo)resumo.textContent=abertas.length?abertas.length+" divergência(s) em aberto neste dispositivo. Confira na aba ESTOQUE COMPLETO.":"Nenhuma divergência identificada nas entradas deste dispositivo.";
  if(!pendencias.length){lista.textContent="Nenhuma pendência identificada com a planilha importada.";return;}
  for(const p of pendencias){
   const card=document.createElement("article");card.className="operator-pending-item";
   const titulo=document.createElement("strong");titulo.textContent="SKU "+p.sku+" · Lote "+p.lote;
   const detalhe=document.createElement("p");detalhe.textContent="Postura: "+([...p.posturas].join(", ")||"não informada")+" | Romaneio: "+p.caixas+" CX | Estoque: "+(saldos.has(p.chave)?saldos.get(p.chave)+" CX":"NÃO ENCONTRADO")+" | "+(!saldos.has(p.chave)?"SKU/lote ausente":"Quantidade superior ao saldo");
   const referencia=document.createElement("p");referencia.textContent="Palete(s): "+[...new Set(p.linhas.map(l=>l.cells[3]?.textContent))].join(", ")+" | Destino(s): "+[...new Set(p.linhas.map(l=>l.cells[2]?.textContent))].join(", ");
-  const concluidos=lerExpedicoesPendentes().filter(x=>x.estado==='BAIXA_CONCLUIDA');
-  const baixados=p.linhas.every(linha=>concluidos.some(x=>
-   String(x.destino||'').trim()===String(linha.cells[2]?.textContent||'').trim()&&
-   String(x.palete||'').trim()===String(linha.cells[3]?.textContent||'').trim()&&
-   chaveReservaTeste(x.sku,x.loteCompleto||x.lote)===p.chave));
+  const baixados=p.linhas.every(linhaBaixada);
+  if(!baixados&&!abertas.includes(p))continue;
   if(baixados){
    card.style.borderLeft='5px solid #bf4747';
    const etiqueta=document.createElement('strong');etiqueta.textContent='ROMANEIO BAIXADO ESTOQUE';etiqueta.style.color='#a83232';
@@ -3407,7 +3414,7 @@ window.matchMedia('(max-width:767px)').addEventListener('change',event=>{if(even
 (function(){
  const central=document.createElement('iframe');
  central.id='romaneioSincronizacaoAutomatica';
- central.src='./integracao/central-conexao.html?estado=2_0_105';
+ central.src='./integracao/central-conexao.html?estado=2_0_106';
  central.title='Sincronização automática do Romaneio';
  central.tabIndex=-1;
  central.setAttribute('aria-hidden','true');
@@ -3509,7 +3516,7 @@ btn?.addEventListener('click',async()=>{
  }catch(e){resumo.textContent='Conferência não realizada: '+e.message;}finally{btn.disabled=false;}
 });
 </script>
-<script type="module" src="./integracao/estoques-firebase-ui.mjs?v=2.0.105"></script>
+<script type="module" src="./integracao/estoques-firebase-ui.mjs?v=2.0.106"></script>
 <script type="module">
 import {prepararBaixa,prepararAjuste} from './integracao/operacoes-estoque.mjs';
 let resultadoEtapa4=null;
@@ -3800,7 +3807,7 @@ document.getElementById('etapa4Preparar')?.addEventListener('click',async()=>{
 </script>
 
 <script type="module">
-import {expirarHistoricosLocais} from './integracao/retencao-historicos.mjs?v=2.0.105';
+import {expirarHistoricosLocais} from './integracao/retencao-historicos.mjs?v=2.0.106';
 let retencaoEmAndamento=false;
 async function aplicarRetencaoHistoricos(){
  if(retencaoEmAndamento)return;
