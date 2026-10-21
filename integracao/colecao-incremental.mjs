@@ -1,6 +1,8 @@
 // Base da sessão: uma carga inicial confirmada e deltas do mesmo acompanhamento.
 // Não persiste nem apaga dados operacionais; cache offline não autoriza recepção.
-export const LIMITE_COLECAO_INCREMENTAL=100000;
+// Limite máximo aceito pelo serviço; a imagem no limite é recusada para
+// nunca tratar uma coleção truncada como completa.
+export const LIMITE_COLECAO_INCREMENTAL=10000;
 export function criarColecaoIncremental({assinar,aoMudar=()=>{},aoErro=()=>{},online=()=>true,limite=LIMITE_COLECAO_INCREMENTAL,esperaMs=15000}){
  let mapa=new Map(),pronta=false,encerrada=false,erro=null,cancelar=null,revisao=0,geracao=0;
  const esperas=new Set();

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {criarColecaoIncremental} from './colecao-incremental.mjs';
+import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs';
 const documento=(id,dados={})=>({id,data:()=>structuredClone(dados)});
 function fonte(){
  let docs=new Map(),ouvintes=[],leituras=0,assinaturas=0;
@@ -75,3 +75,5 @@ test('simulação: 2 consumidores, 1000 movimentos, 200 expedições, 50 novas m
  }
  assert.equal(total,2500);
 });
+
+test('limite padrão respeita o teto real de dez mil documentos por consulta',()=>{assert.equal(LIMITE_COLECAO_INCREMENTAL,10000);});

@@ -20,7 +20,7 @@ function ambiente({mobile=false,entradas=[]}={}){
  const c={criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL,db:{},auth:{currentUser:{uid:'marina'},authStateReady:async()=>{}},navigator:{onLine:true},
   receberEntradasNoAparelho:()=>!mobile,raizOperacional:uid=>['romaneio_ambientes','sala-ovos'],queueMicrotask,
   cancelarMudancasRemotas:null,contaObservada:null,ultimaAssinaturaRemota:null,revisaoExpedicoesRemotas:0,cicloSolicitadoDuranteConsulta:false,cicloAutomatico:()=>ciclos++,
-  collection:(_db,...path)=>({nome:path.at(-1)}),orderBy:()=>{},limit:()=>{},query:ref=>ref,
+  collection:(_db,...path)=>({nome:path.at(-1)}),orderBy:()=>{},limit:n=>{assert.ok(n<=10000,'Consulta excede o máximo aceito pelo serviço');return n;},query:ref=>ref,
   onSnapshot(ref,opcoes,ok,erro){assert.equal(opcoes.includeMetadataChanges,true);fontes.set(ref.nome,{ok,erro,ativa:true});return ()=>{fontes.get(ref.nome).ativa=false;};},
   $:id=>{if(!elementos.has(id))elementos.set(id,{disabled:false,textContent:''});return elementos.get(id);},
   window:{addEventListener(){},removeEventListener(){},confirm:()=>true,parent:null},location:{origin:'https://romaneio.example'},
