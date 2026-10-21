@@ -1,3 +1,4 @@
+import {conteudoCanonico} from './comprovante-baixa-agrupada.mjs?v=2.0.105';
 // Baixa com duas fases compatíveis com regras Firestore já publicadas.
 // Fase 1: registra PENDENTE_BAIXA sem alterar saldos.
 // Fase 2: transação única atualiza saldo e marca expedições BAIXA_CONCLUIDA.
@@ -24,7 +25,7 @@ export async function registrarBaixaTransacional({db,doc,runTransaction,uid,ambi
 
  const raiz=['romaneio_ambientes',ambienteId];
  const estoqueRef=doc(db,...raiz,'estoques_oficiais','embalado');
- const movimentacoes=registros.map(x=>{
+ const movimentacoesBrutas=registros.map(x=>{
    if(!x||!x.destino||!x.sku||!(x.loteCompleto||x.lote)||!inteiro(x.caixas)||Number(x.caixas)<=0)
      throw Error('Romaneio incompleto. Confira destino, SKU, lote e caixas.');
    if(ativos&&!String(x.registroId||'').trim())throw Error('Palete sem identificador único. Sincronize o romaneio antes da baixa.');
@@ -33,14 +34,21 @@ export async function registrarBaixaTransacional({db,doc,runTransaction,uid,ambi
  });
  // A identidade pertence ao contrato da baixa, não à representação do SDK.
  // Referências sem path público podem ter o mesmo String(ref) genérico.
- const porIdentificador=new Map();
- for(const m of movimentacoes){
+ const porIdentificador=new Map(),movimentacoes=[];
+ for(const m of movimentacoesBrutas){
    const anterior=porIdentificador.get(m.id);
    if(anterior){
+     const primeira=anterior.registro.linhasBaixa?.[0]||anterior.registro;
+     if(anterior.origemId===m.origemId&&conteudoCanonico(primeira)===conteudoCanonico(m.registro)&&!m.registro.linhasBaixa){
+       const linhas=anterior.registro.linhasBaixa||[{...primeira}];
+       linhas.push({...m.registro});
+       anterior.registro={...primeira,caixas:linhas.reduce((n,x)=>n+Number(x.caixas),0),linhasBaixa:linhas};
+       continue;
+     }
      const descrever=x=>'destino '+x.destino+', palete '+x.palete+', SKU '+x.sku+', '+x.caixas+' CX';
      throw Error('Expedições com identificadores repetidos: '+m.id+' ('+descrever(anterior.registro)+' / '+descrever(m.registro)+'). Nenhum saldo alterado.');
    }
-   porIdentificador.set(m.id,m);
+   porIdentificador.set(m.id,m);movimentacoes.push(m);
  }
  const quantidades=new Map(),solicitadas=new Map();
  for(const x of registros){const k=chave(x);solicitadas.set(k,(solicitadas.get(k)||0)+Number(x.caixas));}
@@ -72,6 +80,8 @@ export async function registrarBaixaTransacional({db,doc,runTransaction,uid,ambi
        const antigo=snap.data();
        if(antigo.estado!=='PENDENTE_BAIXA')throw Error('Expedição já baixada. Nenhum desconto adicional foi feito.');
        if(antigo.origemId&&antigo.origemId!==m.origemId)throw Error('Identidade de expedição divergente.');
+       if(m.registro.linhasBaixa&&(Number(antigo.caixas)!==Number(m.registro.caixas)||conteudoCanonico(antigo.linhasBaixa)!==conteudoCanonico(m.registro.linhasBaixa)))
+         throw Error('Comprovante pendente difere do agrupamento atual. Nenhum saldo alterado.');
      }else if(!ativos)throw Error('Expedição excluída ainda não sincronizada no Firebase.');
    }
    const criadoEm=new Date().toISOString();

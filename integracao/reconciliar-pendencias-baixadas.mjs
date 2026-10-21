@@ -1,3 +1,4 @@
+import {parcelaComprovada} from './comprovante-baixa-agrupada.mjs?v=2.0.105';
 // Conciliação somente leitura: nunca desconta estoque nem "confirma" uma baixa.
 // Marca como concluída uma pendência local apenas com documento efetivamente
 // BAIXA_CONCLUIDA no servidor, vinculado por ID estável da expedição.
@@ -9,7 +10,7 @@ function mesmaExpedicao(local,remoto){
  if(normalizar(local.sku)!==normalizar(remoto.sku))return false;
  if(normalizar(local.loteCompleto||local.lote)!==normalizar(remoto.loteCompleto||remoto.lote))return false;
  if(!Number.isSafeInteger(Number(local.caixas))||Number(local.caixas)<=0||
-    Number(local.caixas)!==Number(remoto.caixas))return false;
+    (Number(local.caixas)!==Number(remoto.caixas)&&!parcelaComprovada(local,remoto)))return false;
  // Estes campos impedem que paletes distintos do mesmo SKU sejam conciliados.
  for(const campo of ['destino','palete','registroId']){
   if(local[campo]!=null&&remoto[campo]!=null&&

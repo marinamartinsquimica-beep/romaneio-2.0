@@ -174,3 +174,23 @@ test('baixa total sintética de 31 paletes e 9 destinos: 2625 menos 1950 resulta
  await assert.rejects(registrarBaixaTransacional(args(m,registros,resultado)),/estoque mudou|já baixada/i);
  assert.equal(m.estoqueAtual().itens.reduce((a,x)=>a+x.saldo,0),675);
 });
+test('duas linhas idênticas com mesmo ID preservam as caixas e registram um comprovante detalhado',async()=>{
+ const linha={...reg[0],caixas:10},invertida=Object.fromEntries(Object.entries(linha).reverse());
+ const registros=[linha,invertida],resultado={aplicados:[{sku:linha.sku,lote:linha.lote,caixas:20}],pendencias:[]};
+ const m=memoria(),r=await registrarBaixaTransacional(args(m,registros,resultado));
+ assert.equal(r.baixadas,20);assert.equal(m.estoqueAtual().itens[0].saldo,36);
+ assert.equal(m.expedicoes().length,1);assert.equal(m.expedicoes()[0].caixas,20);
+ assert.equal(m.expedicoes()[0].linhasBaixa.length,2);assert.equal(registros[0].caixas,10);assert.equal(registros[1].caixas,10);
+ const {filtrarExpedicoesJaBaixadas}=await import('./filtro-expedicoes-baixadas.mjs');
+ const f=await filtrarExpedicoesJaBaixadas({registros,destino:'TODOS OS DESTINOS',buscar:async id=>m.docs.get('romaneio_ambientes/homologacao_romaneio20/expedicoes/'+id)});
+ assert.equal(f.pendentes.length,0);assert.equal(f.concluidos.length,2);
+ await assert.rejects(registrarBaixaTransacional(args(m,registros,resultado)),/estoque mudou|já baixada/i);
+ assert.equal(m.estoqueAtual().itens[0].saldo,36);
+});
+test('comprovante pendente com dez caixas não pode ser reutilizado para vinte',async()=>{
+ const {identidadeExpedicaoBaixa}=await import('./baixa-transacional.mjs');
+ const linha={...reg[0],caixas:10},m=memoria();
+ m.docs.set('romaneio_ambientes/homologacao_romaneio20/expedicoes/'+identidadeExpedicaoBaixa(linha,true).id,{...linha,estado:'PENDENTE_BAIXA'});
+ await assert.rejects(registrarBaixaTransacional(args(m,[linha,{...linha}],{aplicados:[{sku:linha.sku,lote:linha.lote,caixas:20}],pendencias:[]})),/difere do agrupamento/);
+ assert.equal(m.estoqueAtual().itens[0].saldo,56);
+});
