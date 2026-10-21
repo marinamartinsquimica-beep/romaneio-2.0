@@ -54,11 +54,10 @@ test('fila de movimentos não condiciona sincronização das expedições',()=>{
  assert.match(blocoExpedicoes,/await sincronizarExpedicoesCompartilhadas\(\)/);
  assert.ok(trecho.includes("if(receberEntradasNoAparelho())await receberAutomaticamente()"));
 });
-test('paginação completa consulta servidor, em vez de truncar expedições em 50',()=>{
+test('base completa confirmada substitui varreduras sem truncar expedições em 50',()=>{
  const trecho=central.slice(central.indexOf('async function sincronizarExpedicoesCompartilhadasInterno()'),central.indexOf('function registrarExclusoesRecebidas('));
- assert.match(trecho,/getDocsFromServer\(consulta\)/);
- assert.match(trecho,/startAfter\(cursor\)/);
- assert.match(trecho,/orderBy\('__name__'\)/);
+ assert.match(trecho,/await lerExpedicoesParaRecepcao\(auth.currentUser.uid\)/);
+ assert.doesNotMatch(trecho,/getDocsFromServer\(consulta\)/);
  assert.match(trecho,/const verificadas=await reconciliarPendenciasJaBaixadas\(locais,buscarBaixa\)/);
  assert.ok(trecho.indexOf('const verificadas=await reconciliarPendenciasJaBaixadas')<trecho.indexOf('for(const x of verificadas.registros)'));
  assert.doesNotMatch(trecho,/tx\.update\(d,\{estado:'BAIXA_CONCLUIDA'/);

@@ -33,7 +33,7 @@ test('fila pendente não bloqueia conciliação de baixas nem deixa receber por 
 });
 test('celular não cria assinatura de movimentos e guarda adicional impede expedições diretas',async()=>{
  let assinaturas=0;
- const fonte=html.slice(html.indexOf('function observarMovimentosAutomaticos(u){'),html.indexOf('// O painel já acompanha expedições:'));
+ const fonte=html.slice(html.indexOf('function observarMovimentosAutomaticos(u){'),html.indexOf('// Compatibilidade com avisos do painel:'));
  const c={contaObservada:null,cancelarMudancasRemotas:null,ultimaAssinaturaRemota:null,receberEntradasNoAparelho:()=>false,onSnapshot:()=>assinaturas++};runInNewContext(fonte,c);c.observarMovimentosAutomaticos({uid:'salaovos'});assert.equal(assinaturas,0);
  const inicio=html.indexOf('async function sincronizarExpedicoesCompartilhadasInterno(){');
  assert.match(html.slice(inicio,inicio+200),/if\(!receberEntradasNoAparelho\(\)\)return/);
@@ -45,7 +45,8 @@ test('aviso de expedição exige mesma origem, janela, conta e ambiente; consult
  const msg={origin:a.c.location.origin,source:parent,data:{origem:'romaneio-expedicoes-alteradas',uid:'marina',ambienteId:'sala-ovos'}};
  listener({...msg,origin:'https://outro.example'});listener({...msg,data:{...msg.data,uid:'outra'}});listener({...msg,data:{...msg.data,ambienteId:'outro'}});assert.equal(a.contagem.expedicoes,1);
  listener(msg);await new Promise(resolve=>setImmediate(resolve));assert.equal(a.contagem.expedicoes,2);assert.equal(a.contagem.recepcoes,2);
- assert.match(html,/getDocsFromServer\(consulta\)/);
+ assert.match(html,/const recebidas=await lerExpedicoesParaRecepcao\(auth.currentUser.uid\)/);
+ assert.match(html,/const snap=await base.expedicoes.ler\(\)/);
 });
 test('consultas simultâneas do painel são agrupadas sem perder uma alteração durante a consulta',()=>{
  const inicio=ui.indexOf(' let atualizacaoPaletes=');const trecho=ui.slice(inicio,ui.indexOf(' async function atualizarPaletesCompartilhados(){',inicio));

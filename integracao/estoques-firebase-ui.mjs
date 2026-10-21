@@ -1,3 +1,4 @@
+import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.102';
 import {permiteReceberPaletes} from './direcao-sincronizacao.mjs';
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
@@ -5,7 +6,7 @@ import {guardarModeloEmbalado} from './modelo-estoque-persistente.mjs';
 import {descreverErroPublicacao} from './erro-publicacao-estoque.mjs?v=2.0.99';
 import {initializeApp,getApp,getApps} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getFirestore,doc,getDocFromServer,getDocsFromServer,startAfter,collection,query,orderBy,limit,onSnapshot,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {getFirestore,doc,getDocFromServer,collection,query,orderBy,limit,onSnapshot,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {publicarEstoqueOficial} from './publicacao-estoques.mjs';
 import {conferirEstoques} from './conferencia-estoques.mjs';
 const config={apiKey:'AIzaSyCCy5uY1eAFQE9Vhykr7xNNayDtk_B-Hy4',authDomain:'romaneio-2-0-homologacao.sistemaapp.com',projectId:'romaneio-2-0-homologacao',storageBucket:'romaneio-2-0-homologacao.sistemastorage.app',messagingSenderId:'357381847782',appId:'1:357381847782:web:59ad8365c033bba8e79927'};
@@ -116,7 +117,6 @@ function observar(uid,ambienteId=null){
   return;
  }
  let atualizacaoPaletes=0,emConsulta=false,refazerConsulta=false;
- let ultimaAssinaturaExpedicoes=null,ultimaAssinaturaMovimento=null;
  function agendarConsultaCompartilhada(){
   clearTimeout(atualizacaoPaletes);
   atualizacaoPaletes=setTimeout(()=>{atualizacaoPaletes=0;void atualizarPaletesCompartilhados();},150);
@@ -128,22 +128,8 @@ function observar(uid,ambienteId=null){
   try{
    if(auth.currentUser?.uid!==uid||ambienteAtual?.ambienteId!==ambienteId)return;
    if(!navigator.onLine)return;
-   const lerColecao=async(nome)=>{
-    const todos=[];let ultimo=null;
-    for(let pagina=0;pagina<100;pagina++){
-     const consulta=ultimo
-      ?query(collection(db,...raiz,nome),orderBy('__name__'),startAfter(ultimo),limit(200))
-      :query(collection(db,...raiz,nome),orderBy('__name__'),limit(200));
-     const dados=await getDocsFromServer(consulta);
-     todos.push(...dados.docs.map(x=>({id:x.id,...x.data()})));
-     if(dados.size<200)return todos;
-     ultimo=dados.docs[dados.docs.length-1];
-    }
-    throw Error('Histórico compartilhado excedeu o limite seguro de leitura.');
-   };
-   const movimentos=await lerColecao('movimentos');
-   if(auth.currentUser?.uid!==uid)return;
-   const expedicoes=await lerColecao('expedicoes');
+   const movimentos=(await movimentosRecebidos.ler()).docs.map(x=>({id:x.id,...x.data()}));
+   const expedicoes=(await expedicoesRecebidas.ler()).docs.map(x=>({id:x.id,...x.data()}));
    const {paletesOutrosUsuarios}=await import('./painel-paletes-outros-usuarios.mjs?v=2.0.97');
    const {CHAVE_FECHAMENTOS}=await import('./marcos-romaneios-fechados.mjs');
    const locais=JSON.parse(localStorage.getItem('entradas')||'[]');
@@ -173,28 +159,22 @@ function observar(uid,ambienteId=null){
  window.addEventListener('online',aoReconectar);
  document.addEventListener('visibilitychange',aoRetornar);
  unsub.push(()=>{window.removeEventListener('online',aoReconectar);document.removeEventListener('visibilitychange',aoRetornar);if(window.atualizarConsultaCompartilhada===atualizarPaletesCompartilhados)delete window.atualizarConsultaCompartilhada;});
+ // Uma assinatura por coleção; mudanças atualizam a base já recebida.
+ const erroRecepcao=e=>mostrar('Consulta compartilhada: '+e.message);
+ const assinar=(nome,ok,erro)=>onSnapshot(query(collection(db,...raiz,nome),orderBy('__name__'),limit(LIMITE_COLECAO_INCREMENTAL)),{includeMetadataChanges:true},ok,erro);
+ const movimentosRecebidos=criarColecaoIncremental({
+  assinar:(ok,erro)=>assinar('movimentos',ok,erro),online:()=>navigator.onLine,aoErro:erroRecepcao,
+  aoMudar:snapshot=>{renderizarDestinosExcluidos(snapshot.docs.map(d=>d.data()));agendarConsultaCompartilhada();}
+ });
+ const expedicoesRecebidas=criarColecaoIncremental({
+  assinar:(ok,erro)=>assinar('expedicoes',ok,erro),online:()=>navigator.onLine,aoErro:erroRecepcao,
+  aoMudar:()=>agendarConsultaCompartilhada()
+ });
+ const aoOffline=()=>{movimentosRecebidos.invalidar();expedicoesRecebidas.invalidar();};
+ const reiniciarRecepcao=()=>{movimentosRecebidos.reconectar();expedicoesRecebidas.reconectar();};
+ window.addEventListener('offline',aoOffline);window.addEventListener('online',reiniciarRecepcao);
+ unsub.push(()=>{movimentosRecebidos.parar();expedicoesRecebidas.parar();window.removeEventListener('offline',aoOffline);window.removeEventListener('online',reiniciarRecepcao);});
  agendarConsultaCompartilhada();
- unsub.push(onSnapshot(collection(db,...raiz,'expedicoes'),snapshot=>{
-  if(snapshot.metadata.fromCache)return;
-  const assinatura=JSON.stringify(snapshot.docs.map(d=>[d.id,d.data()]));
-  if(assinatura===ultimaAssinaturaExpedicoes)return;
-  ultimaAssinaturaExpedicoes=assinatura;
-  agendarConsultaCompartilhada();
-  document.getElementById('romaneioSincronizacaoAutomatica')?.contentWindow?.postMessage({
-   origem:'romaneio-expedicoes-alteradas',uid,ambienteId
-  },location.origin);
- },e=>mostrar('Consulta compartilhada: '+e.message)));
- unsub.push(onSnapshot(query(collection(db,...raiz,'movimentos'),orderBy('criadoEm','desc'),limit(1)),snapshot=>{
-  if(snapshot.metadata.fromCache)return;
-  const assinatura=JSON.stringify(snapshot.docs.map(d=>[d.id,d.data()]));
-  if(assinatura===ultimaAssinaturaMovimento)return;
-  ultimaAssinaturaMovimento=assinatura;
-  agendarConsultaCompartilhada();
- },e=>mostrar('Consulta compartilhada: '+e.message)));
- renderizarDestinosExcluidos();
- unsub.push(onSnapshot(query(collection(db,...raiz,'movimentos'),orderBy('criadoEm','desc'),limit(50)),snapshot=>{
-   renderizarDestinosExcluidos(snapshot.docs.map(d=>d.data()));
- },err=>{const alvo=$('listaDestinosExcluidos');if(alvo){const p=document.createElement('p');p.textContent='Histórico remoto indisponível: '+err.message+'. As exclusões locais e a fila não foram descartadas.';alvo.append(p)}}));
 }
 onAuthStateChanged(auth,async u=>{unsub.forEach(f=>f());unsub=[];ambienteAtual=null;usuarioAtual=u?.uid||null;window.__paletesDeOutrosUsuarios=[];window.__reservasCompartilhadas=null;window.operadorAtualizarPainel?.();versoes={embalado:'',paripassu:''};if(!u){mostrar('Faça login na Central de Conexão para compartilhar os estoques.');return;}try{const vinculo=await resolverAmbienteUsuario({db,uid:u.uid});if(usuarioAtual!==u.uid)return;ambienteAtual=vinculo;observar(u.uid,vinculo.ambienteId);}catch(e){if(usuarioAtual!==u.uid)return;mostrar('Sincronização suspensa: '+e.message);}});
 $('etapa4Arquivo')?.addEventListener('change',async()=>{const arquivo=$('etapa4Arquivo')?.files?.[0];if(!arquivo||$('etapa4Tipo')?.value!=='embalado')return;try{await importar(arquivo,'embalado');await guardarModeloEmbalado(arquivo);window.__etapa4ArquivoEmbalado=arquivo;mostrar('Modelo de Estoque Embalado preservado neste navegador. Publique para sincronizar os saldos no sistema.')}catch(err){mostrar('Arquivo não preservado: '+err.message)}});

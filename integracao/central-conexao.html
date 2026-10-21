@@ -28,6 +28,7 @@ a{color:#156e9b;font-weight:700}
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {motivosFormatoOperacional} from './protocolo-movimentos.js?v=2.0.97';
 import {permiteReceberPaletes} from './direcao-sincronizacao.mjs';
+import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.102';
 import {criarControleLeituras} from './controle-leituras-automaticas.mjs?v=2.0.99';
 import {initializeApp,getApps,getApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,setPersistence,browserLocalPersistence} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
@@ -491,14 +492,17 @@ function salvarBackupAutomatico(){
  localStorage.setItem(CHAVE_BACKUP_AUTOMATICO,JSON.stringify({criadoEm:new Date().toISOString(),dados}));
  return true;
 }
+async function lerHistoricoRecebido(uid){
+ const base=obterBaseRecebida(uid);
+ const snap=await base.movimentos.ler();
+ if(base!==obterBaseRecebida(uid))throw Error('Sessão alterada; dados preservados.');
+ return snap;
+}
 async function lerExpedicoesParaRecepcao(uid){
- const ref=collection(db,...raizOperacional(uid),'expedicoes'),todos=[];let cursor=null;
- for(let pagina=0;pagina<100;pagina++){
-  const q=cursor?query(ref,orderBy('__name__'),startAfter(cursor),limit(100)):query(ref,orderBy('__name__'),limit(100));
-  const snap=await getDocsFromServer(q);todos.push(...snap.docs.map(d=>({id:d.id,...d.data()})));
-  if(snap.size<100)return todos;cursor=snap.docs[snap.docs.length-1];
- }
- throw Error('Consulta de baixas incompleta; nenhum romaneio será recebido.');
+ const base=obterBaseRecebida(uid);
+ const snap=await base.expedicoes.ler();
+ if(base!==obterBaseRecebida(uid))throw Error('Sessão alterada; dados preservados.');
+ return snap.docs.map(d=>({id:d.id,...d.data()}));
 }
 async function guardarHistoricoEncerradosRecebidos(registro,historico){
  const dbLocal=await new Promise((resolve,reject)=>{
@@ -538,12 +542,20 @@ async function aplicarUniaoSeguraOperacional(){
   if(fila.length)throw Error('Há movimentações locais pendentes; envie ou resolva antes da união.');
   if(baseBruta!==null&&!Array.isArray(JSON.parse(baseBruta)))throw Error('Estado-base inválido.');
   const uidRecepcao=auth.currentUser.uid;
-  const snap=await lerHistoricoMovimentosCompleto(uidRecepcao);
+  const baseRecepcao=obterBaseRecebida(uidRecepcao);
+  const snap=await lerHistoricoRecebido(uidRecepcao);
   const {CHAVE_FECHAMENTOS,filtrarMovimentosJaFechados}=await import('./marcos-romaneios-fechados.mjs');
   const fechamentosOriginais=localStorage.getItem(CHAVE_FECHAMENTOS);
   const fechamentosBrutos=JSON.parse(fechamentosOriginais||'[]');
   if(!Array.isArray(fechamentosBrutos))throw Error('Marcadores de romaneios encerrados inválidos; nenhuma entrada foi recebida.');
   const expedicoesRecepcao=await lerExpedicoesParaRecepcao(uidRecepcao);
+  const revisaoBaixas=baseRecepcao.expedicoes.revisao;
+  const validarBaseRecepcao=()=>{
+   if(!navigator.onLine||baseRecepcao!==obterBaseRecebida(uidRecepcao)||snap.revisao!==baseRecepcao.movimentos.revisao||revisaoBaixas!==baseRecepcao.expedicoes.revisao){
+    cicloSolicitadoDuranteConsulta=true;
+    throw Error('Recebimento mudou durante a conferência; repetir sem alterar dados.');
+   }
+  };
   if(auth.currentUser?.uid!==uidRecepcao)throw Error('Sessão alterada durante a consulta de baixas.');
   const {filtrarEventosBaixados,separarEncerradosLocais,identidadeHistoricoEncerrados}=await import('./recepcao-romaneios-ativos.mjs?v=2.0.97');
   const movimentosRecepcao=snap.docs.map(d=>({id:d.id,...d.data()}));
@@ -556,6 +568,7 @@ async function aplicarUniaoSeguraOperacional(){
    const historicoConfirmado=await guardarHistoricoEncerradosRecebidos(registro,historico);
    const {registrarFechamento}=await import('./marcos-romaneios-fechados.mjs');
    if(auth.currentUser?.uid!==uidRecepcao||localStorage.getItem('entradas')!==entradasBrutas||localStorage.getItem(CHAVE_OPERACIONAL)!==filaBruta||localStorage.getItem(baseChave)!==baseBruta||localStorage.getItem(chaveHistorico)!==historicoBruto||localStorage.getItem(CHAVE_FECHAMENTOS)!==fechamentosOriginais)throw Error('Dados mudaram durante o arquivamento; entradas preservadas.');
+   validarBaseRecepcao();
    const marcadores=registrarFechamento(encerramento.encerrados,fechamentosBrutos);
    try{
     if(!historico.some(x=>x.id===historicoConfirmado.id))historico.unshift(historicoConfirmado);
@@ -636,6 +649,7 @@ async function aplicarUniaoSeguraOperacional(){
    if(!uniaoAutomaticaEmAndamento&&!window.confirm(
       'Receber '+seguros.remotos.length+' palete(s) com histórico íntegro? '+
       seguros.incertos.length+' registros continuam em revisão. Nenhuma baixa será executada.'))return;
+   validarBaseRecepcao();
    localStorage.setItem('entradas',JSON.stringify(proximo));
    localStorage.setItem(baseChave,JSON.stringify(proximo));
    backupUniaoNestaSessao=false;
@@ -785,6 +799,7 @@ async function aplicarUniaoSeguraOperacional(){
   }
   if(novosArquivados.length){
    if(localStorage.getItem('entradas')!==entradasBrutas)throw Error('Entradas alteradas durante a conferência; repetir.');
+   validarBaseRecepcao();
    localStorage.setItem(chaveArquivo,JSON.stringify([...arquivadas,...novosArquivados]));
   }
 
@@ -815,6 +830,7 @@ async function aplicarUniaoSeguraOperacional(){
   try{
    // Guarda final contra recebimento iniciado antes da limpeza do romaneio.
    if(!receberEntradasNoAparelho())throw Error('Celular não recebe paletes remotos: união cancelada.');
+   validarBaseRecepcao();
    localStorage.setItem('entradas',JSON.stringify(resultado));
    localStorage.setItem(baseChave,JSON.stringify(resultado));
    if(exclusoesArquivadas.length){
@@ -915,7 +931,7 @@ async function consolidarBaseLegada(){
  if(!Array.isArray(locais)||!locais.length){baseConsolidadaNestaSessao=true;return;}
  if(lerOperacional().length)return;
  const uid=auth.currentUser?.uid;if(!uid)return;
- const historico=(await lerHistoricoMovimentosCompleto(uid)).docs.map(d=>({id:d.id,...d.data()}));
+ const historico=(await lerHistoricoRecebido(uid)).docs.map(d=>({id:d.id,...d.data()}));
  const porId=new Map();
  for(const m of historico){
   const id=String(m.item?.registroId||m.antes?.registroId||'');
@@ -991,21 +1007,8 @@ async function sincronizarExpedicoesCompartilhadasInterno(){
  const bruto=localStorage.getItem(chave),locais=JSON.parse(bruto||'[]');
  if(!Array.isArray(locais))return;
  const raiz=raizOperacional(auth.currentUser.uid);
- const ref=collection(db,...raiz,'expedicoes');
- // Firestore getDocs(limit(50)) ignorava documentos mais antigos. Ler todas as
- // páginas diretamente do servidor, com cursor ordenado e limite por página.
- const docs=new Map();
- let cursor=null;
- for(let pagina=0;pagina<100;pagina++){
-  const consulta=cursor
-   ?query(ref,orderBy('__name__'),startAfter(cursor),limit(100))
-   :query(ref,orderBy('__name__'),limit(100));
-  const snap=await getDocsFromServer(consulta);
-  for(const registro of snap.docs)docs.set(registro.id,registro.data());
-  if(snap.size<100)break;
-  if(pagina===99)throw Error('Limite de leitura atingido. Nenhum arquivo local foi alterado.');
-  cursor=snap.docs[snap.docs.length-1];
- }
+ const recebidas=await lerExpedicoesParaRecepcao(auth.currentUser.uid);
+ const docs=new Map(recebidas.map(x=>[x.id,x]));
  // Aplicar prova de baixa ANTES de considerar cadastrar pendência nova.
  const {reconciliarPendenciasJaBaixadas}=await import('./reconciliar-pendencias-baixadas.mjs');
  const buscarBaixa=async id=>{
@@ -1083,22 +1086,39 @@ function registrarExclusoesRecebidas(snap){
  }
  if(mudou)localStorage.setItem(chaveArquivo,JSON.stringify(arquivo));
 }
-function observarMovimentosAutomaticos(u){
- if(contaObservada===u?.uid)return;
- if(cancelarMudancasRemotas){cancelarMudancasRemotas();cancelarMudancasRemotas=null;}
- contaObservada=u?.uid||null;ultimaAssinaturaRemota=null;
- if(!u||!receberEntradasNoAparelho())return;
- const q=query(collection(db,...raizOperacional(u.uid),'movimentos'),orderBy('criadoEm','desc'),limit(500));
- cancelarMudancasRemotas=onSnapshot(q,snap=>{
-  if(snap.metadata.fromCache)return;
-  registrarExclusoesRecebidas(snap);
-  const assinatura=snap.docs.map(d=>d.id+':'+String(d.data()?.criadoEm||'')+':'+String(d.data()?.tipo||'')).join('|');
-  if(assinatura===ultimaAssinaturaRemota)return;
-  ultimaAssinaturaRemota=assinatura;
-  void cicloAutomatico();
- },e=>{$('resultadoAplicarUniao').textContent='Recebimento remoto interrompido: '+(e.code||e.message||e);});
+let baseRecebida=null;
+function obterBaseRecebida(uid){
+ const ambienteId=raizOperacional(uid)[1];
+ if(!receberEntradasNoAparelho()||auth.currentUser?.uid!==uid||baseRecebida?.chave!==uid+':'+ambienteId)
+  throw Error('Base online indisponível para esta sessão; dados preservados.');
+ return baseRecebida;
 }
-// O painel já acompanha expedições: reutilizar seu aviso evita outra assinatura.
+function observarMovimentosAutomaticos(u){
+ if(cancelarMudancasRemotas){cancelarMudancasRemotas();cancelarMudancasRemotas=null;}
+ baseRecebida=null;contaObservada=u?.uid||null;ultimaAssinaturaRemota=null;
+ if(!u||!receberEntradasNoAparelho())return;
+ const raiz=raizOperacional(u.uid),chave=u.uid+':'+raiz[1];
+ const erro=e=>{$('resultadoAplicarUniao').textContent='Recebimento remoto interrompido: '+(e.code||e.message||e);};
+ const assinar=(nome,ok,erro)=>onSnapshot(query(collection(db,...raiz,nome),orderBy('__name__'),limit(LIMITE_COLECAO_INCREMENTAL)),{includeMetadataChanges:true},ok,erro);
+ const movimentos=criarColecaoIncremental({assinar:(ok,e)=>assinar('movimentos',ok,e),online:()=>navigator.onLine,aoErro:erro,
+  aoMudar:(snap,revisao)=>queueMicrotask(()=>{
+   if(baseRecebida?.movimentos!==movimentos)return;
+   registrarExclusoesRecebidas(snap);
+   const assinatura=chave+':'+revisao;
+   ultimaAssinaturaRemota=assinatura;
+   void cicloAutomatico();
+  })
+ });
+ const expedicoes=criarColecaoIncremental({assinar:(ok,e)=>assinar('expedicoes',ok,e),online:()=>navigator.onLine,aoErro:erro,
+  aoMudar:()=>queueMicrotask(()=>{if(baseRecebida?.expedicoes===expedicoes){revisaoExpedicoesRemotas++;void cicloAutomatico();}})
+ });
+ baseRecebida={chave,movimentos,expedicoes};
+ const offline=()=>{movimentos.invalidar();expedicoes.invalidar();};
+ const online=()=>{movimentos.reconectar();expedicoes.reconectar();};
+ window.addEventListener('offline',offline);window.addEventListener('online',online);
+ cancelarMudancasRemotas=()=>{movimentos.parar();expedicoes.parar();window.removeEventListener('offline',offline);window.removeEventListener('online',online);};
+}
+// Compatibilidade com avisos do painel: a conciliação usa a base confirmada da sessão.
 // O aviso não contém registros e não substitui a consulta confirmada no servidor.
 window.addEventListener('message',e=>{
  if(e.origin!==location.origin||e.source!==window.parent||window.parent===window)return;

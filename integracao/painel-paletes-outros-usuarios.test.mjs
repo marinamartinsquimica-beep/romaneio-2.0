@@ -43,7 +43,9 @@ test('código do painel não altera a sincronização local nem o armazenamento 
  const inicio=ui.indexOf('async function atualizarPaletesCompartilhados()');
  const fim=ui.indexOf('window.__paletesDeOutrosUsuarios=resultado.remotos;',inicio);
  const secao=ui.slice(inicio,fim);
- assert.match(secao,/getDocsFromServer\(consulta\)/);
+ assert.match(secao,/await movimentosRecebidos\.ler\(\)/);
+ assert.match(secao,/await expedicoesRecebidas\.ler\(\)/);
+ assert.doesNotMatch(secao,/getDocsFromServer/);
  assert.match(secao,/paletesOutrosUsuarios\(/);
  assert.doesNotMatch(secao,/localStorage\.setItem\('entradas'/);
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
