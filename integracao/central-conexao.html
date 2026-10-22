@@ -28,7 +28,7 @@ a{color:#156e9b;font-weight:700}
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {motivosFormatoOperacional} from './protocolo-movimentos.js?v=2.0.97';
 import {permiteReceberPaletes} from './direcao-sincronizacao.mjs';
-import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.113';
+import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.114';
 import {criarControleLeituras} from './controle-leituras-automaticas.mjs?v=2.0.99';
 import {initializeApp,getApps,getApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,setPersistence,browserLocalPersistence} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
@@ -557,7 +557,7 @@ async function aplicarUniaoSeguraOperacional(){
    }
   };
   if(auth.currentUser?.uid!==uidRecepcao)throw Error('Sessão alterada durante a consulta de baixas.');
-  const {filtrarEventosBaixados,separarEncerradosLocais,identidadeHistoricoEncerrados}=await import('./recepcao-romaneios-ativos.mjs?v=2.0.113');
+  const {filtrarEventosBaixados,separarEncerradosLocais,identidadeHistoricoEncerrados}=await import('./recepcao-romaneios-ativos.mjs?v=2.0.114');
   const movimentosRecepcao=snap.docs.map(d=>({id:d.id,...d.data()}));
   const encerramento=separarEncerradosLocais({registros:entradas,movimentos:movimentosRecepcao,expedicoes:expedicoesRecepcao,fechamentos:fechamentosBrutos});
   if(encerramento.encerrados.length){
@@ -865,13 +865,22 @@ function construirBackupConferencia(){
  for(const chave of chaves){const bruto=localStorage.getItem(chave);copia.dados[chave]=bruto===null?null:JSON.parse(bruto);}
  if(!Array.isArray(copia.dados.entradas))throw Error('Entradas locais inválidas; backup cancelado');
  const painel=window.parent!==window?window.parent:window;
- copia.conferencia={versao:'2.0.113',estoque: painel.estoqueTesteConsulta?[...painel.estoqueTesteConsulta.values()]:null,comprovantes:painel.__comprovantesBaixaConfirmados||[],reservasCompartilhadas:painel.__reservasCompartilhadas||[]};
+ copia.conferencia={versao:'2.0.114',estoque: painel.estoqueTesteConsulta?[...painel.estoqueTesteConsulta.values()]:null,comprovantes:painel.__comprovantesBaixaConfirmados||[],reservasCompartilhadas:painel.__reservasCompartilhadas||[]};
  return copia;
 }
-$('exportarBackupUniao').onclick=()=>{
+async function completarBackupComBaseConfirmada(copia,base){
+ if(!base)throw Error('Aguarde a conexão e clique em Sincronizar agora antes de baixar a cópia completa.');
+ const [movimentos,expedicoes]=await Promise.all([base.movimentos.ler(),base.expedicoes.ler()]);
+ if(baseRecebida!==base)throw Error('A conexão mudou durante o diagnóstico. Tente novamente.');
+ copia.conferencia.movimentosConfirmados=movimentos.docs.map(d=>({id:d.id,...d.data()}));
+ copia.conferencia.expedicoesConfirmadas=expedicoes.docs.map(d=>({id:d.id,...d.data()}));
+ copia.conferencia.baseConfirmadaEm=new Date().toISOString();
+ return copia;
+}
+$('exportarBackupUniao').onclick=async()=>{
  const saida=$('resultadoBackupUniao');
  try{
-  const copia=construirBackupConferencia();
+  const copia=await completarBackupComBaseConfirmada(construirBackupConferencia(),baseRecebida);
   const arquivo=new Blob([JSON.stringify(copia,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(arquivo);
   const link=document.createElement('a');
@@ -1017,7 +1026,7 @@ async function sincronizarExpedicoesCompartilhadasInterno(){
  const recebidas=await lerExpedicoesParaRecepcao(auth.currentUser.uid);
  const docs=new Map(recebidas.map(x=>[x.id,x]));
  // Aplicar prova de baixa ANTES de considerar cadastrar pendência nova.
- const {reconciliarPendenciasJaBaixadas}=await import('./reconciliar-pendencias-baixadas.mjs?v=2.0.113');
+ const {reconciliarPendenciasJaBaixadas}=await import('./reconciliar-pendencias-baixadas.mjs?v=2.0.114');
  const buscarBaixa=async id=>{
   if(docs.has(id))return docs.get(id);
   const snap=await getDocFromServer(doc(db,...raiz,'expedicoes',id));
