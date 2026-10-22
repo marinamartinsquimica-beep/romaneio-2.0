@@ -1,3 +1,4 @@
+import {validarSelecaoSemCancelamentos} from './correcoes-lancamentos.mjs?v=2.0.115';
 import {registroBaixadoNoEstoque} from './status-baixa-romaneio.mjs?v=2.0.110';
 import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.110';
 import {permiteReceberPaletes} from './direcao-sincronizacao.mjs';
@@ -233,6 +234,7 @@ window.registrarBaixaConferida=async ({resultado,versaoInicial,destino,registros
  if(!usuario||!ambienteAtual?.ambienteId||!ambienteAtual?.permissoes?.prepararBaixa)
    throw Error('Operador sem acesso à baixa de estoque.');
  if(!navigator.onLine)throw Error('É necessário estar online.');
+ validarSelecaoSemCancelamentos(registros,JSON.parse(localStorage.getItem('romaneio2_expedicoes_excluidas_pendentes_v1')||'[]'));
  const ambienteId=ambienteAtual.ambienteId;
  const {registrarBaixaTransacional}=await import('./baixa-transacional.mjs?v=2.0.110');
  const confirmada=await registrarBaixaTransacional({

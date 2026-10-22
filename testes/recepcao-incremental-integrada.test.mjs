@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from '../integracao/colecao-incremental.mjs';
+import {identificarCorrecoes} from '../integracao/correcoes-lancamentos.mjs';
 import * as marcos from '../integracao/marcos-romaneios-fechados.mjs';
 import * as recepcao from '../integracao/recepcao-romaneios-ativos.mjs';
 import * as recuperar from '../integracao/recuperar-paletes-remotos.mjs';
@@ -17,7 +18,7 @@ const mov=(tipo,id,item,antes=null)=>({id,tipo,item,antes,criadoEm:'2026-10-21T1
 function ambiente({mobile=false,entradas=[]}={}){
  const dados=new Map([['entradas',JSON.stringify(entradas)],['romaneio2_movimentos_pendentes_v1','[]'],['romaneio2_ultimo_estado_movimentos_v1',JSON.stringify(entradas)]]);
  const fontes=new Map(),elementos=new Map();let ciclos=0;
- const c={criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL,db:{},auth:{currentUser:{uid:'marina'},authStateReady:async()=>{}},navigator:{onLine:true},
+ const c={identificarCorrecoes,criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL,db:{},auth:{currentUser:{uid:'marina'},authStateReady:async()=>{}},navigator:{onLine:true},
   receberEntradasNoAparelho:()=>!mobile,raizOperacional:uid=>['romaneio_ambientes','sala-ovos'],queueMicrotask,
   cancelarMudancasRemotas:null,contaObservada:null,ultimaAssinaturaRemota:null,revisaoExpedicoesRemotas:0,cicloSolicitadoDuranteConsulta:false,cicloAutomatico:()=>ciclos++,
   collection:(_db,...path)=>({nome:path.at(-1)}),orderBy:()=>{},limit:n=>{assert.ok(n<=10000,'Consulta excede o máximo aceito pelo serviço');return n;},query:ref=>ref,

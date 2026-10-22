@@ -281,7 +281,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.114</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.115</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
 <div class="romaneio-backup-actions" style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button class="desktop-backup-action" type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Pendências de sincronização</button><button class="desktop-backup-action" type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button><button class="mobile-sync-action" type="button" onclick="sincronizarRomaneioCelular()" style="width:auto;background:#5CDCF2;color:#254D69;font-weight:800;font-size:13px;padding:10px 18px;border-radius:12px;border:2px solid #254D69">SINCRONIZAR</button></div>
 <section class="dashboard"><div class="metric"><div class="ico">📋</div><div><b id="dashRegistros">0</b><span id="dashRegistrosLabel">Registros totais</span></div></div><div class="metric"><div class="ico">📦</div><div><b id="dashCaixas">0</b><span id="dashCaixasLabel">Caixas totais</span></div></div><div class="metric"><div class="ico">🧱</div><div><b id="dashPaletes">0</b><span id="dashPaletesLabel">Paletes totais</span></div></div><div class="metric"><div class="ico">📍</div><div><b id="dashDestinos">0</b><span id="dashDestinosLabel">Destinos totais</span></div></div><div class="metric"><div class="ico">🕒</div><div><b id="dashUltimo">--</b><span>Último registro</span></div></div></section>
@@ -400,7 +400,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.114";
+const APP_VERSION = "2.0.115";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -735,7 +735,7 @@ async function apagarDestino(destino) {
     const estado = lerEstadoOperacional();
     const paleteAbertoSeraAfetado = Boolean(estado && paletes.has(String(estado.paleteAtual)));
     const avisoPaleteAberto = paleteAbertoSeraAfetado ? "\nO palete aberto deste Destino também será encerrado." : "";
-    const mensagem = `APAGAR O DESTINO ${nomeDestino}?\n\nSerão apagadas ${linhas.length} entrada(s), ${paletes.size} palete(s) e ${caixas} caixas.${avisoPaleteAberto}\n\nOs demais Destinos serão preservados.\nEsta ação não pode ser desfeita.`;
+    const mensagem = `FINALIZAR / REMOVER O DESTINO ${nomeDestino}?\n\nSerão apagadas ${linhas.length} entrada(s), ${paletes.size} palete(s) e ${caixas} caixas.${avisoPaleteAberto}\n\nOs demais Destinos serão preservados.\nEsta ação não pode ser desfeita.`;
     if (!await confirmarRaiar(mensagem)) return;
     const registroExclusao={id:criarIdentificadorMovimento(),destino:nomeDestino,criadoEm:new Date().toISOString(),dispositivoId:identificarDispositivoLocal(),caixas,paletes:[...paletes],linhas:linhas.map(l=>({sku:l.cells[1]?.textContent||'',lote:l.cells[4]?.textContent||'',postura:l.cells[6]?.textContent||'',caixas:Number(l.cells[7]?.textContent||0),destino:nomeDestino,palete:l.cells[3]?.textContent||''})),estado:'EXCLUIDO_NO_DISPOSITIVO_AGUARDANDO_BAIXA'};
     const historico=JSON.parse(localStorage.getItem('romaneio2_destinos_excluidos_v1')||'[]');
@@ -788,7 +788,7 @@ function renderizarRomaneiosDestino() {
         const apagar = document.createElement("button");
         apagar.className = "btn-danger";
         apagar.type = "button";
-        apagar.textContent = "Apagar destino";
+        apagar.textContent = "Finalizar / remover destino";
         apagar.addEventListener("click", () => apagarDestino(item.nome));
         acoes.append(novo, excel, apagar);
 
@@ -1567,13 +1567,13 @@ function preencherLinha(linha, item) {
     const editar = document.createElement("button");
     editar.className = "btn-blue";
     editar.type = "button";
-    editar.textContent = "Editar";
+    editar.textContent = "Corrigir lote / quantidade";
     editar.addEventListener("click", () => editarLinha(editar));
 
     const excluir = document.createElement("button");
     excluir.className = "btn-danger";
     excluir.type = "button";
-    excluir.textContent = "Excluir";
+    excluir.textContent = "Cancelar linha incorreta";
     excluir.addEventListener("click", () => excluirLinha(excluir));
     acoes.append(adicionar, editar, excluir);
 }
@@ -1759,10 +1759,17 @@ function registrarMovimentosLocais(atuais) {
     const j=adicionados.findIndex(novo=>(antigo.registroId&&novo.registroId&&novo.registroId===antigo.registroId)||(String(novo.palete)===String(antigo.palete)&&String(novo.destino||'')===String(antigo.destino||'')&&String(novo.sku)===String(antigo.sku)&&String(novo.loteCompleto)===String(antigo.loteCompleto)));
     if(j>=0){const novo=adicionados.splice(j,1)[0];removidos.splice(i,1);fila.push({...criar("edicao",novo),antes:antigo});}
   }
-  for(const item of removidos)fila.push(criar("exclusao",item));
+  const correcoes=lerJsonLocalStorage('romaneio2_intencoes_correcao_v1',{});
+  for(const item of removidos){
+   const intencao=correcoes[item.registroId];
+   const corrigido=intencao&&chaveMovimento(intencao)===chaveMovimento(item);
+   fila.push(criar("exclusao",corrigido?{...item,finalidadeExclusao:'CORRECAO_LANCAMENTO'}:item));
+  }
   for(const item of adicionados)fila.push(criar("inclusao",item));
   // Persiste a fila antes de avançar o estado-base, evitando perda de eventos.
   localStorage.setItem(FILA_MOVIMENTOS_KEY,JSON.stringify(fila));
+  for(const item of removidos)delete correcoes[item.registroId];
+  localStorage.setItem('romaneio2_intencoes_correcao_v1',JSON.stringify(correcoes));
   localStorage.setItem(BASE_MOVIMENTOS_KEY,JSON.stringify(atuais));
   atualizarIndicadorFilaMovimentos();
 }
@@ -1996,7 +2003,11 @@ function salvarLocalStorage() {
     let tbody = document.querySelector("#tabela tbody");
     let dados = [];
 
-    for (let linha of tbody.rows) {
+    const cancelados=new Set(lerExpedicoesPendentes().filter(r=>r.estado==='ARQUIVADA_APOS_CONFERENCIA'&&r.correcaoMovimentoId).map(r=>r.registroId));
+    for (let linha of Array.from(tbody.rows)) {
+        // Uma tabela que estava em edição pode ter adiado a atualização visual.
+        // Não reenviar como inclusão uma identidade já cancelada e auditada.
+        if(cancelados.has(linha.dataset.registroId)){linha.remove();continue;}
         if (!linha.dataset.registroId) linha.dataset.registroId = criarIdentificadorMovimento();
         dados.push({
             registroId: linha.dataset.registroId,
@@ -2274,7 +2285,12 @@ async function excluirLinha(botao) {
     const linha=botao.closest("tr");
     if(!linha)return;
     const anterior=dadosDaLinhaRomaneio(linha);
-    if(!await confirmarRaiar(`Excluir ${anterior.caixas} caixa(s) do SKU ${anterior.sku}, palete ${anterior.palete}, destino ${anterior.destino}?\nEsta ação atualiza o romaneio e as reservas locais.`))return;
+    if(!await confirmarRaiar(`CANCELAR LINHA INCORRETA?\n${anterior.caixas} caixa(s), SKU ${anterior.sku}, palete ${anterior.palete}, destino ${anterior.destino}.\nUse para corrigir um lançamento errado. Esta linha NÃO irá para baixa. Para expedição, use FINALIZAR / REMOVER DESTINO.`))return;
+    if(window.romaneioPossuiBaixaConfirmada?.({...anterior,registroId:linha.dataset.registroId})){alert('Esta linha já possui baixa confirmada. Use a conferência no computador.');return;}
+    if([...document.querySelectorAll('#tabela tbody tr')].filter(l=>l.dataset.registroId===linha.dataset.registroId).length!==1){alert('Identificação repetida. Confira estas linhas no computador antes de cancelar.');return;}
+    const intencoes=lerJsonLocalStorage('romaneio2_intencoes_correcao_v1',{});
+    intencoes[linha.dataset.registroId]={...anterior,registroId:linha.dataset.registroId};
+    localStorage.setItem('romaneio2_intencoes_correcao_v1',JSON.stringify(intencoes));
     registrarCorrecaoRomaneio("EXCLUSÃO",anterior,null);
     linha.remove();
     salvarLocalStorage();
@@ -3444,7 +3460,7 @@ window.matchMedia('(max-width:767px)').addEventListener('change',event=>{if(even
 (function(){
  const central=document.createElement('iframe');
  central.id='romaneioSincronizacaoAutomatica';
- central.src='./integracao/central-conexao.html?estado=2_0_114';
+ central.src='./integracao/central-conexao.html?estado=2_0_115';
  central.title='Sincronização automática do Romaneio';
  central.tabIndex=-1;
  central.setAttribute('aria-hidden','true');
@@ -3475,6 +3491,7 @@ window.matchMedia('(max-width:767px)').addEventListener('change',event=>{if(even
   if(event.key==='romaneio2_expedicoes_excluidas_pendentes_v1'){
    if(typeof operadorAtualizarPainel==='function')operadorAtualizarPainel();
    if(typeof atualizarDestinosBaixa==='function')atualizarDestinosBaixa();
+   renderizarPendenciasConferenciaEstoque();atualizarResumoReservaTeste();
    return;
   }
   if(event.key!=='entradas'||atualizando)return;
@@ -3546,7 +3563,7 @@ btn?.addEventListener('click',async()=>{
  }catch(e){resumo.textContent='Conferência não realizada: '+e.message;}finally{btn.disabled=false;}
 });
 </script>
-<script type="module" src="./integracao/estoques-firebase-ui.mjs?v=2.0.114"></script>
+<script type="module" src="./integracao/estoques-firebase-ui.mjs?v=2.0.115"></script>
 <script type="module">
 import {prepararBaixa,prepararAjuste} from './integracao/operacoes-estoque.mjs';
 let resultadoEtapa4=null;
@@ -3605,7 +3622,7 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
  button.disabled=true;
  try{
   if(!resultadoEtapa4)throw Error('Prepare a conferência antes de exportar.');
-  const {resolverModeloEmbalado}=await import('./integracao/modelo-estoque-persistente.mjs?v=2.0.114');
+  const {resolverModeloEmbalado}=await import('./integracao/modelo-estoque-persistente.mjs?v=2.0.115');
   const arquivo=await resolverModeloEmbalado({memoria:window.__etapa4ArquivoEmbalado,selecionado:document.getElementById('etapa4Tipo')?.value==='embalado'?document.getElementById('etapa4Arquivo')?.files?.[0]:null});
   window.__etapa4ArquivoEmbalado=arquivo;
   const res=resultadoEtapa4.modo==='baixa'
@@ -3837,7 +3854,7 @@ document.getElementById('etapa4Preparar')?.addEventListener('click',async()=>{
 </script>
 
 <script type="module">
-import {expirarHistoricosLocais} from './integracao/retencao-historicos.mjs?v=2.0.114';
+import {expirarHistoricosLocais} from './integracao/retencao-historicos.mjs?v=2.0.115';
 let retencaoEmAndamento=false;
 async function aplicarRetencaoHistoricos(){
  if(retencaoEmAndamento)return;
