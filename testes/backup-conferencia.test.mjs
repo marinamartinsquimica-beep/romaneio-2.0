@@ -22,7 +22,7 @@ test('Central aberta separadamente exporta arquivo de excluídos mesmo sem paine
 
 test('backup completo usa bases recebidas e exige confirmação de ambas',async()=>{
  const base={movimentos:{ler:async()=>({docs:[{id:'mov',data:()=>({tipo:'exclusao'})}]})},expedicoes:{ler:async()=>({docs:[{id:'exp',data:()=>({estado:'BAIXA_CONCLUIDA'})}]})}};
- const c={baseRecebida:base};
+ const c={baseRecebida:base,metricasBasesCompartilhadas:()=>[],metricasEnviosCompartilhados:()=>[]};
  const fonte=html.slice(html.indexOf('async function completarBackupComBaseConfirmada('),html.indexOf("$('exportarBackupUniao').onclick="));
  runInNewContext(fonte,c);const copia=await c.completarBackupComBaseConfirmada({conferencia:{}},base);
  assert.equal(copia.conferencia.movimentosConfirmados[0].id,'mov');

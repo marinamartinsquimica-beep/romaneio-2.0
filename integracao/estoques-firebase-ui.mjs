@@ -1,3 +1,4 @@
+import {adquirirBaseCompartilhada} from './bases-compartilhadas.mjs?v=2.0.117';
 import {validarSelecaoSemCancelamentos} from './correcoes-lancamentos.mjs?v=2.0.115';
 import {registroBaixadoNoEstoque} from './status-baixa-romaneio.mjs?v=2.0.110';
 import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.110';
@@ -175,12 +176,10 @@ function observar(uid,ambienteId=null){
  // Uma assinatura por coleção; mudanças atualizam a base já recebida.
  const erroRecepcao=e=>mostrar('Consulta compartilhada: '+e.message);
  const assinar=(nome,ok,erro)=>onSnapshot(query(collection(db,...raiz,nome),orderBy('__name__'),limit(LIMITE_COLECAO_INCREMENTAL)),{includeMetadataChanges:true},ok,erro);
- const movimentosRecebidos=criarColecaoIncremental({
-  assinar:(ok,erro)=>assinar('movimentos',ok,erro),online:()=>navigator.onLine,aoErro:erroRecepcao,
+ const movimentosRecebidos=adquirirBaseCompartilhada({chave:uid+':'+ambienteId+':movimentos',criar:callbacks=>criarColecaoIncremental({assinar:(ok,erro)=>assinar('movimentos',ok,erro),online:()=>navigator.onLine,...callbacks}),aoErro:erroRecepcao,
   aoMudar:snapshot=>{renderizarDestinosExcluidos(snapshot.docs.map(d=>d.data()));agendarConsultaCompartilhada();}
  });
- const expedicoesRecebidas=criarColecaoIncremental({
-  assinar:(ok,erro)=>assinar('expedicoes',ok,erro),online:()=>navigator.onLine,aoErro:erroRecepcao,
+ const expedicoesRecebidas=adquirirBaseCompartilhada({chave:uid+':'+ambienteId+':expedicoes',criar:callbacks=>criarColecaoIncremental({assinar:(ok,erro)=>assinar('expedicoes',ok,erro),online:()=>navigator.onLine,...callbacks}),aoErro:erroRecepcao,
   aoMudar:snapshot=>{atualizarComprovantesBaixa(snapshot.docs.map(d=>({id:d.id,...d.data()})));agendarConsultaCompartilhada();}
  });
  const aoOffline=()=>{movimentosRecebidos.invalidar();expedicoesRecebidas.invalidar();};

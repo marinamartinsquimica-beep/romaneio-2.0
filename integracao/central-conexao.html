@@ -25,11 +25,13 @@ a{color:#156e9b;font-weight:700}
 #gestaoUsuarios select{width:auto}
 @media(max-width:640px){body{padding:10px}main>section{padding:17px}main>h1{font-size:22px}button{width:100%;margin:5px 0!important}}
 </style></head><body><main><h1>Conexão do sistema</h1><p>Sincronização segura de paletes, conferência de movimentações e gerenciamento de acessos.</p><section><h2>Estado da conexão</h2><output id="estado">Verificando…</output><p id="detalhe"></p><button id="verificar" type="button">TESTAR CONEXÃO</button><output id="verificacaoFirebase" class="resultado-verificacao" role="status" aria-live="polite">Clique para testar a autenticação com o servidor sistema.</output></section><section><h2>Autenticação operacional</h2><p id="sessao">Verificando sessão…</p><form id="login"><label>E-mail operacional<input id="email" type="email" autocomplete="username" required></label><label>Senha<input id="senha" type="password" autocomplete="current-password" required></label><button type="submit">Reconectar</button></form><button id="sair" hidden>Encerrar sessão neste aparelho</button><small>A senha não é salva pelo aplicativo. A sessão autenticada pode persistir neste navegador.</small></section><section><h2>Movimentações locais</h2><output id="fila">Consultando…</output><p><button type="button" id="inspecionarPendentes">VERIFICAR FILA OPERACIONAL</button></p><output id="relatorioPendentes" class="resultado-verificacao" aria-live="polite">Verificação somente leitura; nenhum envio será realizado.</output><p><button type="button" id="prepararEnvioReal">PREPARAR SINCRONIZAÇÃO CONTROLADA</button> <button type="button" id="confirmarEnvioReal" disabled>CONFIRMAR ENVIO DA FILA</button></p><output id="estadoEnvioReal" class="resultado-verificacao" aria-live="polite">Nenhuma movimentação operacional será enviada sem confirmação.</output><p><small>O envio requer confirmação explícita. Somente IDs confirmados pelo Firestore saem da fila.</small></p><p><button type="button" id="resolverTestePendente">RESOLVER PENDÊNCIA FICTÍCIA</button></p><output id="resultadoResolverTeste" class="resultado-verificacao" aria-live="polite">Requer backup e confirmação de exclusão remota.</output></section><section><h2>Leitura compartilhada — computador e celular</h2><p>Consulta somente leitura dos últimos registros desta conta no Firestore. Não altera paletes, estoque ou fila.</p><button type="button" id="consultarCompartilhados">CONSULTAR MOVIMENTAÇÕES NO sistema</button><output id="resultadoCompartilhados" class="resultado-verificacao" aria-live="polite">Aguardando consulta. A listagem requer permissão específica nas regras do sistema.</output></section><section><h2>Atualização automática — somente leitura</h2><p>Acompanhe novas movimentações desta conta em tempo real. Nenhum palete ou estoque local será alterado.</p><button type="button" id="iniciarTempoReal">INICIAR ACOMPANHAMENTO</button> <button type="button" id="pararTempoReal" disabled>PARAR ACOMPANHAMENTO</button><output id="resultadoTempoReal" class="resultado-verificacao" aria-live="polite">Acompanhamento desligado.</output></section><section><h2>Receber e conciliar movimentações entre aparelhos</h2><p>Compara as movimentações remotas com os dados deste dispositivo. Os testes fictícios são excluídos da análise.</p><button type="button" id="preverRecebimento">ANALISAR MOVIMENTAÇÕES RECEBIDAS</button><output id="resultadoAnaliseImediata" class="resultado-verificacao" aria-live="polite">Aguardando análise.</output><p><button type="button" id="diagnosticarOfflineReal">DIAGNOSTICAR SINCRONIZAÇÃO OFFLINE — SOMENTE LEITURA</button></p><output id="resultadoDiagnosticoOffline" class="resultado-verificacao" aria-live="polite">Nenhum dado será alterado.</output><p><button type="button" id="prepararUniaoSegura">PREPARAR UNIÃO CONTROLADA</button></p><output id="resultadoPrepararUniao" class="resultado-verificacao" aria-live="polite">Preparação somente leitura. Não aplica a união.</output><p><button type="button" id="exportarBackupUniao">BAIXAR CÓPIA DE SEGURANÇA LOCAL</button></p><output id="resultadoBackupUniao" class="resultado-verificacao" aria-live="polite">O arquivo de segurança será gerado neste dispositivo, sem alterar os dados.</output><p><button type="button" id="aplicarUniaoSegura">CONFIRMAR E APLICAR UNIÃO</button></p><output id="resultadoAplicarUniao" class="resultado-verificacao" aria-live="polite">Disponível após baixar o backup. A união exige confirmação explícita e nova consulta ao sistema.</output><p><button type="button" id="prepararPublicacaoLocal">PREPARAR PUBLICAÇÃO DAS ENTRADAS LOCAIS</button></p><output id="resultadoPublicacaoLocal" class="resultado-verificacao" aria-live="polite">Compara as entradas locais com o sistema e prepara apenas inclusões ausentes para a fila, mediante confirmação. Não altera estoque.</output><output id="resultadoPrevia" class="resultado-verificacao" aria-live="polite">Nenhuma análise realizada. Os dados locais permanecem intactos.</output></section><section><h2>Validação sistema — dados fictícios</h2><p>Teste isolado: SKU TESTE-G, lote TESTE-001, 13 caixas. Não usa a fila operacional nem altera estoque.</p><button id="testeGravar" disabled>GRAVAR TESTE NO sistema</button> <button id="testeReenviar" disabled>REENVIAR MESMO TESTE</button><output id="testeResultado" aria-live="polite">Aguardando autenticação.</output><small>O teste cria um documento imutável por identificação. Repetir não cria outro registro.</small></section><section><h2>Fila offline — validação</h2><p>Teste fictício isolado da fila operacional.</p><button type="button" id="prepararOffline">PREPARAR TESTE OFFLINE</button> <button type="button" id="enviarOffline">SINCRONIZAR TESTE</button><output id="saidaOffline" class="resultado-verificacao" aria-live="polite">Aguardando preparação.</output></section><section id="historicoAuditoria"><h2>Histórico e rastreabilidade</h2><p>Consulta remota somente leitura.</p><button id="consultarAuditoria" type="button">CONSULTAR HISTÓRICO COMPARTILHADO</button><output id="saidaAuditoria" class="resultado-verificacao">Aguardando consulta.</output></section><section id="resolverDivergencias"><h2>Conciliação de caixas — conferência manual</h2><p>Para conflitos de quantidade, preserve o valor local até confirmar. Exige backup da sessão. Não realiza baixa de estoque.</p><button id="consultarConflitosCaixas" type="button">CONSULTAR CONFLITOS DE CAIXAS</button><div id="listaConflitosCaixas"></div><output id="saidaConflitosCaixas" class="resultado-verificacao" aria-live="polite">Nenhuma alteração aplicada.</output></section><section id="gestaoUsuarios" hidden><h2>Gestão de usuários e permissões — Administrador</h2><p>Gerencie perfis e acessos do ambiente compartilhado. Operadores não podem alterar usuários. A criação de contas de autenticação permanece no serviço de autenticação.</p><button id="listarMembros" type="button">ATUALIZAR USUÁRIOS</button><div id="listaMembros"></div><output id="saidaMembros" class="resultado-verificacao" aria-live="polite">Aguardando consulta.</output></section><a href="../index.html">Voltar ao Romaneio</a></main><script type="module">
-import {conciliarCorrecoes,identificarCorrecoes} from './correcoes-lancamentos.mjs?v=2.0.116';
+import {adquirirBaseCompartilhada,metricasBasesCompartilhadas} from './bases-compartilhadas.mjs?v=2.0.117';
+import {controleEnviosCompartilhado,erroTemporario,metricasEnviosCompartilhados} from './controle-tentativas.mjs?v=2.0.117';
+import {conciliarCorrecoes,identificarCorrecoes} from './correcoes-lancamentos.mjs?v=2.0.117';
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {motivosFormatoOperacional} from './protocolo-movimentos.js?v=2.0.97';
 import {permiteReceberPaletes} from './direcao-sincronizacao.mjs';
-import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.116';
+import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.117';
 import {criarControleLeituras} from './controle-leituras-automaticas.mjs?v=2.0.99';
 import {initializeApp,getApps,getApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,setPersistence,browserLocalPersistence} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
@@ -139,6 +141,9 @@ $('prepararEnvioReal').onclick=()=>{
 };
 async function confirmarEnvioRealOperacional(){
  const b=$('confirmarEnvioReal');if(!preparacaoReal||envioRealEmAndamento)return;
+ const controle=controleEnviosCompartilhado(auth.currentUser?.uid);
+ if(!controle.iniciar()){$('estadoEnvioReal').textContent='Envio em espera; fila preservada. Nova tentativa após '+Math.ceil(controle.restanteMs/1000)+' segundos.';return;}
+ let falhaEnvio=null;
  envioRealEmAndamento=true;b.disabled=true;b.textContent='SINCRONIZANDO…';
  try{
   await auth.authStateReady();const u=auth.currentUser;
@@ -165,12 +170,12 @@ async function confirmarEnvioRealOperacional(){
      atual.splice(i,1);localStorage.setItem(CHAVE_OPERACIONAL,JSON.stringify(atual));
     }else if(i>=0)throw Error('Registro local mudou após confirmação remota: mantido para revisão');
     if(resultado==='existente')jaExistiam++;else enviados++;
-   }catch(e){falhas.push(id+': '+(e.code||e.message||String(e)));}
+   }catch(e){falhaEnvio=e;falhas.push(id+': '+(e.code||e.message||String(e)));if(erroTemporario(e))break;}
    $('estadoEnvioReal').textContent='Confirmados novos: '+enviados+' | Já existentes: '+jaExistiam+' | Falhas: '+falhas.length+' | Pendentes: '+lerOperacional().length;
   }
   $('estadoEnvioReal').textContent+='\n'+(falhas.length?'REVISAR: '+falhas.join(' | '):'Concluído: operações confirmadas removidas da fila local.');
- }catch(e){$('estadoEnvioReal').textContent='Envio não concluído: '+(e.code||e.message||String(e))+'. Fila preservada.';}
- finally{preparacaoReal=null;envioRealEmAndamento=false;b.disabled=true;b.textContent='CONFIRMAR ENVIO DA FILA';status();}
+ }catch(e){falhaEnvio=e;$('estadoEnvioReal').textContent='Envio não concluído: '+(e.code||e.message||String(e))+'. Fila preservada.';}
+ finally{if(falhaEnvio)controle.falhou(falhaEnvio);else controle.sucesso();controle.encerrar();preparacaoReal=null;envioRealEmAndamento=false;b.disabled=true;b.textContent='CONFIRMAR ENVIO DA FILA';status();}
 }
 $('confirmarEnvioReal').onclick=confirmarEnvioRealOperacional;
 $('consultarCompartilhados').onclick=async()=>{
@@ -558,7 +563,7 @@ async function aplicarUniaoSeguraOperacional(){
    }
   };
   if(auth.currentUser?.uid!==uidRecepcao)throw Error('Sessão alterada durante a consulta de baixas.');
-  const {filtrarEventosBaixados,separarEncerradosLocais,identidadeHistoricoEncerrados}=await import('./recepcao-romaneios-ativos.mjs?v=2.0.116');
+  const {filtrarEventosBaixados,separarEncerradosLocais,identidadeHistoricoEncerrados}=await import('./recepcao-romaneios-ativos.mjs?v=2.0.117');
   const movimentosRecepcao=snap.docs.map(d=>({id:d.id,...d.data()}));
   const encerramento=separarEncerradosLocais({registros:entradas,movimentos:movimentosRecepcao,expedicoes:expedicoesRecepcao,fechamentos:fechamentosBrutos});
   if(encerramento.encerrados.length){
@@ -868,7 +873,7 @@ function construirBackupConferencia(){
  for(const chave of chaves){const bruto=localStorage.getItem(chave);copia.dados[chave]=bruto===null?null:JSON.parse(bruto);}
  if(!Array.isArray(copia.dados.entradas))throw Error('Entradas locais inválidas; backup cancelado');
  const painel=window.parent!==window?window.parent:window;
- copia.conferencia={versao:'2.0.116',estoque: painel.estoqueTesteConsulta?[...painel.estoqueTesteConsulta.values()]:null,comprovantes:painel.__comprovantesBaixaConfirmados||[],reservasCompartilhadas:painel.__reservasCompartilhadas||[]};
+ copia.conferencia={versao:'2.0.117',estoque: painel.estoqueTesteConsulta?[...painel.estoqueTesteConsulta.values()]:null,comprovantes:painel.__comprovantesBaixaConfirmados||[],reservasCompartilhadas:painel.__reservasCompartilhadas||[]};
  return copia;
 }
 async function completarBackupComBaseConfirmada(copia,base){
@@ -878,6 +883,8 @@ async function completarBackupComBaseConfirmada(copia,base){
  copia.conferencia.movimentosConfirmados=movimentos.docs.map(d=>({id:d.id,...d.data()}));
  copia.conferencia.expedicoesConfirmadas=expedicoes.docs.map(d=>({id:d.id,...d.data()}));
  copia.conferencia.baseConfirmadaEm=new Date().toISOString();
+ copia.conferencia.metricasConsultas=metricasBasesCompartilhadas();
+ copia.conferencia.metricasEnvios=metricasEnviosCompartilhados();
  return copia;
 }
 $('exportarBackupUniao').onclick=async()=>{
@@ -920,6 +927,7 @@ window.addEventListener('online',status);window.addEventListener('offline',statu
 let envioAutomaticoAgendado=false;
 async function enviarFilaAutomaticamente(){
  if(envioAutomaticoAgendado||envioRealEmAndamento||!navigator.onLine||!auth.currentUser)return;
+ if(!controleEnviosCompartilhado(auth.currentUser.uid).podeTentar())return;
  envioAutomaticoAgendado=true;
  let haviaPendencias=false;
  try{
@@ -1027,17 +1035,16 @@ async function sincronizarExpedicoesCompartilhadasInterno(){
  const bruto=localStorage.getItem(chave),locais=JSON.parse(bruto||'[]');
  if(!Array.isArray(locais))return;
  const raiz=raizOperacional(auth.currentUser.uid);
+ const sessao=obterBaseRecebida(auth.currentUser.uid),revisaoInicial=sessao.expedicoes.revisao;
  const recebidas=await lerExpedicoesParaRecepcao(auth.currentUser.uid);
+ const validarImagem=()=>{if(obterBaseRecebida(auth.currentUser.uid)!==sessao||sessao.expedicoes.revisao!==revisaoInicial)throw Error('Expedições mudaram durante a conciliação; repetir com a base atual.');};
+ validarImagem();
  const docs=new Map(recebidas.map(x=>[x.id,x]));
  // Aplicar prova de baixa ANTES de considerar cadastrar pendência nova.
- const {reconciliarPendenciasJaBaixadas}=await import('./reconciliar-pendencias-baixadas.mjs?v=2.0.116');
- const buscarBaixa=async id=>{
-  if(docs.has(id))return docs.get(id);
-  const snap=await getDocFromServer(doc(db,...raiz,'expedicoes',id));
-  const dado=snap.exists()?snap.data():null;
-  if(dado)docs.set(id,dado);
-  return dado;
- };
+ const {reconciliarPendenciasJaBaixadas}=await import('./reconciliar-pendencias-baixadas.mjs?v=2.0.117');
+ // lerExpedicoesParaRecepcao exige imagem online completa, não truncada.
+ // Ausência nesta imagem é consultada em memória; a baixa mantém transações.
+ const buscarBaixa=async id=>docs.get(id)||null;
  const verificadas=await reconciliarPendenciasJaBaixadas(locais,buscarBaixa);
  const identificador=x=>String(x.movimentoExclusaoId||'');
  const base=x=>[x.destino,x.palete,x.sku,x.loteCompleto,x.lote,x.postura].map(v=>String(v??'').trim().toUpperCase()).join('|');
@@ -1051,7 +1058,7 @@ async function sincronizarExpedicoesCompartilhadasInterno(){
   if(x.movimentoExclusaoId&&x.registroId&&x.estado!=='BAIXA_CONCLUIDA'){
    const origemAtiva='ativo_'+String(x.registroId).trim();
    const idAtivo='exp_'+hash(origemAtiva)+'_'+origemAtiva.length;
-   const ativo=docs.get(idAtivo)||((await getDocFromServer(doc(db,...raiz,'expedicoes',idAtivo))).data()||null);
+   const ativo=docs.get(idAtivo)||null;
    if(ativo?.estado==='BAIXA_CONCLUIDA'&&
       String(ativo.sku||'')===String(x.sku||'')&&
       String(ativo.loteCompleto||ativo.lote||'')===String(x.loteCompleto||x.lote||'')&&
@@ -1067,6 +1074,7 @@ async function sincronizarExpedicoesCompartilhadasInterno(){
   if(x.estado==='BAIXA_CONCLUIDA')continue; // nunca publicar como pendente uma baixa já concluída
   if(!ambienteOperacional?.permissoes?.usuarios)continue;
   const data={...x,origemId:k,estado:'PENDENTE_BAIXA',criadoEm:x.excluidoEm||new Date().toISOString(),autorUid:auth.currentUser.uid};
+  validarImagem();
   await runTransaction(db,async tx=>{const d=doc(db,...raiz,'expedicoes',id);if(!(await tx.get(d)).exists())tx.set(d,data)});
   docs.set(id,data);
  }
@@ -1081,6 +1089,7 @@ async function sincronizarExpedicoesCompartilhadasInterno(){
  // limpeza do celular chegar ao computador. Só encerrar após evidência no
  // próprio Firestore; falta de saldo NÃO comprova baixa anterior.
  const comprovadas=await reconciliarPendenciasJaBaixadas(final,buscarBaixa);
+ validarImagem();
  if(localStorage.getItem(chave)===bruto&&JSON.stringify(comprovadas.registros)!==JSON.stringify(locais))
   localStorage.setItem(chave,JSON.stringify(comprovadas.registros));
 }
@@ -1149,7 +1158,7 @@ function observarMovimentosAutomaticos(u){
  const raiz=raizOperacional(u.uid),chave=u.uid+':'+raiz[1];
  const erro=e=>{$('resultadoAplicarUniao').textContent='Recebimento remoto interrompido: '+(e.code||e.message||e);};
  const assinar=(nome,ok,erro)=>onSnapshot(query(collection(db,...raiz,nome),orderBy('__name__'),limit(LIMITE_COLECAO_INCREMENTAL)),{includeMetadataChanges:true},ok,erro);
- const movimentos=criarColecaoIncremental({assinar:(ok,e)=>assinar('movimentos',ok,e),online:()=>navigator.onLine,aoErro:erro,
+ const movimentos=adquirirBaseCompartilhada({chave:chave+':movimentos',criar:callbacks=>criarColecaoIncremental({assinar:(ok,e)=>assinar('movimentos',ok,e),online:()=>navigator.onLine,...callbacks}),aoErro:erro,
   aoMudar:(snap,revisao)=>queueMicrotask(async()=>{
    if(baseRecebida?.movimentos!==movimentos)return;
    try{await registrarExclusoesRecebidas(snap);}catch(e){erro(e);return;}
@@ -1159,7 +1168,7 @@ function observarMovimentosAutomaticos(u){
    void cicloAutomatico();
   })
  });
- const expedicoes=criarColecaoIncremental({assinar:(ok,e)=>assinar('expedicoes',ok,e),online:()=>navigator.onLine,aoErro:erro,
+ const expedicoes=adquirirBaseCompartilhada({chave:chave+':expedicoes',criar:callbacks=>criarColecaoIncremental({assinar:(ok,e)=>assinar('expedicoes',ok,e),online:()=>navigator.onLine,...callbacks}),aoErro:erro,
   aoMudar:()=>queueMicrotask(()=>{if(baseRecebida?.expedicoes===expedicoes){revisaoExpedicoesRemotas++;void cicloAutomatico();}})
  });
  baseRecebida={chave,movimentos,expedicoes};

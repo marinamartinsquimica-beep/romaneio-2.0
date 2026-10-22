@@ -1,3 +1,4 @@
+import {adquirirBaseCompartilhada} from '../integracao/bases-compartilhadas.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -17,8 +18,8 @@ const incluir={registroId:'registro-0001',data:'21/10/2026',destino:'Taeque',pal
 const mov=(tipo,id,item,antes=null)=>({id,tipo,item,antes,criadoEm:'2026-10-21T10:00:0'+({'inclusao':0,'edicao':1,'exclusao':2}[tipo])+'Z',autorUid:'salaovos'});
 function ambiente({mobile=false,entradas=[]}={}){
  const dados=new Map([['entradas',JSON.stringify(entradas)],['romaneio2_movimentos_pendentes_v1','[]'],['romaneio2_ultimo_estado_movimentos_v1',JSON.stringify(entradas)]]);
- const fontes=new Map(),elementos=new Map();let ciclos=0;
- const c={identificarCorrecoes,criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL,db:{},auth:{currentUser:{uid:'marina'},authStateReady:async()=>{}},navigator:{onLine:true},
+ const fontes=new Map(),elementos=new Map(),escopo={};let ciclos=0;
+ const c={adquirirBaseCompartilhada:op=>adquirirBaseCompartilhada({...op,escopo}),identificarCorrecoes,criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL,db:{},auth:{currentUser:{uid:'marina'},authStateReady:async()=>{}},navigator:{onLine:true},
   receberEntradasNoAparelho:()=>!mobile,raizOperacional:uid=>['romaneio_ambientes','sala-ovos'],queueMicrotask,
   cancelarMudancasRemotas:null,contaObservada:null,ultimaAssinaturaRemota:null,revisaoExpedicoesRemotas:0,cicloSolicitadoDuranteConsulta:false,cicloAutomatico:()=>ciclos++,
   collection:(_db,...path)=>({nome:path.at(-1)}),orderBy:()=>{},limit:n=>{assert.ok(n<=10000,'Consulta excede o máximo aceito pelo serviço');return n;},query:ref=>ref,

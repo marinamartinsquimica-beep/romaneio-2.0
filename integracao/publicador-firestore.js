@@ -1,3 +1,4 @@
+import {erroTemporario} from './controle-tentativas.mjs?v=2.0.117';
 /* Adaptador Firestore 2.0.50. Injeção de dependências permite teste sem rede.
  * Coleção dedicada a movimentos; nenhuma escrita no estoque oficial.
  * Não habilitar em produção sem regras de segurança e testes ponta a ponta.
@@ -32,6 +33,7 @@ export function criarPublicadorMovimentos({transacionar,referencia,registrarErro
     const falha={id:op.id,mensagem:String(e?.message||e),codigo:String(e?.code||'')};
     registrarErro(falha);
     confirmacoes.push({...falha,confirmado:false});
+    if(erroTemporario(e))break;
    }
   }
   const reconciliado=reconciliarConfirmacoes(fila,confirmacoes);
