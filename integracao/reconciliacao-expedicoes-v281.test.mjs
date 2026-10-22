@@ -63,7 +63,7 @@ test('base completa confirmada substitui varreduras sem truncar expedições em 
  assert.doesNotMatch(trecho,/tx\.update\(d,\{estado:'BAIXA_CONCLUIDA'/);
 });
 test('marcação de pendência encerrada não desconta saldo nem escreve Firestore',()=>{
- const bloco=index.slice(index.indexOf('async function arquivarPendenciaHistoricaSemNovaBaixa(destino)'),index.indexOf('function mostrarExpedicoesExcluidasOperador(){'));
+ const bloco=index.slice(index.indexOf('async function arquivarPendenciaHistoricaSemNovaBaixa('),index.indexOf('function mostrarExpedicoesExcluidasOperador(){'));
  assert.match(bloco,/await confirmarRaiar\(/);
  assert.match(bloco,/x\.estado='ARQUIVADA_APOS_CONFERENCIA'/);
  assert.match(bloco,/romaneio2_auditoria_pendencias_historicas_v1/);

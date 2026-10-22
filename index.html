@@ -281,7 +281,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.112</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.113</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
 <div class="romaneio-backup-actions" style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button class="desktop-backup-action" type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Pendências de sincronização</button><button class="desktop-backup-action" type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button><button class="mobile-sync-action" type="button" onclick="sincronizarRomaneioCelular()" style="width:auto;background:#5CDCF2;color:#254D69;font-weight:800;font-size:13px;padding:10px 18px;border-radius:12px;border:2px solid #254D69">SINCRONIZAR</button></div>
 <section class="dashboard"><div class="metric"><div class="ico">📋</div><div><b id="dashRegistros">0</b><span id="dashRegistrosLabel">Registros totais</span></div></div><div class="metric"><div class="ico">📦</div><div><b id="dashCaixas">0</b><span id="dashCaixasLabel">Caixas totais</span></div></div><div class="metric"><div class="ico">🧱</div><div><b id="dashPaletes">0</b><span id="dashPaletesLabel">Paletes totais</span></div></div><div class="metric"><div class="ico">📍</div><div><b id="dashDestinos">0</b><span id="dashDestinosLabel">Destinos totais</span></div></div><div class="metric"><div class="ico">🕒</div><div><b id="dashUltimo">--</b><span>Último registro</span></div></div></section>
@@ -400,7 +400,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.112";
+const APP_VERSION = "2.0.113";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -3216,7 +3216,7 @@ async function confirmarBaixaExpedicao(destino,resumoBaixa=null){
 // Exceção auditável para baixa anterior cujo documento antigo não pode ser
 // comprovado: arquiva a PENDÊNCIA LOCAL, sem dizer que houve baixa nova no Firebase.
 // Não baixa saldo, não altera outras expedições nem toca na fila de movimentos.
-async function arquivarPendenciaHistoricaSemNovaBaixa(destino){
+async function arquivarPendenciaHistoricaSemNovaBaixa(destino,correcao=false){
  const registros=lerExpedicoesPendentes();
  const selecionar=x=>x.destino===destino&&x.estado!=='BAIXA_CONCLUIDA'&&x.estado!=='ARQUIVADA_APOS_CONFERENCIA';
  const pendentes=registros.filter(selecionar);
@@ -3224,11 +3224,11 @@ async function arquivarPendenciaHistoricaSemNovaBaixa(destino){
  const cx=pendentes.reduce((a,x)=>a+Number(x.caixas||0),0);
  const identificacao=pendentes.map(x=>[x.sku,x.loteCompleto||x.lote,x.caixas+' CX'].join(' / ')).join('; ');
  const aprovado=await confirmarRaiar(
-  'ENCERRAR SOMENTE A PENDÊNCIA HISTÓRICA?\n\nDestino: '+destino+
+  (correcao?'ENCERRAR LANÇAMENTOS REMOVIDOS INCORRETOS?':'ENCERRAR SOMENTE A PENDÊNCIA HISTÓRICA?')+'\n\nDestino: '+destino+
   '\nRegistros: '+pendentes.length+' | Caixas: '+cx+
   '\n'+identificacao+
-  '\n\nUse SOMENTE se a baixa já foi executada e conferida anteriormente. Esta operação NÃO registra uma baixa, NÃO modifica estoque e NÃO altera o sistema.'+
-  '\n\nO encerramento ficará registrado no histórico local de auditoria. Se não tiver certeza da baixa anterior, escolha CANCELAR.');
+  (correcao?'\n\nConfirme SOMENTE se estes lançamentos foram removidos para corrigir o romaneio e NÃO representam caixas a expedir. As linhas atuais do romaneio serão preservadas. Esta operação NÃO baixa estoque nem marca os registros como baixados.':'\n\nUse SOMENTE se a baixa já foi executada e conferida anteriormente. Esta operação NÃO registra uma baixa, NÃO modifica estoque e NÃO altera o sistema.')+
+  '\n\nO encerramento ficará registrado no histórico local de auditoria. Confira os registros acima; se não tiver certeza, escolha CANCELAR.');
  if(!aprovado)return;
  const atuais=lerExpedicoesPendentes();
  const ids=new Set(pendentes.map(x=>String(x.movimentoExclusaoId||'')+'|'+String(x.registroId||'')+'|'+[x.destino,x.palete,x.sku,x.loteCompleto||x.lote,x.caixas].join('|')));
@@ -3238,7 +3238,7 @@ async function arquivarPendenciaHistoricaSemNovaBaixa(destino){
   if(!selecionar(x)||!ids.has(key(x)))continue;
   x.estado='ARQUIVADA_APOS_CONFERENCIA';
   x.arquivadaSemNovaBaixaEm=agora;
-  x.motivoArquivo='Operador confirmou baixa anterior; não houve novo desconto nem alteração do sistema.';
+  x.motivoArquivo=correcao?'Operador confirmou lançamentos removidos incorretos; encerrados sem baixa de estoque.':'Operador confirmou baixa anterior; não houve novo desconto nem alteração do sistema.';
   afetados.push({...x});
  }
  if(!afetados.length)return;
@@ -3246,7 +3246,7 @@ async function arquivarPendenciaHistoricaSemNovaBaixa(destino){
  const anterior=lerJsonLocalStorage(chaveAuditoria,[]);
  const journal=Array.isArray(anterior)?anterior:[];
  journal.push({id:criarIdentificadorMovimento(),data:agora,destino,
-  tipo:'ARQUIVO_HISTORICO_SEM_NOVA_BAIXA',registros:afetados,caixas:cx});
+  tipo:correcao?'CORRECAO_LANCAMENTOS_REMOVIDOS_SEM_BAIXA':'ARQUIVO_HISTORICO_SEM_NOVA_BAIXA',registros:afetados,caixas:cx});
  try{
   // Primeiro grava evidência, depois atualiza a lista de pendências.
   localStorage.setItem(chaveAuditoria,JSON.stringify(journal));
@@ -3254,8 +3254,10 @@ async function arquivarPendenciaHistoricaSemNovaBaixa(destino){
  }catch(e){alert('Falha ao salvar auditoria; pendências preservadas: '+e.message);return;}
  operadorAtualizarPainel();
  atualizarDestinosBaixa();
+ atualizarResumoReservaTeste();
+ renderizarPendenciasConferenciaEstoque();
  const status=document.getElementById('etapa4OperacoesStatus');
- if(status)status.textContent='Pendência histórica de '+destino+' arquivada por confirmação do operador. NENHUMA caixa foi descontada e NENHUMA baixa foi gravada no sistema.';
+ if(status)status.textContent=(correcao?'Lançamentos removidos incorretos de ':'Pendência histórica de ')+destino+' encerrados por confirmação do operador. NENHUMA caixa foi descontada e NENHUMA baixa foi gravada no sistema.';
 }
 function mostrarExpedicoesExcluidasOperador(){
  const painel=document.getElementById('historicoDestinosExcluidos'),alvo=document.getElementById('listaDestinosExcluidos');
@@ -3271,7 +3273,8 @@ function mostrarExpedicoesExcluidasOperador(){
   const exportar=document.createElement('button');exportar.textContent='BAIXAR ROMANEIO EXCEL';exportar.onclick=()=>exportarExpedicaoExcluida(destino);
   const preparar=document.createElement('button');preparar.textContent='PREPARAR BAIXA';preparar.onclick=()=>{operadorSelecionarAba('movimentos');window.dispatchEvent(new CustomEvent('romaneio:preparar-baixa-destino',{detail:{destino}}));};
   const arquivar=document.createElement('button');arquivar.className='btn-secondary';arquivar.textContent='ENCERRAR PENDÊNCIA ANTIGA (SEM BAIXA)';arquivar.onclick=()=>arquivarPendenciaHistoricaSemNovaBaixa(destino);
-  div.append(titulo,exportar,preparar,arquivar);alvo.append(div);
+  const corrigir=document.createElement('button');corrigir.className='btn-secondary';corrigir.textContent='ENCERRAR LANÇAMENTOS INCORRETOS (SEM BAIXA)';corrigir.onclick=()=>arquivarPendenciaHistoricaSemNovaBaixa(destino,true);
+  div.append(titulo,exportar,preparar,arquivar,corrigir);alvo.append(div);
  }
 }
 function operadorAtualizarPainel(){
@@ -3443,7 +3446,7 @@ window.matchMedia('(max-width:767px)').addEventListener('change',event=>{if(even
 (function(){
  const central=document.createElement('iframe');
  central.id='romaneioSincronizacaoAutomatica';
- central.src='./integracao/central-conexao.html?estado=2_0_112';
+ central.src='./integracao/central-conexao.html?estado=2_0_113';
  central.title='Sincronização automática do Romaneio';
  central.tabIndex=-1;
  central.setAttribute('aria-hidden','true');
@@ -3545,7 +3548,7 @@ btn?.addEventListener('click',async()=>{
  }catch(e){resumo.textContent='Conferência não realizada: '+e.message;}finally{btn.disabled=false;}
 });
 </script>
-<script type="module" src="./integracao/estoques-firebase-ui.mjs?v=2.0.112"></script>
+<script type="module" src="./integracao/estoques-firebase-ui.mjs?v=2.0.113"></script>
 <script type="module">
 import {prepararBaixa,prepararAjuste} from './integracao/operacoes-estoque.mjs';
 let resultadoEtapa4=null;
@@ -3604,7 +3607,7 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
  button.disabled=true;
  try{
   if(!resultadoEtapa4)throw Error('Prepare a conferência antes de exportar.');
-  const {resolverModeloEmbalado}=await import('./integracao/modelo-estoque-persistente.mjs?v=2.0.112');
+  const {resolverModeloEmbalado}=await import('./integracao/modelo-estoque-persistente.mjs?v=2.0.113');
   const arquivo=await resolverModeloEmbalado({memoria:window.__etapa4ArquivoEmbalado,selecionado:document.getElementById('etapa4Tipo')?.value==='embalado'?document.getElementById('etapa4Arquivo')?.files?.[0]:null});
   window.__etapa4ArquivoEmbalado=arquivo;
   const res=resultadoEtapa4.modo==='baixa'
@@ -3836,7 +3839,7 @@ document.getElementById('etapa4Preparar')?.addEventListener('click',async()=>{
 </script>
 
 <script type="module">
-import {expirarHistoricosLocais} from './integracao/retencao-historicos.mjs?v=2.0.112';
+import {expirarHistoricosLocais} from './integracao/retencao-historicos.mjs?v=2.0.113';
 let retencaoEmAndamento=false;
 async function aplicarRetencaoHistoricos(){
  if(retencaoEmAndamento)return;
