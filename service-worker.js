@@ -1,9 +1,9 @@
-const CACHE_NAME = "romaneio-2-0-cache-v2122-indice-cancelamentos";
+const CACHE_NAME = "romaneio-2-0-cache-v2123-reparo-versao-anterior";
 
 const FILES_TO_CACHE = [
   "./integracao/marcos-romaneios-fechados.mjs?v=2.0.121",
-  "./integracao/selecao-romaneios.mjs?v=2.0.122",
-  "./integracao/correcoes-lancamentos.mjs?v=2.0.122",
+  "./integracao/selecao-romaneios.mjs?v=2.0.123",
+  "./integracao/correcoes-lancamentos.mjs?v=2.0.123",
   "./integracao/leitor-paripassu.mjs",
   "./integracao/leitor-paripassu.mjs?v=2.0.120",
   "./integracao/erro-publicacao-estoque.mjs?v=2.0.120",
@@ -31,7 +31,7 @@ const FILES_TO_CACHE = [
   "./integracao/modelo-estoque-persistente.mjs?v=2.0.118",
   "./integracao/controle-leituras-automaticas.mjs?v=2.0.99",
   "./integracao/erro-publicacao-estoque.mjs?v=2.0.99",
-  "./integracao/estoques-firebase-ui.mjs?v=2.0.122",
+  "./integracao/estoques-firebase-ui.mjs?v=2.0.123",
   "./integracao/baixa-transacional.mjs",
   "./integracao/baixa-transacional.mjs?v=2.0.118",
   "./integracao/filtro-expedicoes-baixadas.mjs",

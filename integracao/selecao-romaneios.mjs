@@ -1,5 +1,5 @@
 // Seleção explícita por origem e destino; nunca inferir baixa por falta de saldo.
-import {criarIndiceCancelamentos} from './correcoes-lancamentos.mjs?v=2.0.122';
+import {criarIndiceCancelamentos} from './correcoes-lancamentos.mjs?v=2.0.123';
 export const pendente=r=>!['BAIXA_CONCLUIDA','ARQUIVADA_APOS_CONFERENCIA'].includes(r?.estado);
 export const chaveSelecao=(origem,destino)=>JSON.stringify([origem,String(destino)]);
 export function fontesOperacionais({entradas,arquivo,fila=[]}){
