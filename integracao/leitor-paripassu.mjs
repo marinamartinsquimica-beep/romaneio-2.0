@@ -1,6 +1,11 @@
 // Exportação PariPassu: aba "1. Estoque". Quantidade = ovos, Qtd. Caixas não é saldo confiável.
 const normalizar=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
 
+// Capacidade logística do SKU confirmada pela operadora no Estoque Embalado
+// em 23/10/2026. A exportação PariPassu omite (240) na descrição deste SKU.
+// Não usar Capacidade da Embalagem / Qtd. Caixas como divisor dos ovos.
+const capacidadesConfirmadas=Object.freeze({'10775':240});
+
 // Reconhece tanto o formato histórico "(120)" quanto a exportação
 // "(CAIXA 120 UN.)". O número do estojo (ex.: ESTOJO 10) não
 // corresponde à quantidade de ovos da caixa logística.
@@ -26,7 +31,11 @@ export function extrairParipassu(linhas){
   if(linha.every(v=>String(v??'').trim()===''))continue;
   const produto=String(linha[iProduto]??'').trim(),lote=String(linha[iLote]??'').trim();
   if(/INDUSTRI/i.test(normalizar(produto))){industriais++;continue;}
-  const skuMatch=produto.match(/^(\d+)\s*-/),ovosPorCaixa=lerOvosPorCaixaProduto(produto);
+  const skuMatch=produto.match(/^(\d+)\s*-/),declarada=lerOvosPorCaixaProduto(produto);
+  const confirmada=skuMatch?capacidadesConfirmadas[skuMatch[1]]:null;
+  if(declarada&&confirmada&&declarada!==confirmada)
+   throw Error('Capacidade de caixa divergente no SKU '+skuMatch[1]+': descrição '+declarada+' ovos, cadastro confirmado '+confirmada+'. Confira a embalagem antes de publicar.');
+  const ovosPorCaixa=declarada||confirmada;
   if(!skuMatch||!ovosPorCaixa){semSku++;if(naoIdentificados.length<5)naoIdentificados.push(produto+(!skuMatch?' [SKU não identificado]':' [SKU '+skuMatch[1]+' identificado; falta informar ovos por caixa logística no cadastro do produto]'));continue;}
   if(!lote)throw Error('Lote ausente em produto '+skuMatch[1]+'.');
   const bruto=linha[iOvos],ovos=Number(String(bruto??'').trim().replace(',','.'));

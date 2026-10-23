@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v2118-selecao-romaneios";
+const CACHE_NAME = "romaneio-2-0-cache-v2119-paripassu-capacidade-confirmada";
 
 const FILES_TO_CACHE = [
   "./integracao/selecao-romaneios.mjs?v=2.0.118",

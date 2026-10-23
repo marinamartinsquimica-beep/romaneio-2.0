@@ -85,6 +85,18 @@ test('SKU desconhecido e capacidade ausente ainda bloqueiam estoque incompleto',
  assert.throws(()=>extrairParipassu([cab,linha('L1','SEM IDENTIFICACAO (CAIXA 120 UN.)',120)]),/sem SKU ou ovos\/caixa/);
 });
 
-test('diagnóstico identifica SKU 10775 e aponta capacidade ausente sem inventar conversão',()=>{
- assert.throws(()=>extrairParipassu([cab,linha('L1','10775 - OVO CAIPIRA ORGÂNICO BENASSI - GRANDE - EST.',120)]),/SKU 10775 identificado; falta informar ovos por caixa logística/);
+test('SKU 10775 sem capacidade na descrição usa as 240 unidades confirmadas, sem ler os valores 1 como caixas',()=>{
+ const r=extrairParipassu([cab,linha('L21.15.21.10.26','10775 - OVO CAIPIRA ORGÂNICO BENASSI- GRANDE - EST',960,1)]);
+ assert.equal(r.itens[0].sku,'10775');assert.equal(r.itens[0].ovosPorCaixa,240);
+ assert.equal(r.itens[0].ovos,960);assert.equal(r.itens[0].saldo,4);
+});
+test('SKU 10775 com descrição completa mantém a mesma conversão',()=>{
+ const r=extrairParipassu([cab,linha('L1','10775-CAIXA (240)-GRANDE BENASSI -10 UNIDADES',960)]);
+ assert.equal(r.itens[0].saldo,4);
+});
+test('capacidade declarada conflitante do SKU 10775 exige conferência antes de publicar',()=>{
+ assert.throws(()=>extrairParipassu([cab,linha('L1','10775-CAIXA (360)-GRANDE BENASSI',960)]),/Capacidade de caixa divergente no SKU 10775/);
+});
+test('correspondência confirmada não é aplicada a outro SKU com nome semelhante',()=>{
+ assert.throws(()=>extrairParipassu([cab,linha('L1','10776 - OVO CAIPIRA ORGÂNICO BENASSI- GRANDE - EST',960)]),/falta informar ovos por caixa/);
 });

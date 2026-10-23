@@ -873,7 +873,7 @@ function construirBackupConferencia(){
  for(const chave of chaves){const bruto=localStorage.getItem(chave);copia.dados[chave]=bruto===null?null:JSON.parse(bruto);}
  if(!Array.isArray(copia.dados.entradas))throw Error('Entradas locais inválidas; backup cancelado');
  const painel=window.parent!==window?window.parent:window;
- copia.conferencia={versao:'2.0.118',estoque: painel.estoqueTesteConsulta?[...painel.estoqueTesteConsulta.values()]:null,comprovantes:painel.__comprovantesBaixaConfirmados||[],reservasCompartilhadas:painel.__reservasCompartilhadas||[]};
+ copia.conferencia={versao:'2.0.119',estoque: painel.estoqueTesteConsulta?[...painel.estoqueTesteConsulta.values()]:null,comprovantes:painel.__comprovantesBaixaConfirmados||[],reservasCompartilhadas:painel.__reservasCompartilhadas||[]};
  return copia;
 }
 async function completarBackupComBaseConfirmada(copia,base){
