@@ -1,6 +1,17 @@
 // Cancelamento é uma intenção explícita; nunca inferir por SKU/volume/horário.
 const texto=x=>String(x??'').trim();
 const fisico=r=>JSON.stringify(['registroId','data','sku','destino','palete','loteCompleto','postura'].map(k=>texto(r?.[k])).concat(Number(r?.caixas)));
+export const identidadeVersaoCorrecao=fisico;
+// Só evidência explícita de correção cancela uma versão. Outro ID ou
+// conteúdo editado permanece válido; igualdade de SKU/volume não basta.
+export function registroCanceladoPorCorrecao(registro,arquivo=[],fila=[]){
+ if(!registro?.registroId)return false;
+ const id=texto(registro.registroId),chave=fisico(registro);
+ const marcadores=arquivo.filter(r=>r.estado==='ARQUIVADA_APOS_CONFERENCIA'&&r.correcaoMovimentoId);
+ const intencoes=fila.filter(m=>m.tipo==='exclusao'&&m.item?.finalidadeExclusao==='CORRECAO_LANCAMENTO').map(m=>m.item);
+ return [...marcadores,...intencoes].some(r=>texto(r.registroId)===id&&(fisico(r)===chave||
+  (registro.movimentoExclusaoId&&r.movimentoExclusaoId===registro.movimentoExclusaoId)));
+}
 // Reparação restrita às duas substituições analisadas e autorizadas em 22/10.
 const reparos=[
  {exclusao:'fe2fc4ad-44c2-4ad7-b48f-7d7231578062',registro:'5beef855-fe01-4cae-ab1d-0a1dd8495148',lote:'L20.01.18.10.26',postura:'.18.10.26',caixas:32,novo:'9a1e0eb0-fafa-4b81-a34b-1e2394efe3af',novoCx:35},
@@ -24,20 +35,20 @@ export function conciliarCorrecoes({entradas,arquivo,movimentos,comprovantes=[],
  const evidencias=[],canceladas=new Map();
  for(const m of correcoes){
   const r=m.item;
-  if(entradas.filter(x=>texto(x.registroId)===texto(r.registroId)).length>1)continue;
+  if(!r.exclusaoSemBaixaOperador&&entradas.filter(x=>texto(x.registroId)===texto(r.registroId)).length>1)continue;
   // Não desfaz baixa nem interfere em edição local ainda não confirmada.
-  if(confirmados.some(x=>texto(x.registroId)===texto(r.registroId)))continue;
-  if(fila.some(x=>texto(x.item?.registroId||x.antes?.registroId)===texto(r.registroId)))continue;
+  if(!r.exclusaoSemBaixaOperador&&confirmados.some(x=>texto(x.registroId)===texto(r.registroId)))continue;
+  if(!r.exclusaoSemBaixaOperador&&fila.some(x=>texto(x.item?.registroId||x.antes?.registroId)===texto(r.registroId)))continue;
   canceladas.set(fisico(r),m);
  }
  const encerradas=arquivo.map(r=>{
-  const m=canceladas.get(fisico(r));
+  const m=canceladas.get(fisico(r))||[...canceladas.values()].find(m=>r.movimentoExclusaoId===m.id&&texto(r.registroId)===texto(m.item.registroId));
   if(!m||r.estado==='BAIXA_CONCLUIDA'||r.estado==='ARQUIVADA_APOS_CONFERENCIA')return r;
   evidencias.push({movimentoId:m.id,origem:'arquivo',antes:{...r}});
   return {...r,estado:'ARQUIVADA_APOS_CONFERENCIA',motivoArquivo:'Lançamento cancelado por correção, sem baixa de estoque.',correcaoMovimentoId:m.id,correcaoRegistradaEm:m.criadoEm};
  });
  for(const [chave,m] of canceladas){
-  if(encerradas.some(r=>fisico(r)===chave))continue;
+  if(encerradas.some(r=>fisico(r)===chave&&(!m.item.exclusaoSemBaixaOperador||(r.estado==='ARQUIVADA_APOS_CONFERENCIA'&&r.correcaoMovimentoId))))continue;
   const antes={...m.item,movimentoExclusaoId:m.id,excluidoEm:m.criadoEm};
   encerradas.push({...antes,estado:'ARQUIVADA_APOS_CONFERENCIA',motivoArquivo:'Lançamento cancelado por correção, sem baixa de estoque.',correcaoMovimentoId:m.id,correcaoRegistradaEm:m.criadoEm});
   evidencias.push({movimentoId:m.id,origem:'marcador-correcao',antes});
@@ -50,6 +61,6 @@ export function conciliarCorrecoes({entradas,arquivo,movimentos,comprovantes=[],
 }
 export function validarSelecaoSemCancelamentos(registros,arquivo){
  if(!Array.isArray(registros)||!Array.isArray(arquivo))throw Error('Seleção de baixa inválida.');
- const ids=new Set(arquivo.filter(r=>r.estado==='ARQUIVADA_APOS_CONFERENCIA'&&r.correcaoMovimentoId).map(r=>texto(r.registroId)).filter(Boolean));
- if(registros.some(r=>ids.has(texto(r.registroId))))throw Error('Um lançamento foi cancelado por correção. Prepare novamente a conferência antes da baixa.');
+ if(registros.some(r=>registroCanceladoPorCorrecao(r,arquivo)))throw Error('Um lançamento foi cancelado por correção. Prepare novamente a conferência antes da baixa.');
 }
+

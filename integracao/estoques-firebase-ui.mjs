@@ -1,5 +1,5 @@
 import {adquirirBaseCompartilhada} from './bases-compartilhadas.mjs?v=2.0.118';
-import {validarSelecaoSemCancelamentos} from './correcoes-lancamentos.mjs?v=2.0.115';
+import {validarSelecaoSemCancelamentos} from './correcoes-lancamentos.mjs?v=2.0.121';
 import {registroBaixadoNoEstoque} from './status-baixa-romaneio.mjs?v=2.0.110';
 import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.110';
 import {permiteReceberPaletes} from './direcao-sincronizacao.mjs';

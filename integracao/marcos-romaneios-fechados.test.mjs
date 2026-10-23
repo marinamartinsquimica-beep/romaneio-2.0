@@ -42,3 +42,12 @@ test('o aplicativo grava marcadores antes de limpar e verifica antes da união',
  assert.ok(index.indexOf('localStorage.setItem(CHAVE_FECHAMENTOS')<index.indexOf('localStorage.removeItem("entradas")'));
  assert.match(central,/const movs=filtrarEventosBaixados\(filtrarMovimentosJaFechados\(movimentosRecepcao,fechamentosBrutos\),expedicoesRecepcao\)/);
 });
+
+
+test('exclusão sem baixa fecha somente versão selecionada, preservando outra com mesmo ID',()=>{
+ const antigo={registroId:'mesmo-id',data:'23/10/2026',destino:'RS',palete:'1',sku:'5002',loteCompleto:'ANTIGO',caixas:35};
+ const novo={...antigo,loteCompleto:'NOVO',caixas:40};
+ const fechados=registrarFechamento([antigo],[],'2026-10-23T13:00:00Z',{porVersao:true});
+ const eventos=[antigo,novo].map((item,i)=>({id:'evento-'+i,tipo:'inclusao',criadoEm:'2026-10-23T12:00:00Z',item}));
+ assert.deepEqual(filtrarMovimentosJaFechados(eventos,fechados),[eventos[1]]);
+});

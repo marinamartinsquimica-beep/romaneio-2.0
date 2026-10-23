@@ -47,3 +47,41 @@ test('grava auditoria e fila antes de aplicar exclusão; falha de armazenamento 
  assert.throws(()=>gravarExclusaoLocal(storage,plano({entradas:[r(9)]}),options),/cota local/);assert.deepEqual(dados,antes);
  gravarExclusaoLocal(storage,plano({entradas:[r(9)]}),options);assert.equal(JSON.parse(dados.get('fila')).length,3);assert.equal(JSON.parse(dados.get('auditoria')).length,1);
 });
+
+test('excluir cópia removida também retira sua representação ativa idêntica, sem bloquear',()=>{
+ const p=plano({entradas:[r(1),r(8)]});
+ assert.deepEqual(p.entradas,[r(8)]);assert.equal(p.registros.length,3);
+});
+test('identificador compartilhado não impede excluir seleção nem apaga outro destino',()=>{
+ const outro={...r(1),destino:'OUTRO DESTINO',loteCompleto:'LOTE NOVO'};
+ const p=plano({entradas:[outro]});
+ assert.deepEqual(p.entradas,[outro]);assert.equal(p.registros.length,3);
+ const recebidos=conciliarCorrecoes({entradas:[outro],arquivo,movimentos:p.movimentos});
+ assert.deepEqual(recebidos.entradas,[outro]);
+});
+test('duas linhas selecionadas com mesmo ID são excluídas, com auditoria das duas parcelas',()=>{
+ const a=r(1),b={...a};const p=plano({entradas:[a,b],arquivo:[],selecao:[chaveSelecao('ativo',a.destino)]});
+ assert.equal(p.entradas.length,0);assert.equal(p.registros.length,2);assert.equal(p.movimentos.length,2);
+ const remoto=conciliarCorrecoes({entradas:[a,b],arquivo:[],movimentos:p.movimentos});
+ assert.equal(remoto.entradas.length,0);
+});
+test('cancelado por correção sai da seleção, mas substituto com outro lote e mesmo ID permanece',async()=>{
+ const {fontesOperacionais}=await import('./selecao-romaneios.mjs');
+ const antigo=r(1),novo={...antigo,loteCompleto:'CORRIGIDO'};
+ const marcador={...antigo,estado:'ARQUIVADA_APOS_CONFERENCIA',correcaoMovimentoId:'correcao-1'};
+ const f=fontesOperacionais({entradas:[antigo,novo],arquivo:[marcador,arquivo[0]]});
+ assert.deepEqual(f.entradas,[novo]);assert.deepEqual(f.arquivo,[]);
+});
+test('excluir versão antiga deixa nova quantidade e novo lote do mesmo ID disponíveis para baixa',()=>{
+ const novo={...r(1),loteCompleto:'CORRIGIDO',caixas:40};const p=plano({entradas:[novo]});
+ assert.deepEqual(p.entradas,[novo]);
+ assert.equal(selecionarRomaneios({entradas:p.entradas,arquivo:p.arquivo,selecao:[chaveSelecao('ativo',novo.destino)]})[0].caixas,40);
+});
+test('exclusão explícita de registro já baixado preserva comprovante e impede retorno',()=>{
+ const a=r(1),recibo={...a,estado:'BAIXA_CONCLUIDA',baixaConfirmadaEm:'antes'};
+ const p=plano({entradas:[a],arquivo:[recibo],selecao:[chaveSelecao('ativo',a.destino)]});
+ assert.equal(p.entradas.length,0);assert.deepEqual(p.arquivo[0],recibo);
+ const remoto=conciliarCorrecoes({entradas:[a],arquivo:[recibo],movimentos:p.movimentos,comprovantes:[recibo]});
+ assert.equal(remoto.entradas.length,0);assert.deepEqual(remoto.arquivo[0],recibo);
+ assert.ok(remoto.arquivo.some(x=>x.estado==='ARQUIVADA_APOS_CONFERENCIA'));
+});
