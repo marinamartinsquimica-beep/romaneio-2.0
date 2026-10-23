@@ -6,7 +6,7 @@ import {permiteReceberPaletes} from './direcao-sincronizacao.mjs';
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
 import {guardarModeloEmbalado} from './modelo-estoque-persistente.mjs';
-import {descreverErroPublicacao} from './erro-publicacao-estoque.mjs?v=2.0.99';
+import {descreverErroPublicacao} from './erro-publicacao-estoque.mjs?v=2.0.120';
 import {initializeApp,getApp,getApps} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {getFirestore,doc,getDocFromServer,collection,query,orderBy,limit,onSnapshot,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
@@ -42,7 +42,7 @@ async function importar(file,tipo){
  if(!aba)throw Error('Aba de estoque não encontrada.');
  const linhas=XLSX.utils.sheet_to_json(w.Sheets[aba],{header:1,defval:'',raw:true});
  if(tipo==='embalado')return lerEmbalado(linhas);
- const {extrairParipassu}=await import('./leitor-paripassu.mjs');return extrairParipassu(linhas).itens;
+ const {extrairParipassu}=await import('./leitor-paripassu.mjs?v=2.0.120');return extrairParipassu(linhas).itens;
 }
 let avisoPariAtual=null,assinaturaPariAtual='';
 function mostrarAvisoParipassu(qtd,assinatura){

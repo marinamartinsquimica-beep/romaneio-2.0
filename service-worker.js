@@ -1,8 +1,10 @@
-const CACHE_NAME = "romaneio-2-0-cache-v2119-paripassu-capacidade-confirmada";
+const CACHE_NAME = "romaneio-2-0-cache-v2120-leitor-paripassu-recuperavel";
 
 const FILES_TO_CACHE = [
   "./integracao/selecao-romaneios.mjs?v=2.0.118",
   "./integracao/leitor-paripassu.mjs",
+  "./integracao/leitor-paripassu.mjs?v=2.0.120",
+  "./integracao/erro-publicacao-estoque.mjs?v=2.0.120",
   "./integracao/bases-compartilhadas.mjs?v=2.0.118",
   "./integracao/controle-tentativas.mjs?v=2.0.118",
   "./integracao/envio-movimentos250.js?v=2.0.118",
@@ -27,7 +29,7 @@ const FILES_TO_CACHE = [
   "./integracao/modelo-estoque-persistente.mjs?v=2.0.118",
   "./integracao/controle-leituras-automaticas.mjs?v=2.0.99",
   "./integracao/erro-publicacao-estoque.mjs?v=2.0.99",
-  "./integracao/estoques-firebase-ui.mjs?v=2.0.118",
+  "./integracao/estoques-firebase-ui.mjs?v=2.0.120",
   "./integracao/baixa-transacional.mjs",
   "./integracao/baixa-transacional.mjs?v=2.0.118",
   "./integracao/filtro-expedicoes-baixadas.mjs",
@@ -61,6 +63,14 @@ self.addEventListener("message", event => {
   if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
+// HTML de entrada serve apenas para navegação; nunca como módulo JavaScript.
+async function recuperarRespostaLocal(req) {
+  const cached = await caches.match(req);
+  const modulo = /\.(mjs|js)$/.test(new URL(req.url).pathname);
+  if (cached && (!modulo || /(java|ecma)script/i.test(cached.headers.get("content-type") || ""))) return cached;
+  if (req.mode === "navigate") return (await caches.match("./inicio.html")) || Response.error();
+  return Response.error();
+}
 self.addEventListener("fetch", event => {
   const req = event.request;
   const url = new URL(req.url);
@@ -70,12 +80,15 @@ self.addEventListener("fetch", event => {
   if (url.pathname.endsWith("/version.json") || url.pathname.endsWith("/service-worker.js") || url.pathname.includes("/integracao/") || req.mode === "navigate") {
     event.respondWith(
       fetch(req, {cache:"no-cache"}).then(resp => {
+        const modulo = /\.(mjs|js)$/.test(url.pathname);
+        if (modulo && (!resp.ok || !/(java|ecma)script/i.test(resp.headers.get("content-type") || "")))
+          return recuperarRespostaLocal(req);
         if (resp.ok) {
           const copy = resp.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(req, copy)).catch(() => {});
         }
         return resp;
-      }).catch(() => caches.match(req).then(cached => cached || caches.match("./inicio.html")))
+      }).catch(() => recuperarRespostaLocal(req))
     );
     return;
   }
@@ -85,7 +98,7 @@ self.addEventListener("fetch", event => {
       const copy = resp.clone();
       caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
       return resp;
-    }).catch(() => caches.match("./inicio.html")))
+    }).catch(() => recuperarRespostaLocal(req)))
   );
 });
 
