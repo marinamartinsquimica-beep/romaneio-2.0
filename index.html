@@ -282,7 +282,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.121</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.122</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
 <div class="romaneio-backup-actions" style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button class="desktop-backup-action" type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Pendências de sincronização</button><button class="desktop-backup-action" type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button><button class="mobile-sync-action" type="button" onclick="sincronizarRomaneioCelular()" style="width:auto;background:#5CDCF2;color:#254D69;font-weight:800;font-size:13px;padding:10px 18px;border-radius:12px;border:2px solid #254D69">SINCRONIZAR</button></div>
 <section class="dashboard"><div class="metric"><div class="ico">📋</div><div><b id="dashRegistros">0</b><span id="dashRegistrosLabel">Registros totais</span></div></div><div class="metric"><div class="ico">📦</div><div><b id="dashCaixas">0</b><span id="dashCaixasLabel">Caixas totais</span></div></div><div class="metric"><div class="ico">🧱</div><div><b id="dashPaletes">0</b><span id="dashPaletesLabel">Paletes totais</span></div></div><div class="metric"><div class="ico">📍</div><div><b id="dashDestinos">0</b><span id="dashDestinosLabel">Destinos totais</span></div></div><div class="metric"><div class="ico">🕒</div><div><b id="dashUltimo">--</b><span>Último registro</span></div></div></section>
@@ -401,7 +401,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.121";
+const APP_VERSION = "2.0.122";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -2004,10 +2004,11 @@ function salvarLocalStorage() {
     let tbody = document.querySelector("#tabela tbody");
     let dados = [];
 
+    const cancelado=window.criarIndiceCancelamentos?.(lerExpedicoesPendentes(),lerFilaMovimentos())||(()=>false);
     for (let linha of Array.from(tbody.rows)) {
         // Uma tabela que estava em edição pode ter adiado a atualização visual.
         // Não reenviar como inclusão uma identidade já cancelada e auditada.
-        if(window.registroCanceladoPorCorrecao?.({...dadosDaLinhaRomaneio(linha),registroId:linha.dataset.registroId},lerExpedicoesPendentes(),lerFilaMovimentos())){linha.remove();continue;}
+        if(window.criarIndiceCancelamentos&&cancelado({...dadosDaLinhaRomaneio(linha),registroId:linha.dataset.registroId})){linha.remove();continue;}
         if (!linha.dataset.registroId) linha.dataset.registroId = criarIdentificadorMovimento();
         dados.push({
             registroId: linha.dataset.registroId,
@@ -2895,7 +2896,9 @@ function chaveReservaTeste(sku,lote) {
 }
 // Cópias removidas do celular continuam na conferência até baixa ou encerramento.
 function linhasConferenciaEstoque(){
- const locais=Array.from(document.querySelectorAll('#tabela tbody tr')).filter(l=>!window.registroCanceladoPorCorrecao?.({...dadosDaLinhaRomaneio(l),registroId:l.dataset.registroId},lerExpedicoesPendentes(),lerFilaMovimentos()));
+ const arquivoExpedicoes=lerExpedicoesPendentes();
+ const cancelado=window.criarIndiceCancelamentos?.(arquivoExpedicoes,lerFilaMovimentos())||(()=>false);
+ const locais=Array.from(document.querySelectorAll('#tabela tbody tr')).filter(l=>!window.criarIndiceCancelamentos||!cancelado({...dadosDaLinhaRomaneio(l),registroId:l.dataset.registroId}));
  // O ID identifica a linha entre a tabela e a cópia de exclusão. Data,
  // quantidade e observações podem ter mudado; não criam outra reserva.
  // Sem ID, exige igualdade completa para não fundir lançamentos legítimos.
@@ -2906,8 +2909,8 @@ function linhasConferenciaEstoque(){
  };
  const quantidades=new Map();for(const l of locais){const k=chave(l);quantidades.set(k,(quantidades.get(k)||0)+1);}
  const linhas=[...locais];
- for(const r of lerExpedicoesPendentes()){
-  if(window.registroCanceladoPorCorrecao?.(r,lerExpedicoesPendentes(),lerFilaMovimentos()))continue;
+ for(const r of arquivoExpedicoes){
+  if(cancelado(r))continue;
   if(r.estado==='BAIXA_CONCLUIDA'||r.estado==='ARQUIVADA_APOS_CONFERENCIA'||window.romaneioPossuiBaixaConfirmada?.(r))continue;
   const l={dataset:{registroId:r.registroId,reservaTeste:'1',excluidoCelular:'1'},cells:[r.data,r.sku,r.destino,r.palete,r.loteCompleto||r.lote,r.lote,r.postura,r.caixas,r.observacoes].map(x=>({textContent:String(x??'')}))};
   const k=chave(l),n=quantidades.get(k)||0;if(n){quantidades.set(k,n-1);continue;}
@@ -2917,6 +2920,7 @@ function linhasConferenciaEstoque(){
 }
 function reservasAtuaisTeste(ignorarIndice) {
   const totais=new Map();
+  const cancelado=window.criarIndiceCancelamentos?.(lerExpedicoesPendentes(),lerFilaMovimentos())||(()=>false);
   (typeof linhasConferenciaEstoque==='function'?linhasConferenciaEstoque():Array.from(document.querySelectorAll("#tabela tbody tr"))).forEach((linha,i)=>{
     if (i===ignorarIndice || linha.dataset.reservaTeste!=="1") return;
     if(window.romaneioPossuiBaixaConfirmada?.({...dadosDaLinhaRomaneio(linha),registroId:linha.dataset.registroId}))return;
@@ -2929,7 +2933,7 @@ function reservasAtuaisTeste(ignorarIndice) {
     .filter((l,i)=>l.dataset.reservaTeste==="1"||i===ignorarIndice)
     .map(l=>l.dataset.registroId).filter(Boolean));
   for(const item of (window.__reservasCompartilhadas||[])){
-    if(window.registroCanceladoPorCorrecao?.(item,lerExpedicoesPendentes(),lerFilaMovimentos()))continue;
+    if(cancelado(item))continue;
     if(item.registroId&&idsLocais.has(String(item.registroId)))continue;
     const chave=chaveReservaTeste(item.sku,item.loteCompleto||item.lote);
     totais.set(chave,(totais.get(chave)||0)+Number(item.caixas||0));
@@ -3568,11 +3572,12 @@ btn?.addEventListener('click',async()=>{
  }catch(e){resumo.textContent='Conferência não realizada: '+e.message;}finally{btn.disabled=false;}
 });
 </script>
-<script type="module" src="./integracao/estoques-firebase-ui.mjs?v=2.0.121"></script>
+<script type="module" src="./integracao/estoques-firebase-ui.mjs?v=2.0.122"></script>
 <script type="module">
 import {prepararBaixa,prepararAjuste} from './integracao/operacoes-estoque.mjs';
-import {selecionarRomaneios,chaveSelecao,assinaturaRegistros,planejarExclusao,gravarExclusaoLocal,pendente,fontesOperacionais} from './integracao/selecao-romaneios.mjs?v=2.0.121';
-import {registroCanceladoPorCorrecao} from './integracao/correcoes-lancamentos.mjs?v=2.0.121';
+import {selecionarRomaneios,chaveSelecao,assinaturaRegistros,planejarExclusao,gravarExclusaoLocal,pendente,fontesOperacionais} from './integracao/selecao-romaneios.mjs?v=2.0.122';
+import {registroCanceladoPorCorrecao,criarIndiceCancelamentos} from './integracao/correcoes-lancamentos.mjs?v=2.0.122';
+window.criarIndiceCancelamentos=criarIndiceCancelamentos;
 window.registroCanceladoPorCorrecao=registroCanceladoPorCorrecao;
 let resultadoEtapa4=null;
 const modoEtapa4=document.getElementById('etapa4Modo');
@@ -3601,6 +3606,9 @@ function renderizarSelecaoRomaneios(){
  for(const [origem,lista] of [['ativo',fontes.entradas],['arquivo',fontes.arquivo]]){
   for(const r of lista){if(!r.destino||r.destino==='ESTOQUE')continue;const key=chaveSelecao(origem,r.destino),g=grupos.get(key)||{destino:r.destino,origem,caixas:0};g.caixas+=Number(r.caixas||0);grupos.set(key,g);}
  }
+ const assinatura=JSON.stringify([...grupos]);
+ if(alvo.dataset.assinaturaRomaneios===assinatura)return;
+ alvo.dataset.assinaturaRomaneios=assinatura;
  alvo.replaceChildren();
  for(const [key,g] of grupos){
   const label=document.createElement('label'),check=document.createElement('input');

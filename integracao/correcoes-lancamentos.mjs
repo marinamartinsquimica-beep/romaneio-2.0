@@ -4,13 +4,20 @@ const fisico=r=>JSON.stringify(['registroId','data','sku','destino','palete','lo
 export const identidadeVersaoCorrecao=fisico;
 // Só evidência explícita de correção cancela uma versão. Outro ID ou
 // conteúdo editado permanece válido; igualdade de SKU/volume não basta.
+export function criarIndiceCancelamentos(arquivo=[],fila=[]){
+ const versoes=new Set(),exclusoes=new Set();
+ const adicionar=r=>{
+  if(!r?.registroId)return;
+  versoes.add(fisico(r));
+  if(r.movimentoExclusaoId)exclusoes.add(JSON.stringify([texto(r.registroId),r.movimentoExclusaoId]));
+ };
+ for(const r of arquivo)if(r.estado==='ARQUIVADA_APOS_CONFERENCIA'&&r.correcaoMovimentoId)adicionar(r);
+ for(const m of fila)if(m.tipo==='exclusao'&&m.item?.finalidadeExclusao==='CORRECAO_LANCAMENTO')adicionar(m.item);
+ return registro=>Boolean(registro?.registroId&&(versoes.has(fisico(registro))||
+  (registro.movimentoExclusaoId&&exclusoes.has(JSON.stringify([texto(registro.registroId),registro.movimentoExclusaoId])))));
+}
 export function registroCanceladoPorCorrecao(registro,arquivo=[],fila=[]){
- if(!registro?.registroId)return false;
- const id=texto(registro.registroId),chave=fisico(registro);
- const marcadores=arquivo.filter(r=>r.estado==='ARQUIVADA_APOS_CONFERENCIA'&&r.correcaoMovimentoId);
- const intencoes=fila.filter(m=>m.tipo==='exclusao'&&m.item?.finalidadeExclusao==='CORRECAO_LANCAMENTO').map(m=>m.item);
- return [...marcadores,...intencoes].some(r=>texto(r.registroId)===id&&(fisico(r)===chave||
-  (registro.movimentoExclusaoId&&r.movimentoExclusaoId===registro.movimentoExclusaoId)));
+ return criarIndiceCancelamentos(arquivo,fila)(registro);
 }
 // Reparação restrita às duas substituições analisadas e autorizadas em 22/10.
 const reparos=[
@@ -61,6 +68,7 @@ export function conciliarCorrecoes({entradas,arquivo,movimentos,comprovantes=[],
 }
 export function validarSelecaoSemCancelamentos(registros,arquivo){
  if(!Array.isArray(registros)||!Array.isArray(arquivo))throw Error('Seleção de baixa inválida.');
- if(registros.some(r=>registroCanceladoPorCorrecao(r,arquivo)))throw Error('Um lançamento foi cancelado por correção. Prepare novamente a conferência antes da baixa.');
+ const cancelado=criarIndiceCancelamentos(arquivo);
+ if(registros.some(cancelado))throw Error('Um lançamento foi cancelado por correção. Prepare novamente a conferência antes da baixa.');
 }
 

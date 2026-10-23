@@ -1,9 +1,10 @@
 // Seleção explícita por origem e destino; nunca inferir baixa por falta de saldo.
-import {registroCanceladoPorCorrecao} from './correcoes-lancamentos.mjs?v=2.0.121';
+import {criarIndiceCancelamentos} from './correcoes-lancamentos.mjs?v=2.0.122';
 export const pendente=r=>!['BAIXA_CONCLUIDA','ARQUIVADA_APOS_CONFERENCIA'].includes(r?.estado);
 export const chaveSelecao=(origem,destino)=>JSON.stringify([origem,String(destino)]);
 export function fontesOperacionais({entradas,arquivo,fila=[]}){
- return {entradas:entradas.filter(r=>!registroCanceladoPorCorrecao(r,arquivo,fila)),arquivo:arquivo.filter(r=>pendente(r)&&!registroCanceladoPorCorrecao(r,arquivo,fila))};
+ const cancelado=criarIndiceCancelamentos(arquivo,fila);
+ return {entradas:entradas.filter(r=>!cancelado(r)),arquivo:arquivo.filter(r=>pendente(r)&&!cancelado(r))};
 }
 export function selecionarRomaneios({entradas,arquivo,selecao,fila=[]}){
  ({entradas,arquivo}=fontesOperacionais({entradas,arquivo,fila}));
