@@ -15,4 +15,5 @@ jobs:
         with:
           node-version: '22'
       - name: Testar importacao e conferencia
-        run: node --test integracao/{leitor-paripassu,paripassu-integracao,conferencia-estoques,contrato-estoques,publicacao-estoques}.test.mjs
+        run: node --test integracao/{leitor-paripassu,paripassu-integracao,conferencia-estoques,contrato-estoques,publicacao-estoques,selecao-romaneios,baixa-transacional,filtro-expedicoes-baixadas}.test.mjs
+

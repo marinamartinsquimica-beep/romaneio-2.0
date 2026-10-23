@@ -72,6 +72,7 @@ test('marcação de pendência encerrada não desconta saldo nem escreve Firesto
 });
 test('destinos arquivados deixam de aparecer em pendências e no seletor de baixa',()=>{
  assert.match(index,/x\.estado!=='BAIXA_CONCLUIDA'&&x\.estado!=='ARQUIVADA_APOS_CONFERENCIA'/);
- assert.match(index,/div.append\(titulo,exportar,preparar\)/);
+ assert.match(index,/div.append\(titulo,exportar,preparar,excluir\)/);
  assert.match(index,/if\(event.key==='romaneio2_expedicoes_excluidas_pendentes_v1'\)\{[\s\S]*?atualizarDestinosBaixa\(\)/);
 });
+

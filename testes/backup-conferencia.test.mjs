@@ -30,9 +30,10 @@ test('backup completo usa bases recebidas e exige confirmação de ambas',async(
  await assert.rejects(c.completarBackupComBaseConfirmada({conferencia:{}},null),/Aguarde a conexão/);
  c.baseRecebida={};await assert.rejects(c.completarBackupComBaseConfirmada({conferencia:{}},base),/conexão mudou/);
 });
-test('destinos aguardando baixa não oferecem encerramento manual por destino',()=>{
+test('destinos aguardando baixa oferecem exclusão explícita sem baixa autorizada pelo operador',()=>{
  const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  const bloco=index.slice(index.indexOf('function mostrarExpedicoesExcluidasOperador(){'),index.indexOf('function operadorAtualizarPainel(){'));
- assert.match(bloco,/div.append\(titulo,exportar,preparar\)/);
+ assert.match(bloco,/div.append\(titulo,exportar,preparar,excluir\)/);
  assert.doesNotMatch(bloco,/div.append\([^;]*(arquivar|corrigir)/);
 });
+

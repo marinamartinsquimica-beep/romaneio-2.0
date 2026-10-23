@@ -8,14 +8,14 @@ export async function filtrarExpedicoesJaBaixadas({registros,destino,buscar}){
  if(typeof buscar!=='function')throw Error('Consulta ao Firebase indisponível.');
  const ativos=destino==='TODOS OS DESTINOS'&&registros.every(x=>!x.movimentoExclusaoId);
  const pendentes=[],concluidos=[],ocorrencias=new Map(),consultas=new Map();
- for(const registro of registros){const id=identidadeExpedicaoBaixa(registro,ativos).id;ocorrencias.set(id,(ocorrencias.get(id)||0)+1);}
+ for(const registro of registros){const id=identidadeExpedicaoBaixa(registro,ativos||registro.origemBaixa==='ativo').id;ocorrencias.set(id,(ocorrencias.get(id)||0)+1);}
  const consultar=id=>{if(!consultas.has(id))consultas.set(id,Promise.resolve().then(()=>buscar(id)));return consultas.get(id);};
  for(let inicio=0;inicio<registros.length;inicio+=15){
   const lote=registros.slice(inicio,inicio+15);
   const estados=await Promise.all(lote.map(async registro=>{
    if(!registro||!registro.sku||!(registro.loteCompleto||registro.lote))
     throw Error('Romaneio incompleto para verificar baixas anteriores.');
-   const principal=identidadeExpedicaoBaixa(registro,ativos);
+   const principal=identidadeExpedicaoBaixa(registro,ativos||registro.origemBaixa==='ativo');
    let encontrado=await consultar(principal.id);
    // Um registro baixado antes da exclusão mantém o ID ativo_<registroId>.
    if(registro.movimentoExclusaoId&&registro.registroId&&encontrado?.estado!=='BAIXA_CONCLUIDA'){
@@ -40,3 +40,4 @@ export async function filtrarExpedicoesJaBaixadas({registros,destino,buscar}){
  }
  return {pendentes,concluidos};
 }
+

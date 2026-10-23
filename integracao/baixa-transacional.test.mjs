@@ -213,3 +213,15 @@ test('baixa anterior à exclusão impede criar segundo desconto',async()=>{
  await assert.rejects(registrarBaixaTransacional({...args(m,[r],{aplicados:[{sku:r.sku,lote:r.lote,caixas:30}],pendencias:[]}),destino:'A'}),/baixa anterior/);
  assert.equal(m.estoqueAtual().itens[0].saldo,56);assert.equal(m.expedicoes().length,1);
 });
+
+
+test('baixa somente destinos escolhidos e mistura ativos com removidos preservando identidades',async()=>{
+ const m=memoria();
+ const registros=[{...reg[0],origemBaixa:'ativo'},{...reg[1],origemBaixa:'arquivo',movimentoExclusaoId:'exclusao-selecionada'}];
+ const a={...args(m,registros),destino:'SELECIONADOS: A, B'};
+ const r=await registrarBaixaTransacional(a);
+ assert.equal(r.baixadas,30);assert.equal(m.estoqueAtual().itens.find(x=>x.sku==='outro').saldo,1520);
+ assert.ok(m.expedicoes().some(x=>x.origemId==='ativo_registro-um'));
+ assert.ok(m.expedicoes().some(x=>x.origemId==='exclusao-selecionada'));
+ await assert.rejects(registrarBaixaTransacional(a),/estoque mudou|já baixada/);
+});

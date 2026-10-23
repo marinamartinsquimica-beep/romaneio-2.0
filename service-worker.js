@@ -1,19 +1,21 @@
-const CACHE_NAME = "romaneio-2-0-cache-v2117-consultas-compartilhadas";
+const CACHE_NAME = "romaneio-2-0-cache-v2118-selecao-romaneios";
 
 const FILES_TO_CACHE = [
-  "./integracao/bases-compartilhadas.mjs?v=2.0.117",
-  "./integracao/controle-tentativas.mjs?v=2.0.117",
-  "./integracao/envio-movimentos250.js?v=2.0.117",
-  "./integracao/publicador-firestore.js?v=2.0.117",
-  "./integracao/correcoes-lancamentos.mjs?v=2.0.117",
+  "./integracao/selecao-romaneios.mjs?v=2.0.118",
+  "./integracao/leitor-paripassu.mjs",
+  "./integracao/bases-compartilhadas.mjs?v=2.0.118",
+  "./integracao/controle-tentativas.mjs?v=2.0.118",
+  "./integracao/envio-movimentos250.js?v=2.0.118",
+  "./integracao/publicador-firestore.js?v=2.0.118",
+  "./integracao/correcoes-lancamentos.mjs?v=2.0.118",
   "./integracao/comprovante-baixa-agrupada.mjs?v=2.0.106",
-  "./integracao/status-baixa-romaneio.mjs?v=2.0.117",
+  "./integracao/status-baixa-romaneio.mjs?v=2.0.118",
   "./integracao/comprovante-baixa-agrupada.mjs?v=2.0.105",
-  "./integracao/comprovante-baixa-agrupada.mjs?v=2.0.117",
-  "./integracao/filtro-expedicoes-baixadas.mjs?v=2.0.117",
-  "./integracao/reconciliar-pendencias-baixadas.mjs?v=2.0.117",
-  "./integracao/colecao-incremental.mjs?v=2.0.117",
-  "./integracao/retencao-historicos.mjs?v=2.0.117",
+  "./integracao/comprovante-baixa-agrupada.mjs?v=2.0.118",
+  "./integracao/filtro-expedicoes-baixadas.mjs?v=2.0.118",
+  "./integracao/reconciliar-pendencias-baixadas.mjs?v=2.0.118",
+  "./integracao/colecao-incremental.mjs?v=2.0.118",
+  "./integracao/retencao-historicos.mjs?v=2.0.118",
   "./inicio.html",
   "./export-utils.js",
   "./jsQR.js",
@@ -22,12 +24,12 @@ const FILES_TO_CACHE = [
   "./integracao/excel-modelo-etapa4.mjs",
   "./integracao/baixa-modelo-aprovado.mjs",
   "./integracao/modelo-estoque-persistente.mjs",
-  "./integracao/modelo-estoque-persistente.mjs?v=2.0.117",
+  "./integracao/modelo-estoque-persistente.mjs?v=2.0.118",
   "./integracao/controle-leituras-automaticas.mjs?v=2.0.99",
   "./integracao/erro-publicacao-estoque.mjs?v=2.0.99",
-  "./integracao/estoques-firebase-ui.mjs?v=2.0.117",
+  "./integracao/estoques-firebase-ui.mjs?v=2.0.118",
   "./integracao/baixa-transacional.mjs",
-  "./integracao/baixa-transacional.mjs?v=2.0.117",
+  "./integracao/baixa-transacional.mjs?v=2.0.118",
   "./integracao/filtro-expedicoes-baixadas.mjs",
   "./integracao/direcao-sincronizacao.mjs",
   "./integracao/regularizar-identificacao-fila.mjs?v=2.0.97",
@@ -36,7 +38,7 @@ const FILES_TO_CACHE = [
   "./integracao/recuperar-paletes-remotos.mjs",
   "./integracao/marcos-romaneios-fechados.mjs",
   "./integracao/painel-paletes-outros-usuarios.mjs",
-  "./integracao/recepcao-romaneios-ativos.mjs?v=2.0.117",
+  "./integracao/recepcao-romaneios-ativos.mjs?v=2.0.118",
   "./vendor/LICENSE-zxing.txt",
   "./qr-parser.js",
   "./manifest.json",
@@ -86,3 +88,4 @@ self.addEventListener("fetch", event => {
     }).catch(() => caches.match("./inicio.html")))
   );
 });
+

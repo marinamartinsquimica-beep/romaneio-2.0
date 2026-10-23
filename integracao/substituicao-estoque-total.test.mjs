@@ -55,7 +55,7 @@ test('assinatura muda quando inventário é editado entre conferência e confirm
 });
 test('conferência da baixa de expedição permanece separada',()=>{
  const source=readFileSync(new URL('../index.html',import.meta.url),'utf8');
- assert.match(source,/modo==='baixa'\?movimentosDoRomaneio\(\):\[\]/);
+ assert.match(source,/let registros=\[\]/);
  assert.match(source,/resultado=prepararBaixa\(e,registros\)/);
  assert.match(source,/resultado=prepararSubstituicaoTotal\(e,inventario\)/);
  assert.match(source,/assinaturaInventario\(lerJsonLocalStorage\('entradas',\[\]\)\)/);
@@ -73,3 +73,4 @@ test('contrato Firestore mantém versão esperada, permissões e apenas estoque 
  assert.match(generator,/await installPanelFormulas\(sx\)/);
  assert.match(generator,/await sx.forceRecalc\(\)/);
 });
+

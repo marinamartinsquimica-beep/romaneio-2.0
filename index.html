@@ -281,7 +281,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.117</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong>v2.0.118</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
 <div class="romaneio-backup-actions" style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button class="desktop-backup-action" type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Pendências de sincronização</button><button class="desktop-backup-action" type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button><button class="mobile-sync-action" type="button" onclick="sincronizarRomaneioCelular()" style="width:auto;background:#5CDCF2;color:#254D69;font-weight:800;font-size:13px;padding:10px 18px;border-radius:12px;border:2px solid #254D69">SINCRONIZAR</button></div>
 <section class="dashboard"><div class="metric"><div class="ico">📋</div><div><b id="dashRegistros">0</b><span id="dashRegistrosLabel">Registros totais</span></div></div><div class="metric"><div class="ico">📦</div><div><b id="dashCaixas">0</b><span id="dashCaixasLabel">Caixas totais</span></div></div><div class="metric"><div class="ico">🧱</div><div><b id="dashPaletes">0</b><span id="dashPaletesLabel">Paletes totais</span></div></div><div class="metric"><div class="ico">📍</div><div><b id="dashDestinos">0</b><span id="dashDestinosLabel">Destinos totais</span></div></div><div class="metric"><div class="ico">🕒</div><div><b id="dashUltimo">--</b><span>Último registro</span></div></div></section>
@@ -309,7 +309,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 <h3>Baixa e ajuste — prévia segura</h3>
 <p style="color:#334155">Prepare a conferência antes de modificar os dados. A baixa de expedição é independente da substituição integral de estoque. Nenhum dado será alterado antes de confirmação explícita.</p>
 <label for="etapa4Modo">Operação</label><select id="etapa4Modo"><option value="baixa">Baixa de expedição</option><option value="ajuste">Ajuste por contagem física</option></select>
-<div id="etapa4DestinoBloco"><label for="etapa4DestinoBaixa">Destino da expedição</label><select id="etapa4DestinoBaixa"><option value="">Todos os destinos — baixa total</option></select><p style="font-size:12px;color:#48647a">A baixa considera somente os paletes do destino escolhido; nenhum destino é apagado.</p></div>
+<div id="etapa4DestinoBloco"><label for="etapa4DestinoBaixa">Destino da expedição</label><select id="etapa4DestinoBaixa"><option value="">Todos os destinos — baixa total</option></select><p style="font-size:12px;color:#48647a">Mantenha a baixa total ou marque vários romaneios abaixo. Excluir sem baixa não desconta o estoque.</p><div id="etapa4SelecaoRomaneios"></div><button type="button" id="etapa4BaixarSelecionados">PREPARAR BAIXA DOS SELECIONADOS</button><button type="button" class="btn-danger" id="etapa4ExcluirSelecionados">EXCLUIR SELECIONADOS SEM BAIXA</button></div>
 <p id="etapa4Orientacao">Baixa automática das caixas existentes no romaneio. Nenhuma digitação necessária.</p><label for="etapa4Movimentos" id="etapa4MovimentosLabel" hidden>Inventário automático: somente paletes com destino ESTOQUE</label>
 <textarea id="etapa4Movimentos" rows="5" hidden style="width:100%;padding:10px;border-radius:8px" placeholder="SKU;LOTE;CAIXAS"></textarea>
 <button type="button" id="etapa4Preparar">PREPARAR CONFERÊNCIA</button><button type="button" id="etapa4Exportar" disabled>BAIXAR EXCEL DO RESULTADO</button><button type="button" id="etapa4ConfirmarBaixa" hidden disabled>CONFIRMAR BAIXA NO SISTEMA</button><button type="button" id="etapa4ConfirmarSubstituicao" class="btn-danger" hidden disabled>CONFIRMAR SUBSTITUIÇÃO INTEGRAL DO ESTOQUE</button><p id="etapa4OrientacaoConfirmacao" hidden style="font-size:12px;color:#48647a">Gere e baixe o Excel atualizado antes de confirmar a baixa no sistema. Nenhum saldo será alterado antes da confirmação.</p>
@@ -400,7 +400,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.117";
+const APP_VERSION = "2.0.118";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -751,7 +751,7 @@ async function apagarDestino(destino) {
     }
     salvarLocalStorage();
     // As exclusões individuais já entram na fila durável do Firebase. Não geram baixa de estoque.
-    if(navigator.onLine){import('./integracao/envio-movimentos250.js?v=2.0.117').then(m=>m.sincronizarMovimentos250()).catch(err=>console.warn('Exclusão preservada na fila; sincronização pendente',err));}
+    if(navigator.onLine){import('./integracao/envio-movimentos250.js?v=2.0.118').then(m=>m.sincronizarMovimentos250()).catch(err=>console.warn('Exclusão preservada na fila; sincronização pendente',err));}
     alert(`Destino ${nomeDestino} apagado. As entradas dos demais Destinos foram mantidas.`);
 }
 
@@ -1956,7 +1956,7 @@ async function guardarBackupIdentificacaoFila(copia){
   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('Cópia de segurança cancelada.'));
  });}finally{db.close();}
 }
-async function resolverPendenciasSincronizacao(botao,mensagem,carregar=()=>import('./integracao/envio-movimentos250.js?v=2.0.117')){
+async function resolverPendenciasSincronizacao(botao,mensagem,carregar=()=>import('./integracao/envio-movimentos250.js?v=2.0.118')){
  botao.disabled=true;mensagem.textContent='Enviando pendências. Aguarde a confirmação do sistema.';
  try{
   if(!navigator.onLine)throw Error('Sem internet. Reconecte este aparelho e tente novamente.');
@@ -2030,7 +2030,7 @@ function salvarLocalStorage() {
         registrarCopiaSegurancaOffline(dados);
     registrarMovimentosLocais(dados);
     // Envia a fila durável em segundo plano: cada operação só sai após confirmação do Firebase.
-    if (navigator.onLine) import('./integracao/envio-movimentos250.js?v=2.0.117')
+    if (navigator.onLine) import('./integracao/envio-movimentos250.js?v=2.0.118')
       .then(m=>m.sincronizarMovimentos250())
       .catch(e=>console.warn('Movimentações preservadas para próximo envio:',e));
     try { window.dispatchEvent(new CustomEvent("romaneio:entradas-salvas", {detail:{quantidade:dados.length}})); } catch(e) { console.warn("Evento de sincronização indisponível",e); }
@@ -3277,6 +3277,7 @@ async function arquivarPendenciaHistoricaSemNovaBaixa(destino,correcao=false){
  if(status)status.textContent=(correcao?'Lançamentos removidos incorretos de ':'Pendência histórica de ')+destino+' encerrados por confirmação do operador. NENHUMA caixa foi descontada e NENHUMA baixa foi gravada no sistema.';
 }
 function mostrarExpedicoesExcluidasOperador(){
+ window.renderizarSelecaoRomaneios?.();
  const painel=document.getElementById('historicoDestinosExcluidos'),alvo=document.getElementById('listaDestinosExcluidos');
  if(!painel||!alvo)return;
  const itens=lerExpedicoesPendentes().filter(x=>x.estado!=='BAIXA_CONCLUIDA'&&x.estado!=='ARQUIVADA_APOS_CONFERENCIA');
@@ -3289,7 +3290,8 @@ function mostrarExpedicoesExcluidasOperador(){
   const titulo=document.createElement('p');titulo.textContent=destino+' — '+paletes.size+' paletes, '+caixas+' caixas — REMOVIDO DO CELULAR / PRESERVADO NO COMPUTADOR / BAIXA PENDENTE';
   const exportar=document.createElement('button');exportar.textContent='BAIXAR ROMANEIO EXCEL';exportar.onclick=()=>exportarExpedicaoExcluida(destino);
   const preparar=document.createElement('button');preparar.textContent='PREPARAR BAIXA';preparar.onclick=()=>{operadorSelecionarAba('movimentos');window.dispatchEvent(new CustomEvent('romaneio:preparar-baixa-destino',{detail:{destino}}));};
-  div.append(titulo,exportar,preparar);alvo.append(div);
+  const excluir=document.createElement('button');excluir.className='btn-danger';excluir.textContent='EXCLUIR ROMANEIO SEM BAIXA';excluir.onclick=()=>window.dispatchEvent(new CustomEvent('romaneio:excluir-sem-baixa',{detail:{destino}}));
+  div.append(titulo,exportar,preparar,excluir);alvo.append(div);
  }
 }
 function operadorAtualizarPainel(){
@@ -3417,7 +3419,7 @@ async function sincronizarRomaneioCelular(){
  if(botao)botao.disabled=true;
  try {
   if(!navigator.onLine)throw Error('Sem internet. Os registros estão preservados para o próximo envio.');
-  const {sincronizarMovimentos250}=await import('./integracao/envio-movimentos250.js?v=2.0.117');
+  const {sincronizarMovimentos250}=await import('./integracao/envio-movimentos250.js?v=2.0.118');
   await sincronizarMovimentos250();
   localStorage.setItem('romaneio2_solicitar_sincronizacao_v1',String(Date.now()));
   const qtd=lerFilaMovimentos().length;
@@ -3564,9 +3566,10 @@ btn?.addEventListener('click',async()=>{
  }catch(e){resumo.textContent='Conferência não realizada: '+e.message;}finally{btn.disabled=false;}
 });
 </script>
-<script type="module" src="./integracao/estoques-firebase-ui.mjs?v=2.0.117"></script>
+<script type="module" src="./integracao/estoques-firebase-ui.mjs?v=2.0.118"></script>
 <script type="module">
 import {prepararBaixa,prepararAjuste} from './integracao/operacoes-estoque.mjs';
+import {selecionarRomaneios,chaveSelecao,assinaturaRegistros,planejarExclusao,gravarExclusaoLocal,pendente} from './integracao/selecao-romaneios.mjs?v=2.0.118';
 let resultadoEtapa4=null;
 const modoEtapa4=document.getElementById('etapa4Modo');
 modoEtapa4?.addEventListener('change',()=>{
@@ -3583,13 +3586,75 @@ modoEtapa4?.addEventListener('change',()=>{
  substituir.hidden=!ajuste;substituir.disabled=true;
  document.getElementById('etapa4OrientacaoConfirmacao').hidden=ajuste;
 });
+function chavesSelecionadas(){return [...document.querySelectorAll('#etapa4SelecaoRomaneios input:checked')].map(x=>x.value).sort();}
+function registrosSelecionados(){return selecionarRomaneios({entradas:lerJsonLocalStorage('entradas',[]),arquivo:lerExpedicoesPendentes(),selecao:chavesSelecionadas()});}
+function renderizarSelecaoRomaneios(){
+ const alvo=document.getElementById('etapa4SelecaoRomaneios');if(!alvo)return;
+ const marcadas=new Set(chavesSelecionadas()),grupos=new Map();
+ for(const [origem,lista] of [['ativo',lerJsonLocalStorage('entradas',[])],['arquivo',lerExpedicoesPendentes().filter(pendente)]]){
+  for(const r of lista){if(!r.destino||r.destino==='ESTOQUE')continue;const key=chaveSelecao(origem,r.destino),g=grupos.get(key)||{destino:r.destino,origem,caixas:0};g.caixas+=Number(r.caixas||0);grupos.set(key,g);}
+ }
+ alvo.replaceChildren();
+ for(const [key,g] of grupos){
+  const label=document.createElement('label'),check=document.createElement('input');
+  check.type='checkbox';check.value=key;check.checked=marcadas.has(key);check.style.cssText='width:22px;height:22px;vertical-align:middle;margin-right:10px';
+  check.addEventListener('change',invalidarSelecaoPreparada);
+  label.append(check,document.createTextNode(g.destino+' — '+g.caixas+' caixas — '+(g.origem==='arquivo'?'removido do celular':'romaneio ativo')));alvo.append(label);
+ }
+}
+function invalidarSelecaoPreparada(){
+ resultadoEtapa4=null;
+ document.getElementById('etapa4Exportar').disabled=true;
+ document.getElementById('etapa4ConfirmarBaixa').hidden=true;
+ document.getElementById('etapa4OrientacaoConfirmacao').hidden=true;
+ document.getElementById('etapa4OperacoesStatus').textContent='Seleção alterada. Prepare novamente a conferência.';
+}
+function validarSelecaoPreparada(atual){
+ if(atual.destino!=='arquivo:__SELECIONADOS__')return;
+ if(JSON.stringify(atual.selecaoMarcada)!==JSON.stringify(chavesSelecionadas())||atual.assinaturaSelecao!==assinaturaRegistros(registrosSelecionados()))
+  throw Error('Os romaneios selecionados mudaram. Prepare a conferência e baixe novamente o Excel.');
+}
+let exclusaoRomaneiosEmAndamento=false;
+async function excluirRomaneiosSelecionados(selecao=chavesSelecionadas()){
+ if(exclusaoRomaneiosEmAndamento)return;
+ exclusaoRomaneiosEmAndamento=true;
+ const status=document.getElementById('etapa4OperacoesStatus');
+ try{
+  const ler=()=>selecionarRomaneios({entradas:lerJsonLocalStorage('entradas',[]),arquivo:lerExpedicoesPendentes(),selecao});
+  const registros=ler();if(!registros.length)throw Error('Marque os romaneios que deseja excluir.');
+  const assinatura=assinaturaRegistros(registros),destinos=[...new Set(registros.map(r=>r.destino))],cx=registros.reduce((a,r)=>a+Number(r.caixas||0),0);
+  if(!await confirmarRaiar('EXCLUIR ROMANEIOS SEM BAIXA\n\nDestinos: '+destinos.join(', ')+'\nRegistros: '+registros.length+' | Caixas: '+cx+'\n\nEsses registros sairão do romaneio e das pendências. Nenhuma caixa será descontada do estoque atual e eles NÃO serão marcados como baixados. A auditoria e os comprovantes anteriores serão preservados.\n\nConfirmar a exclusão dos selecionados?',{titulo:'Confirmar exclusão dos romaneios',cancelar:'NÃO, MANTER',confirmar:'SIM, EXCLUIR SEM BAIXA'}))return;
+  // Importar antes da leitura final: nenhuma espera entre conferir e gravar.
+  const {registrarFechamento,CHAVE_FECHAMENTOS}=await import('./integracao/marcos-romaneios-fechados.mjs');
+  if(assinatura!==assinaturaRegistros(ler()))throw Error('Os romaneios mudaram durante a confirmação. Confira e selecione novamente.');
+  const agora=new Date().toISOString(),plano=planejarExclusao({entradas:lerJsonLocalStorage('entradas',[]),arquivo:lerExpedicoesPendentes(),selecao,agora,criarId:criarIdentificadorMovimento,dispositivoId:identificarDispositivoLocal()});
+  const fechamentos=registrarFechamento(plano.registros,lerJsonLocalStorage(CHAVE_FECHAMENTOS,[]),agora);
+  gravarExclusaoLocal(localStorage,plano,{filaKey:FILA_MOVIMENTOS_KEY,baseKey:BASE_MOVIMENTOS_KEY,arquivoKey:CHAVE_EXPEDICOES_PENDENTES,auditoriaKey:'romaneio2_auditoria_pendencias_historicas_v1',agora,extras:{[CHAVE_FECHAMENTOS]:fechamentos}});
+  invalidarSelecaoPreparada();
+  document.querySelector('#tabela tbody').replaceChildren();carregarLocalStorage();
+  operadorAtualizarPainel();atualizarResumoReservaTeste();renderizarPendenciasConferenciaEstoque();atualizarIndicadorFilaMovimentos();atualizarDestinosBaixa();
+  status.textContent=destinos.join(', ')+': '+cx+' caixas excluídas dos romaneios SEM BAIXA. Estoque preservado. Correções registradas na fila para sincronização.';
+  if(navigator.onLine)void import('./integracao/envio-movimentos250.js?v=2.0.118').then(m=>m.sincronizarMovimentos250()).catch(e=>console.warn('Exclusão preservada na fila:',e));
+ }catch(e){status.textContent='Exclusão não concluída: '+e.message;await confirmarRaiar(status.textContent,{titulo:'Conferir exclusão'});}
+ finally{exclusaoRomaneiosEmAndamento=false;}
+}
+document.getElementById('etapa4ExcluirSelecionados').addEventListener('click',()=>excluirRomaneiosSelecionados());
+document.getElementById('etapa4BaixarSelecionados').addEventListener('click',()=>{
+ atualizarDestinosBaixa();document.getElementById('etapa4DestinoBaixa').value='arquivo:__SELECIONADOS__';document.getElementById('etapa4Preparar').click();
+});
+window.addEventListener('romaneio:excluir-sem-baixa',e=>{operadorSelecionarAba('movimentos');void excluirRomaneiosSelecionados([chaveSelecao('arquivo',e.detail.destino)]);});
+window.renderizarSelecaoRomaneios=renderizarSelecaoRomaneios;
+renderizarSelecaoRomaneios();
+
 function atualizarDestinosBaixa(){
  const campo=document.getElementById('etapa4DestinoBaixa'),anterior=campo.value||'ativo:__TODOS__';
  const nomes=[...new Set([...document.querySelectorAll('#tabela tbody tr')].map(tr=>String(tr.cells[2]?.textContent||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
  campo.replaceChildren();const todos=new Option('TODOS OS DESTINOS — BAIXA TOTAL','ativo:__TODOS__');campo.append(todos);
  const arquivos=[...new Set(lerExpedicoesPendentes().filter(x=>x.estado!=='BAIXA_CONCLUIDA'&&x.estado!=='ARQUIVADA_APOS_CONFERENCIA').map(x=>x.destino))];
+ renderizarSelecaoRomaneios();
+ campo.append(new Option('ROMANEIOS MARCADOS ABAIXO','arquivo:__SELECIONADOS__'));
  if(arquivos.length)campo.append(new Option('TODAS AS PENDÊNCIAS EXCLUÍDAS — BAIXA TOTAL','arquivo:__TODOS__'));
- for(const nome of nomes.filter(n=>!arquivos.includes(n)))campo.append(new Option(nome+' — no computador / conferir exclusão no celular',nome));
+ for(const nome of nomes.filter(n=>!arquivos.includes(n)))campo.append(new Option(nome+' — no computador','ativo:'+nome));
  for(const nome of arquivos)campo.append(new Option(nome+' — excluído no celular / baixa pendente','arquivo:'+nome));
  campo.value=([ ...campo.options ].some(op=>op.value===anterior)?anterior:'ativo:__TODOS__');
 }
@@ -3597,7 +3662,7 @@ function lerRegistrosAtivosParaBaixa(){
  const registros=lerJsonLocalStorage('entradas',[]);
  if(!Array.isArray(registros)||!registros.length)throw Error('Nenhum romaneio ativo para baixa total.');
  if(registros.some(x=>!String(x.registroId||'').trim()))throw Error('Existe palete sem identificador de sincronização. Sincronize antes da baixa para evitar descontos repetidos.');
- return registros.map(x=>({...x,loteCompleto:String(x.loteCompleto||x.lote||''),caixas:Number(x.caixas)}));
+ return registros.map(x=>({...x,origemBaixa:'ativo',loteCompleto:String(x.loteCompleto||x.lote||''),caixas:Number(x.caixas)}));
 }
 function movimentosDoRomaneio(){
  const selecionado=document.getElementById('etapa4DestinoBaixa')?.value||'ativo:__TODOS__';
@@ -3623,7 +3688,8 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
  button.disabled=true;
  try{
   if(!resultadoEtapa4)throw Error('Prepare a conferência antes de exportar.');
-  const {resolverModeloEmbalado}=await import('./integracao/modelo-estoque-persistente.mjs?v=2.0.117');
+  validarSelecaoPreparada(resultadoEtapa4);
+  const {resolverModeloEmbalado}=await import('./integracao/modelo-estoque-persistente.mjs?v=2.0.118');
   const arquivo=await resolverModeloEmbalado({memoria:window.__etapa4ArquivoEmbalado,selecionado:document.getElementById('etapa4Tipo')?.value==='embalado'?document.getElementById('etapa4Arquivo')?.files?.[0]:null});
   window.__etapa4ArquivoEmbalado=arquivo;
   const res=resultadoEtapa4.modo==='baixa'
@@ -3666,10 +3732,10 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
   }
   if(resultadoEtapa4&&res.operacao==='baixa'){
    resultadoEtapa4.exportado=true; // Excel gerado e download solicitado após aviso Raiar
-   const completa=(resultadoEtapa4.destino.startsWith('arquivo:')||resultadoEtapa4.destino==='ativo:__TODOS__')&&resultadoEtapa4.resultado.aplicados.length>0;
+   const completa=(resultadoEtapa4.destino.startsWith('arquivo:')||resultadoEtapa4.destino.startsWith('ativo:'))&&resultadoEtapa4.resultado.aplicados.length>0;
    const botao=document.getElementById('etapa4ConfirmarBaixa');
    botao.hidden=false;botao.disabled=Boolean(resultadoEtapa4.confirmada);
-   document.getElementById('etapa4OrientacaoConfirmacao').hidden=!(resultadoEtapa4.destino.startsWith('arquivo:')||resultadoEtapa4.destino==='ativo:__TODOS__');
+   document.getElementById('etapa4OrientacaoConfirmacao').hidden=!(resultadoEtapa4.destino.startsWith('arquivo:')||resultadoEtapa4.destino.startsWith('ativo:'));
   }
   status.textContent=(res.conciliacoes?.length?'Modelo alinhado ao sistema: '+res.conciliacoes.length+' lote(s) corrigido(s) na cópia exportada. ':'')+(res.operacao==='baixa'?'Excel gerado: '+res.baixadas+' caixa(s) baixadas; '+res.removidas+' linha(s) zeradas removidas; '+res.naoBaixadas+' caixa(s) não baixadas. Estoque: '+res.estoqueAntes+' → '+res.estoqueDepois+' caixas. Confira o Excel antes de publicar no sistema.':'Excel do INVENTÁRIO ESTOQUE gerado: '+res.registros+' lotes, '+res.estoqueAntes+' → '+res.estoqueDepois+' caixas. Confira o arquivo antes de confirmar a substituição integral no sistema.');
  }catch(e){status.textContent='Excel não gerado: '+e.message;}
@@ -3726,8 +3792,9 @@ document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async(
  try{
   const atual=resultadoEtapa4;
   if(!atual||atual.modo!=='baixa')throw Error('Prepare a conferência antes de registrar a baixa.');
+  validarSelecaoPreparada(atual);
   if(atual.confirmada)throw Error('Esta baixa já foi confirmada. Baixe o Excel e depois apague o romaneio.');
-  if(!atual.destino.startsWith('arquivo:')&&atual.destino!=='ativo:__TODOS__')throw Error('Selecione TODOS OS DESTINOS ou uma pendência de expedição para a baixa.');
+  if(!atual.destino.startsWith('arquivo:')&&!atual.destino.startsWith('ativo:'))throw Error('Selecione TODOS OS DESTINOS ou uma pendência de expedição para a baixa.');
   if(!atual.exportado){
    status.textContent='Baixa aguardando download obrigatório do Excel atualizado. Nenhum saldo foi alterado.';
    await confirmarRaiar('DOWNLOAD OBRIGATÓRIO\n\nBaixe primeiro a planilha do estoque atualizado. Depois confira o resumo e confirme a baixa.\n\nNenhum saldo foi alterado.');
@@ -3738,7 +3805,7 @@ document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async(
   if(document.getElementById('etapa4DestinoBaixa').value!==atual.destino)
    throw Error('O destino mudou. Prepare novamente a conferência.');
   const totalGeral=atual.destino==='arquivo:__TODOS__'||atual.destino==='ativo:__TODOS__';
-  const destino=totalGeral?'TODOS OS DESTINOS':atual.destino.slice('arquivo:'.length);
+  const destino=atual.destino==='arquivo:__SELECIONADOS__'?'SELECIONADOS: '+[...new Set(atual.registrosBaixa.map(r=>r.destino))].join(', '):totalGeral?'TODOS OS DESTINOS':atual.destino.startsWith('ativo:')?atual.destino.slice(6):atual.destino.slice('arquivo:'.length);
   const ativos=atual.destino==='ativo:__TODOS__';
   const baixados=atual.registrosBaixa;
   if(!Array.isArray(baixados))throw Error('Lista de baixas não verificada no sistema. Prepare novamente.');
@@ -3752,6 +3819,7 @@ document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async(
   }
   if(!await confirmarRaiar('REGISTRAR BAIXA NO sistema\n\nDestino: '+destino+'\nCaixas a baixar: '+totalBaixado+'\nCaixas sem baixa: '+totalNaoBaixado+'\n\nO sistema atualizará os saldos das caixas disponíveis e encerrará esta pendência. Confirmar?'))return;
   if(typeof window.registrarBaixaConferida!=='function')throw Error('Integração sistema não carregada. Abra a Central de Conexão e aguarde a sincronização.');
+  validarSelecaoPreparada(atual);
   const executar=document.getElementById('etapa4ConfirmarBaixa');executar.disabled=true;
   let executado;
   try{executado=await window.registrarBaixaConferida({resultado:{...atual.resultado,origem:atual.origem},versaoInicial:atual.versaoInicial,destino,registros:baixados});}
@@ -3797,13 +3865,14 @@ document.getElementById('etapa4Preparar')?.addEventListener('click',async()=>{
  try{
   const modo=modoEtapa4.value;
   let registrosParaBaixa=null,romaneiosJaBaixados=0;
-  let registros=modo==='baixa'?movimentosDoRomaneio():[];let assinaturaAjuste='';
+  let registros=[];let assinaturaAjuste='';
   if(modo==='baixa'){
    const selecao=document.getElementById('etapa4DestinoBaixa')?.value||'ativo:__TODOS__';
    const arquivo=selecao.startsWith('arquivo:');
-   const pendencias=arquivo?lerExpedicoesPendentes().filter(x=>x.estado!=='BAIXA_CONCLUIDA'&&x.estado!=='ARQUIVADA_APOS_CONFERENCIA'&&(selecao==='arquivo:__TODOS__'||x.destino===selecao.slice(8))):lerRegistrosAtivosParaBaixa();
+   const pendencias=selecao==='arquivo:__SELECIONADOS__'?registrosSelecionados():arquivo?lerExpedicoesPendentes().filter(x=>x.estado!=='BAIXA_CONCLUIDA'&&x.estado!=='ARQUIVADA_APOS_CONFERENCIA'&&(selecao==='arquivo:__TODOS__'||x.destino===selecao.slice(8))):lerRegistrosAtivosParaBaixa().filter(x=>selecao==='ativo:__TODOS__'||x.destino===selecao.slice(6));
+   if(!pendencias.length)throw Error('Selecione pelo menos um romaneio para baixar.');
    if(typeof window.filtrarExpedicoesParaBaixa!=='function')throw Error('Aguardando conexão com o sistema para verificar baixas anteriores.');
-   const identificador=selecao==='ativo:__TODOS__'||selecao==='arquivo:__TODOS__'?'TODOS OS DESTINOS':selecao.slice(8);
+   const identificador=selecao==='ativo:__TODOS__'||selecao==='arquivo:__TODOS__'||selecao==='arquivo:__SELECIONADOS__'?'TODOS OS DESTINOS':selecao.startsWith('ativo:')?selecao.slice(6):selecao.slice(8);
    const verificados=await window.filtrarExpedicoesParaBaixa({destino:identificador,registros:pendencias});
    registrosParaBaixa=verificados.pendentes.map(x=>({...x}));
    romaneiosJaBaixados=verificados.concluidos.length;
@@ -3838,10 +3907,10 @@ document.getElementById('etapa4Preparar')?.addEventListener('click',async()=>{
   const dados=modo==='baixa'?[['Caixas solicitadas',solicitadas],['Caixas preparadas',efetivadas],['Não baixadas',solicitadas-efetivadas],['Estoque anterior',estoqueAntes],['Estoque após baixa',estoqueDepois]]:[['Registros ESTOQUE',resultado.totalRegistros],['Lotes no novo estoque',resultado.totalLotes],['Lotes retirados',resultado.retirados.length],['Estoque anterior',estoqueAntes],['Novo estoque',estoqueDepois]];
   for(const [nome,valor] of dados){const card=document.createElement('div');card.className='etapa4-resumo-card';const title=document.createElement('span'),number=document.createElement('strong');title.textContent=nome;number.textContent=Number(valor).toLocaleString('pt-BR');card.append(title,number);resumo.appendChild(card)}
   saida.prepend(resumo);
-  resultadoEtapa4={modo,resultado,origem:e.map(x=>({...x})),destino:modo==='ajuste'?'ESTOQUE':document.getElementById('etapa4DestinoBaixa')?.value||'ativo:__TODOS__',versaoInicial:window.__etapa4Versoes?.embalado||'',registrosBaixa:registrosParaBaixa,jaBaixadosIgnorados:romaneiosJaBaixados,assinatura:assinaturaAjuste,exportado:false};
+  resultadoEtapa4={modo,resultado,origem:e.map(x=>({...x})),selecaoMarcada:chavesSelecionadas(),assinaturaSelecao:assinaturaRegistros(registrosSelecionados()),destino:modo==='ajuste'?'ESTOQUE':document.getElementById('etapa4DestinoBaixa')?.value||'ativo:__TODOS__',versaoInicial:window.__etapa4Versoes?.embalado||'',registrosBaixa:registrosParaBaixa,jaBaixadosIgnorados:romaneiosJaBaixados,assinatura:assinaturaAjuste,exportado:false};
   document.getElementById('etapa4Exportar').disabled=modo==='baixa'&&!resultado.aplicados.length;
   if(modo==='ajuste'){const substituir=document.getElementById('etapa4ConfirmarSubstituicao');substituir.hidden=false;substituir.disabled=true;}
-  if(modo==='baixa'&&(resultadoEtapa4.destino.startsWith('arquivo:')||resultadoEtapa4.destino==='ativo:__TODOS__')){
+  if(modo==='baixa'&&(resultadoEtapa4.destino.startsWith('arquivo:')||resultadoEtapa4.destino.startsWith('ativo:'))){
    const botao=document.getElementById('etapa4ConfirmarBaixa'),aviso=document.getElementById('etapa4OrientacaoConfirmacao');
    const podeBaixar=resultado.aplicados.length>0;
    botao.hidden=!podeBaixar;botao.disabled=!podeBaixar;aviso.hidden=!podeBaixar;
@@ -3855,7 +3924,7 @@ document.getElementById('etapa4Preparar')?.addEventListener('click',async()=>{
 </script>
 
 <script type="module">
-import {expirarHistoricosLocais} from './integracao/retencao-historicos.mjs?v=2.0.117';
+import {expirarHistoricosLocais} from './integracao/retencao-historicos.mjs?v=2.0.118';
 let retencaoEmAndamento=false;
 async function aplicarRetencaoHistoricos(){
  if(retencaoEmAndamento)return;
@@ -3874,3 +3943,4 @@ window.addEventListener('romaneio-historico-salvo',()=>void aplicarRetencaoHisto
 
 </body>
 </html>
+

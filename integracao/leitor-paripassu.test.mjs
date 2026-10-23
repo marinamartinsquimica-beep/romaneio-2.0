@@ -84,3 +84,7 @@ test('quantidade permanece em ovos e não usa Qtd. Caixas nem ESTOJO 10 como sal
 test('SKU desconhecido e capacidade ausente ainda bloqueiam estoque incompleto',()=>{
  assert.throws(()=>extrairParipassu([cab,linha('L1','SEM IDENTIFICACAO (CAIXA 120 UN.)',120)]),/sem SKU ou ovos\/caixa/);
 });
+
+test('diagnóstico identifica SKU 10775 e aponta capacidade ausente sem inventar conversão',()=>{
+ assert.throws(()=>extrairParipassu([cab,linha('L1','10775 - OVO CAIPIRA ORGÂNICO BENASSI - GRANDE - EST.',120)]),/SKU 10775 identificado; falta informar ovos por caixa logística/);
+});

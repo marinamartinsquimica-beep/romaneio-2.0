@@ -1,4 +1,4 @@
-import {adquirirBaseCompartilhada} from './bases-compartilhadas.mjs?v=2.0.117';
+import {adquirirBaseCompartilhada} from './bases-compartilhadas.mjs?v=2.0.118';
 import {validarSelecaoSemCancelamentos} from './correcoes-lancamentos.mjs?v=2.0.115';
 import {registroBaixadoNoEstoque} from './status-baixa-romaneio.mjs?v=2.0.110';
 import {criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL} from './colecao-incremental.mjs?v=2.0.110';
@@ -270,3 +270,4 @@ window.substituirEstoqueEmbaladoPeloInventario=async ({resultado,versaoInicial})
   doc,runTransaction,autorizado:true,ambienteId:ambienteAtual.ambienteId
  });
 };
+

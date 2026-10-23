@@ -27,7 +27,7 @@ export function extrairParipassu(linhas){
   const produto=String(linha[iProduto]??'').trim(),lote=String(linha[iLote]??'').trim();
   if(/INDUSTRI/i.test(normalizar(produto))){industriais++;continue;}
   const skuMatch=produto.match(/^(\d+)\s*-/),ovosPorCaixa=lerOvosPorCaixaProduto(produto);
-  if(!skuMatch||!ovosPorCaixa){semSku++;if(naoIdentificados.length<5)naoIdentificados.push(produto);continue;}
+  if(!skuMatch||!ovosPorCaixa){semSku++;if(naoIdentificados.length<5)naoIdentificados.push(produto+(!skuMatch?' [SKU não identificado]':' [SKU '+skuMatch[1]+' identificado; falta informar ovos por caixa logística no cadastro do produto]'));continue;}
   if(!lote)throw Error('Lote ausente em produto '+skuMatch[1]+'.');
   const bruto=linha[iOvos],ovos=Number(String(bruto??'').trim().replace(',','.'));
   if(String(bruto??'').trim()===''||!Number.isSafeInteger(ovos)||ovos<0)throw Error('Quantidade de ovos inválida no SKU '+skuMatch[1]+' e lote '+lote+'.');
@@ -64,3 +64,4 @@ export function extrairParipassu(linhas){
  // Caixas fracionadas são divergências de conferência, não motivo para bloquear a importação.
  return {itens,industriaisIgnorados:industriais,linhasValidas,caixasFracionadas:fracionadas,duplicadosIgnorados:duplicados,conflitosRastreabilidade:conflitos};
 }
+

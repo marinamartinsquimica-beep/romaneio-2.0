@@ -28,9 +28,10 @@ export async function registrarBaixaTransacional({db,doc,runTransaction,uid,ambi
  const movimentacoesBrutas=registros.map(x=>{
    if(!x||!x.destino||!x.sku||!(x.loteCompleto||x.lote)||!inteiro(x.caixas)||Number(x.caixas)<=0)
      throw Error('Romaneio incompleto. Confira destino, SKU, lote e caixas.');
-   if(ativos&&!String(x.registroId||'').trim())throw Error('Palete sem identificador único. Sincronize o romaneio antes da baixa.');
-   const {origemId,id}=identidadeExpedicaoBaixa(x,ativos);
-   return {registro:x,origemId,id,ref:doc(db,...raiz,'expedicoes',id)};
+   const ativo=ativos||x.origemBaixa==='ativo';
+   if(ativo&&!String(x.registroId||'').trim())throw Error('Palete sem identificador único. Sincronize o romaneio antes da baixa.');
+   const {origemId,id}=identidadeExpedicaoBaixa(x,ativo);
+   return {registro:x,ativo,origemId,id,ref:doc(db,...raiz,'expedicoes',id)};
  });
  // A identidade pertence ao contrato da baixa, não à representação do SDK.
  // Referências sem path público podem ter o mesmo String(ref) genérico.
@@ -91,7 +92,7 @@ export async function registrarBaixaTransacional({db,doc,runTransaction,uid,ambi
        if(antigo.origemId&&antigo.origemId!==m.origemId)throw Error('Identidade de expedição divergente.');
        if(m.registro.linhasBaixa&&(Number(antigo.caixas)!==Number(m.registro.caixas)||conteudoCanonico(antigo.linhasBaixa)!==conteudoCanonico(m.registro.linhasBaixa)))
          throw Error('Comprovante pendente difere do agrupamento atual. Nenhum saldo alterado.');
-     }else if(!ativos&&!(String(m.registro.movimentoExclusaoId||'').trim()&&String(m.registro.registroId||'').trim()))throw Error('Expedição excluída sem identificação de sincronização. Sincronize antes de confirmar a baixa.');
+     }else if(!m.ativo&&!(String(m.registro.movimentoExclusaoId||'').trim()&&String(m.registro.registroId||'').trim()))throw Error('Expedição excluída sem identificação de sincronização. Sincronize antes de confirmar a baixa.');
    }
    await conferirAnteriores(tx);
    const criadoEm=new Date().toISOString();
@@ -129,3 +130,4 @@ export async function registrarBaixaTransacional({db,doc,runTransaction,uid,ambi
  });
  return {baixadas,naoBaixadas,versao:novaVersao,comprovantes:movimentacoes.map(m=>({...m.registro,id:m.id,origemId:m.origemId,estado:'BAIXA_CONCLUIDA',confirmadoPor:uid}))};
 }
+
