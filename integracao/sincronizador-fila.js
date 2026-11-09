@@ -6,17 +6,19 @@ export function criarSincronizadorFila({ler,gravar,publicador,avisar}){
  if([ler,gravar,avisar].some(x=>typeof x!=='function')||!publicador||typeof publicador.publicar!=='function')throw TypeError('Dependências inválidas');
  let emAndamento=null;
  const assinatura=op=>JSON.stringify(op);
- async function executar(){
+ async function executar(operacoes){
   if(emAndamento)return emAndamento;
   emAndamento=(async()=>{
    const antes=ler();
    if(!Array.isArray(antes))throw TypeError('Fila inválida');
    if(!antes.length)return {confirmados:0,pendentes:0};
-   const resultado=await publicador.publicar(antes);
+   const envio=Array.isArray(operacoes)?operacoes:antes;
+   if(!envio.length)return {confirmados:0,pendentes:antes.length};
+   const resultado=await publicador.publicar(envio);
    const confirmados=new Map();
    for(const c of resultado.confirmacoes||[]){
     if(c.confirmado===true){
-     const original=antes.find(x=>x.id===c.id);
+     const original=envio.find(x=>x.id===c.id);
      if(original)confirmados.set(c.id,assinatura(original));
     }
    }
