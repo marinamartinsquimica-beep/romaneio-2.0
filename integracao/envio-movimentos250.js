@@ -8,7 +8,7 @@ import {initializeApp,getApps,getApp} from 'https://www.gstatic.com/firebasejs/1
 import {getAuth} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {getFirestore,doc,getDocFromServer,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {criarPublicadorMovimentos} from './publicador-firestore.js?v=2.0.117';
-import {criarSincronizadorFila} from './sincronizador-fila.js?v=2.0.97';
+import {criarSincronizadorFila} from './sincronizador-fila.js?v=2.0.127';
 const config={apiKey:'AIzaSyCCy5uY1eAFQE9Vhykr7xNNayDtk_B-Hy4',authDomain:'romaneio-2-0-homologacao.firebaseapp.com',projectId:'romaneio-2-0-homologacao',storageBucket:'romaneio-2-0-homologacao.firebasestorage.app',messagingSenderId:'357381847782',appId:'1:357381847782:web:59ad8365c033bba8e79927'};
 exigirFirebaseHomologacao(config);
 const app=getApps().length?getApp():initializeApp(config),auth=getAuth(app),db=getFirestore(app);
@@ -33,20 +33,27 @@ export async function sincronizarMovimentos250(){
  await auth.authStateReady();
  if(!auth.currentUser)throw Error('Reconecte pela Central de Conexão');
  const uid=auth.currentUser.uid,controle=controleEnviosCompartilhado(uid);
- if(!controle.iniciar())return {confirmados:0,pendentes:ler().length,emEspera:true};
+ if(!controle.iniciar())return {confirmados:0,pendentes:ler().length,emEspera:true,aguardarMs:controle.restanteMs};
  try{
   ambienteEnvio=null;
   const vinculo=await resolverAmbienteUsuario({db,uid});if(auth.currentUser?.uid!==uid)throw Error('Sessão alterada durante a verificação');ambienteEnvio={uid,ambienteId:vinculo.ambienteId};
   const limiteLotes=Math.ceil(ler().length/50)+1;
-  let confirmados=0;const falhas=[],rejeitados=[];
+  let confirmados=0;const falhas=[],rejeitados=[],tentadas=new Set();
+  const assinatura=op=>JSON.stringify(op);
   for(let lote=0;lote<limiteLotes;lote++){
-   const antes=ler().length;if(!antes)break;
-   const parcial=await sincronizador.executar();
+   const filaAtual=ler();if(!filaAtual.length)break;
+   const candidatas=filaAtual.filter(op=>!tentadas.has(assinatura(op))).slice(0,50);
+   if(!candidatas.length)break;
+   const antes=filaAtual.length;
+   for(const op of candidatas)tentadas.add(assinatura(op));
+   const parcial=await sincronizador.executar(candidatas);
    confirmados+=parcial.confirmados||0;
    falhas.push(...(parcial.falhas||[]));
    rejeitados.push(...(parcial.rejeitados||[]));
    const depois=ler().length;
-   if(!depois||depois>=antes||parcial.falhas?.length)break;
+   const falhaTemporaria=(parcial.falhas||[]).some(e=>/resource-exhausted|quota|unavailable|deadline-exceeded|network|permission-denied/i.test(String(e?.code||e?.codigo||'')+' '+String(e?.message||e?.mensagem||e||'')));
+   if(!depois||falhaTemporaria)break;
+   if(depois>=antes&&!ler().some(op=>!tentadas.has(assinatura(op))))break;
   }
   const pendentes=ler().length;
   if(falhas.length)controle.falhou(falhas[0]);
