@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v2124-sincronizacao-pendentes";
+const CACHE_NAME = "romaneio-2-0-cache-v2125-versao-visivel";
 
 const FILES_TO_CACHE = [
   "./integracao/marcos-romaneios-fechados.mjs?v=2.0.121",
