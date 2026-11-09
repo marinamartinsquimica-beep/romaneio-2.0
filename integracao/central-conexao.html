@@ -25,7 +25,7 @@ a{color:#156e9b;font-weight:700}
 #gestaoUsuarios select{width:auto}
 @media(max-width:640px){body{padding:10px}main>section{padding:17px}main>h1{font-size:22px}button{width:100%;margin:5px 0!important}}
 </style></head><body><main><h1>Conexão do sistema</h1><p>Sincronização segura de paletes, conferência de movimentações e gerenciamento de acessos.</p><section><h2>Estado da conexão</h2><output id="estado">Verificando…</output><p id="detalhe"></p><button id="verificar" type="button">TESTAR CONEXÃO</button><output id="verificacaoFirebase" class="resultado-verificacao" role="status" aria-live="polite">Clique para testar a autenticação com o servidor sistema.</output></section><section><h2>Autenticação operacional</h2><p id="sessao">Verificando sessão…</p><form id="login"><label>E-mail operacional<input id="email" type="email" autocomplete="username" required></label><label>Senha<input id="senha" type="password" autocomplete="current-password" required></label><button type="submit">Reconectar</button></form><button id="sair" hidden>Encerrar sessão neste aparelho</button><small>A senha não é salva pelo aplicativo. A sessão autenticada pode persistir neste navegador.</small></section><section><h2>Movimentações locais</h2><output id="fila">Consultando…</output><p><button type="button" id="inspecionarPendentes">VERIFICAR FILA OPERACIONAL</button></p><output id="relatorioPendentes" class="resultado-verificacao" aria-live="polite">Verificação somente leitura; nenhum envio será realizado.</output><p><button type="button" id="prepararEnvioReal">PREPARAR SINCRONIZAÇÃO CONTROLADA</button> <button type="button" id="confirmarEnvioReal" disabled>CONFIRMAR ENVIO DA FILA</button></p><output id="estadoEnvioReal" class="resultado-verificacao" aria-live="polite">Nenhuma movimentação operacional será enviada sem confirmação.</output><p><small>O envio requer confirmação explícita. Somente IDs confirmados pelo Firestore saem da fila.</small></p><p><button type="button" id="resolverTestePendente">RESOLVER PENDÊNCIA FICTÍCIA</button></p><output id="resultadoResolverTeste" class="resultado-verificacao" aria-live="polite">Requer backup e confirmação de exclusão remota.</output></section><section id="resetDadosTesteSection"><h2>Resetar dados de teste antigos</h2><p>Limpa somente o romaneio e a fila local deste aparelho. Antes, baixa uma cópia JSON. O estoque importado, a conta e o histórico remoto permanecem intactos.</p><button id="resetDadosTesteBtn" type="button" style="background:#a83232;color:#fff;border:2px solid #7f1d1d;border-radius:10px;font-weight:800;padding:12px 16px">RESETAR DADOS DE TESTE ANTIGOS</button><output id="resetDadosTesteStatus" class="resultado-verificacao" aria-live="polite">Disponível para este aparelho. A confirmação informa a quantidade que será removida.</output></section><section><h2>Leitura compartilhada — computador e celular</h2><p>Consulta somente leitura dos últimos registros desta conta no Firestore. Não altera paletes, estoque ou fila.</p><button type="button" id="consultarCompartilhados">CONSULTAR MOVIMENTAÇÕES NO sistema</button><output id="resultadoCompartilhados" class="resultado-verificacao" aria-live="polite">Aguardando consulta. A listagem requer permissão específica nas regras do sistema.</output></section><section><h2>Atualização automática — somente leitura</h2><p>Acompanhe novas movimentações desta conta em tempo real. Nenhum palete ou estoque local será alterado.</p><button type="button" id="iniciarTempoReal">INICIAR ACOMPANHAMENTO</button> <button type="button" id="pararTempoReal" disabled>PARAR ACOMPANHAMENTO</button><output id="resultadoTempoReal" class="resultado-verificacao" aria-live="polite">Acompanhamento desligado.</output></section><section><h2>Receber e conciliar movimentações entre aparelhos</h2><p>Compara as movimentações remotas com os dados deste dispositivo. Os testes fictícios são excluídos da análise.</p><button type="button" id="preverRecebimento">ANALISAR MOVIMENTAÇÕES RECEBIDAS</button><output id="resultadoAnaliseImediata" class="resultado-verificacao" aria-live="polite">Aguardando análise.</output><p><button type="button" id="diagnosticarOfflineReal">DIAGNOSTICAR SINCRONIZAÇÃO OFFLINE — SOMENTE LEITURA</button></p><output id="resultadoDiagnosticoOffline" class="resultado-verificacao" aria-live="polite">Nenhum dado será alterado.</output><p><button type="button" id="prepararUniaoSegura">PREPARAR UNIÃO CONTROLADA</button></p><output id="resultadoPrepararUniao" class="resultado-verificacao" aria-live="polite">Preparação somente leitura. Não aplica a união.</output><p><button type="button" id="exportarBackupUniao">BAIXAR CÓPIA DE SEGURANÇA LOCAL</button></p><output id="resultadoBackupUniao" class="resultado-verificacao" aria-live="polite">O arquivo de segurança será gerado neste dispositivo, sem alterar os dados.</output><p><button type="button" id="aplicarUniaoSegura">CONFIRMAR E APLICAR UNIÃO</button></p><output id="resultadoAplicarUniao" class="resultado-verificacao" aria-live="polite">Disponível após baixar o backup. A união exige confirmação explícita e nova consulta ao sistema.</output><p><button type="button" id="prepararPublicacaoLocal">PREPARAR PUBLICAÇÃO DAS ENTRADAS LOCAIS</button></p><output id="resultadoPublicacaoLocal" class="resultado-verificacao" aria-live="polite">Compara as entradas locais com o sistema e prepara apenas inclusões ausentes para a fila, mediante confirmação. Não altera estoque.</output><output id="resultadoPrevia" class="resultado-verificacao" aria-live="polite">Nenhuma análise realizada. Os dados locais permanecem intactos.</output></section><section><h2>Validação sistema — dados fictícios</h2><p>Teste isolado: SKU TESTE-G, lote TESTE-001, 13 caixas. Não usa a fila operacional nem altera estoque.</p><button id="testeGravar" disabled>GRAVAR TESTE NO sistema</button> <button id="testeReenviar" disabled>REENVIAR MESMO TESTE</button><output id="testeResultado" aria-live="polite">Aguardando autenticação.</output><small>O teste cria um documento imutável por identificação. Repetir não cria outro registro.</small></section><section><h2>Fila offline — validação</h2><p>Teste fictício isolado da fila operacional.</p><button type="button" id="prepararOffline">PREPARAR TESTE OFFLINE</button> <button type="button" id="enviarOffline">SINCRONIZAR TESTE</button><output id="saidaOffline" class="resultado-verificacao" aria-live="polite">Aguardando preparação.</output></section><section id="historicoAuditoria"><h2>Histórico e rastreabilidade</h2><p>Consulta remota somente leitura.</p><button id="consultarAuditoria" type="button">CONSULTAR HISTÓRICO COMPARTILHADO</button><output id="saidaAuditoria" class="resultado-verificacao">Aguardando consulta.</output></section><section id="resolverDivergencias"><h2>Conciliação de caixas — conferência manual</h2><p>Para conflitos de quantidade, preserve o valor local até confirmar. Exige backup da sessão. Não realiza baixa de estoque.</p><button id="consultarConflitosCaixas" type="button">CONSULTAR CONFLITOS DE CAIXAS</button><div id="listaConflitosCaixas"></div><output id="saidaConflitosCaixas" class="resultado-verificacao" aria-live="polite">Nenhuma alteração aplicada.</output></section><section id="gestaoUsuarios" hidden><h2>Gestão de usuários e permissões — Administrador</h2><p>Gerencie perfis e acessos do ambiente compartilhado. Operadores não podem alterar usuários. A criação de contas de autenticação permanece no serviço de autenticação.</p><button id="listarMembros" type="button">ATUALIZAR USUÁRIOS</button><div id="listaMembros"></div><output id="saidaMembros" class="resultado-verificacao" aria-live="polite">Aguardando consulta.</output></section><a href="../index.html">Voltar ao Romaneio</a></main><script type="module">
-import {resetarDadosTesteAntigos} from './resetar-dados-teste.mjs?v=2.0.142';
+import {resetarDadosTesteAntigos} from './resetar-dados-teste.mjs?v=2.0.143';
 import {adquirirBaseCompartilhada,metricasBasesCompartilhadas} from './bases-compartilhadas.mjs?v=2.0.118';
 import {controleEnviosCompartilhado,erroTemporario,metricasEnviosCompartilhados} from './controle-tentativas.mjs?v=2.0.118';
 import {conciliarCorrecoes,identificarCorrecoes,identidadeVersaoCorrecao} from './correcoes-lancamentos.mjs?v=2.0.123';
@@ -1031,17 +1031,30 @@ async function sincronizarExpedicoesCompartilhadas(){
 }
 async function sincronizarExpedicoesCompartilhadasInterno(){
  if(!receberEntradasNoAparelho())return;
+ const corteRaw=localStorage.getItem('romaneio2_ultimo_reinicio_local_v1'),corte=Date.parse(corteRaw||'');
+ const posteriorReset=registro=>{
+  if(!corteRaw||!Number.isFinite(corte))return true;
+  const valor=registro?.excluidoEm??registro?.criadoEm??registro?.baixaConfirmadaEm;
+  let instante=NaN;
+  if(valor&&typeof valor.toDate==='function')instante=valor.toDate().getTime();
+  else if(valor&&Number.isFinite(Number(valor.seconds)))instante=Number(valor.seconds)*1000;
+  else if(valor instanceof Date)instante=valor.getTime();
+  else instante=Date.parse(String(valor??''));
+  return Number.isFinite(instante)&&instante>corte;
+ };
+
  if(!auth.currentUser||!escopoOperacionalPronto||!navigator.onLine)return;
  const chave='romaneio2_expedicoes_excluidas_pendentes_v1';
  const bruto=localStorage.getItem(chave),locaisBrutos=JSON.parse(bruto||'[]');
  if(!Array.isArray(locaisBrutos))return;
- const locais=locaisBrutos.filter(pertenceAoCicloDoUltimoReset);
+ const locais=locaisBrutos.filter(posteriorReset);
  const raiz=raizOperacional(auth.currentUser.uid);
  const sessao=obterBaseRecebida(auth.currentUser.uid),revisaoInicial=sessao.expedicoes.revisao;
- const recebidas=(await lerExpedicoesParaRecepcao(auth.currentUser.uid)).filter(pertenceAoCicloDoUltimoReset);
+ const recebidas=await lerExpedicoesParaRecepcao(auth.currentUser.uid);
+ const recebidasNoCiclo=recebidas.filter(posteriorReset);
  const validarImagem=()=>{if(obterBaseRecebida(auth.currentUser.uid)!==sessao||sessao.expedicoes.revisao!==revisaoInicial)throw Error('Expedições mudaram durante a conciliação; repetir com a base atual.');};
  validarImagem();
- const docs=new Map(recebidas.map(x=>[x.id,x]));
+ const docs=new Map(recebidasNoCiclo.map(x=>[x.id,x]));
  // Aplicar prova de baixa ANTES de considerar cadastrar pendência nova.
  const {reconciliarPendenciasJaBaixadas}=await import('./reconciliar-pendencias-baixadas.mjs?v=2.0.118');
  // lerExpedicoesParaRecepcao exige imagem online completa, não truncada.
@@ -1116,27 +1129,25 @@ function aplicarCorrecoesConfirmadas(movimentos,comprovantes){
   localStorage.setItem('entradas',JSON.stringify(resultado.entradas));
  }
 }
-function pertenceAoCicloDoUltimoReset(registro){
- const corteRaw=localStorage.getItem('romaneio2_ultimo_reinicio_local_v1');
- if(!corteRaw)return true;
- const corte=Date.parse(corteRaw);
- if(!Number.isFinite(corte))return true;
- const valor=registro?.excluidoEm??registro?.criadoEm??registro?.baixaConfirmadaEm;
- let instante=NaN;
- if(valor&&typeof valor.toDate==='function')instante=valor.toDate().getTime();
- else if(valor&&Number.isFinite(Number(valor.seconds)))instante=Number(valor.seconds)*1000;
- else if(valor instanceof Date)instante=valor.getTime();
- else instante=Date.parse(String(valor??''));
- // Após um reset, registros legados sem data confiável não voltam à fila operacional.
- return Number.isFinite(instante)&&instante>corte;
-}
 async function registrarExclusoesRecebidas(snap){
  if(!receberEntradasNoAparelho())return; // Não importar histórico de outros dispositivos no celular.
+ const corteRaw=localStorage.getItem('romaneio2_ultimo_reinicio_local_v1'),corte=Date.parse(corteRaw||'');
+ const posteriorReset=registro=>{
+  if(!corteRaw||!Number.isFinite(corte))return true;
+  const valor=registro?.excluidoEm??registro?.criadoEm??registro?.baixaConfirmadaEm;
+  let instante=NaN;
+  if(valor&&typeof valor.toDate==='function')instante=valor.toDate().getTime();
+  else if(valor&&Number.isFinite(Number(valor.seconds)))instante=Number(valor.seconds)*1000;
+  else if(valor instanceof Date)instante=valor.getTime();
+  else instante=Date.parse(String(valor??''));
+  return Number.isFinite(instante)&&instante>corte;
+ };
+
  const base=baseRecebida;
  if(!base)return;
  const comprovantes=(await base.expedicoes.ler()).docs.map(d=>({id:d.id,...d.data()}));
  if(baseRecebida!==base||base.movimentos.revisao!==snap.revisao)return;
- const movimentos=snap.docs.map(d=>({id:d.id,...d.data()})).filter(pertenceAoCicloDoUltimoReset);
+ const movimentos=snap.docs.map(d=>({id:d.id,...d.data()})).filter(posteriorReset);
  aplicarCorrecoesConfirmadas(movimentos,comprovantes);
  const correcoesCanceladas=new Set(identificarCorrecoes(movimentos).map(m=>m.id));
  const chaveArquivo='romaneio2_expedicoes_excluidas_pendentes_v1';
@@ -1148,7 +1159,7 @@ async function registrarExclusoesRecebidas(snap){
  const identidade=x=>[x?.destino,x?.palete,x?.sku,x?.loteCompleto].map(v=>String(v??'').trim().toUpperCase()).join('|');
  for(const docSnap of snap.docs){
   const mov=docSnap.data(),item=mov?.item;
-  if(!pertenceAoCicloDoUltimoReset(mov))continue;
+  if(!posteriorReset(mov))continue;
   if(correcoesCanceladas.has(docSnap.id))continue;
   if(mov?.tipo!=='exclusao'||!item?.destino||ids.has(docSnap.id))continue;
   const id=String(item.registroId||'');
