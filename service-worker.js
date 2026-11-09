@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v2128-transacoes-em-lotes";
+const CACHE_NAME = "romaneio-2-0-cache-v2129-trava-expiravel";
 
 const FILES_TO_CACHE = [
   "./integracao/marcos-romaneios-fechados.mjs?v=2.0.121",
@@ -8,8 +8,8 @@ const FILES_TO_CACHE = [
   "./integracao/leitor-paripassu.mjs?v=2.0.120",
   "./integracao/erro-publicacao-estoque.mjs?v=2.0.120",
   "./integracao/bases-compartilhadas.mjs?v=2.0.118",
-  "./integracao/controle-tentativas.mjs?v=2.0.118",
-  "./integracao/envio-movimentos250.js?v=2.0.128",
+  "./integracao/controle-tentativas.mjs?v=2.0.129",
+  "./integracao/envio-movimentos250.js?v=2.0.129",
   "./integracao/sincronizador-fila.js?v=2.0.128",
   "./integracao/publicador-firestore.js?v=2.0.128",
   "./integracao/correcoes-lancamentos.mjs?v=2.0.118",
