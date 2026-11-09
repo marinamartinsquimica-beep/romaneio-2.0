@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v2136-sync-timeout";
+const CACHE_NAME = "romaneio-2-0-cache-v2137-sync-timeout";
 
 const FILES_TO_CACHE = [
   "./integracao/marcos-romaneios-fechados.mjs?v=2.0.121",
@@ -8,10 +8,10 @@ const FILES_TO_CACHE = [
   "./integracao/leitor-paripassu.mjs?v=2.0.120",
   "./integracao/erro-publicacao-estoque.mjs?v=2.0.120",
   "./integracao/bases-compartilhadas.mjs?v=2.0.118",
-  "./integracao/controle-tentativas.mjs?v=2.0.136",
+  "./integracao/controle-tentativas.mjs?v=2.0.137",
   "./integracao/resetar-dados-teste.mjs?v=2.0.135",
-  "./integracao/envio-movimentos250.js?v=2.0.136",
-  "./integracao/sincronizador-fila.js?v=2.0.136",
+  "./integracao/envio-movimentos250.js?v=2.0.137",
+  "./integracao/sincronizador-fila.js?v=2.0.137",
   "./integracao/publicador-firestore.js?v=2.0.128",
   "./integracao/correcoes-lancamentos.mjs?v=2.0.118",
   "./integracao/comprovante-baixa-agrupada.mjs?v=2.0.106",

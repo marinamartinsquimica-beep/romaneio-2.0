@@ -1,4 +1,4 @@
-import {controleEnviosCompartilhado} from './controle-tentativas.mjs?v=2.0.136';
+import {controleEnviosCompartilhado} from './controle-tentativas.mjs?v=2.0.137';
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
 /* 2.0.50: integração de envio sob comando explícito, desabilitada até homologação.
@@ -8,7 +8,7 @@ import {initializeApp,getApps,getApp} from 'https://www.gstatic.com/firebasejs/1
 import {getAuth} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {getFirestore,doc,getDocFromServer,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {criarPublicadorMovimentos} from './publicador-firestore.js?v=2.0.128';
-import {criarSincronizadorFila} from './sincronizador-fila.js?v=2.0.136';
+import {criarSincronizadorFila} from './sincronizador-fila.js?v=2.0.137';
 const config={apiKey:'AIzaSyCCy5uY1eAFQE9Vhykr7xNNayDtk_B-Hy4',authDomain:'romaneio-2-0-homologacao.firebaseapp.com',projectId:'romaneio-2-0-homologacao',storageBucket:'romaneio-2-0-homologacao.firebasestorage.app',messagingSenderId:'357381847782',appId:'1:357381847782:web:59ad8365c033bba8e79927'};
 exigirFirebaseHomologacao(config);
 const app=getApps().length?getApp():initializeApp(config),auth=getAuth(app),db=getFirestore(app);
@@ -27,7 +27,6 @@ const publicador=criarPublicadorMovimentos({
 });
 const sincronizador=criarSincronizadorFila({ler,gravar,publicador,avisar:r=>window.dispatchEvent(new CustomEvent('romaneio:sincronizacao-resultado',{detail:r}))});
 const PRAZO_RESPOSTA_ENVIO_MS=30000;
-let sincronizacaoEmAndamento=null;
 function aguardarResposta(promise,etapa){
  let temporizador;
  return Promise.race([
@@ -35,7 +34,7 @@ function aguardarResposta(promise,etapa){
   new Promise((_,reject)=>{temporizador=setTimeout(()=>reject(new Error('O sistema não respondeu em 30 segundos durante '+etapa+'. A fila foi preservada.')),PRAZO_RESPOSTA_ENVIO_MS);})
  ]).finally(()=>clearTimeout(temporizador));
 }
-async function executarSincronizacao250({liberarEspera=false}={}){
+export async function sincronizarMovimentos250({liberarEspera=false}={}){
  if(!habilitado)throw Error('Envio ainda não habilitado; fila preservada');
  if(!ler().length)return {confirmados:0,pendentes:0};
  if(!navigator.onLine)throw Error('Sem internet; fila local preservada');
@@ -73,11 +72,6 @@ async function executarSincronizacao250({liberarEspera=false}={}){
   return {confirmados,pendentes,falhas,rejeitados};
  }catch(e){controle.falhou(e);throw e;}
  finally{controle.encerrar(controleEnvioId);}
-}
-export function sincronizarMovimentos250(opcoes={}){
- if(sincronizacaoEmAndamento)return sincronizacaoEmAndamento;
- sincronizacaoEmAndamento=executarSincronizacao250(opcoes).finally(()=>{sincronizacaoEmAndamento=null;});
- return sincronizacaoEmAndamento;
 }
 export function estadoSincronizacao250(){return {habilitado,autenticado:!!auth.currentUser,pendentes:ler().length,erros:erros.slice(-10)};}
 
