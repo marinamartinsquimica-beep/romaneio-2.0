@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v2132-retry-manual";
+const CACHE_NAME = "romaneio-2-0-cache-v2133-reset-teste";
 
 const FILES_TO_CACHE = [
   "./integracao/marcos-romaneios-fechados.mjs?v=2.0.121",
@@ -8,9 +8,9 @@ const FILES_TO_CACHE = [
   "./integracao/leitor-paripassu.mjs?v=2.0.120",
   "./integracao/erro-publicacao-estoque.mjs?v=2.0.120",
   "./integracao/bases-compartilhadas.mjs?v=2.0.118",
-  "./integracao/controle-tentativas.mjs?v=2.0.132",
-  "./integracao/envio-movimentos250.js?v=2.0.132",
-  "./integracao/sincronizador-fila.js?v=2.0.132",
+  "./integracao/controle-tentativas.mjs?v=2.0.133",
+  "./integracao/envio-movimentos250.js?v=2.0.133",
+  "./integracao/sincronizador-fila.js?v=2.0.133",
   "./integracao/publicador-firestore.js?v=2.0.128",
   "./integracao/correcoes-lancamentos.mjs?v=2.0.118",
   "./integracao/comprovante-baixa-agrupada.mjs?v=2.0.106",

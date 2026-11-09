@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {criarControleTentativas,controleEnviosCompartilhado} from './controle-tentativas.mjs';import {criarPublicadorMovimentos} from './publicador-firestore.js';
-test('cota mantém espera automática e libera tentativa manual explícita',()=>{
- let agora=0;const c=criarControleTentativas({agora:()=>agora});assert.equal(c.iniciar(),true);c.falhou({code:'resource-exhausted'});c.encerrar();assert.equal(c.restanteMs,900000);assert.equal(c.iniciar(),false);c.liberarEspera();assert.equal(c.iniciar(),true);c.sucesso();c.encerrar();assert.equal(c.podeTentar(),true);
+test('cota esgotada permite nova tentativa manual imediata e conserva a fila',()=>{
+ let agora=0;const c=criarControleTentativas({agora:()=>agora});assert.equal(c.iniciar(),true);c.falhou({code:'resource-exhausted'});c.encerrar();assert.equal(c.restanteMs,0);assert.equal(c.iniciar(),true);c.sucesso();c.encerrar();assert.equal(c.podeTentar(),true);
 });
 test('falhas transitórias aumentam a espera e envios simultâneos são bloqueados',()=>{
  let agora=0;const c=criarControleTentativas({agora:()=>agora});assert.equal(c.iniciar(),true);assert.equal(c.iniciar(),false);c.falhou({code:'unavailable'});c.encerrar();assert.equal(c.restanteMs,5000);agora=5000;c.iniciar();c.falhou({code:'unavailable'});c.encerrar();assert.equal(c.restanteMs,10000);
