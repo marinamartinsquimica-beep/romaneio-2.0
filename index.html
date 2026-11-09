@@ -59,6 +59,7 @@ button{border-radius:13px;font-family:inherit}.btn-primary{background:#254D69;bo
 .eme-aviso-dado{background:#e8f9fc}.eme-aviso-dado span{color:#496579}
 .eme-aviso-diferenca{background:#ffe8df;color:#8e3b29}
 .eme-aviso-ok{background:#254D69;border-radius:13px}
+.eme-aviso-card .eme-aviso-todas{background:#e4f8fc;color:#254D69;border:1px solid #8eddeb;margin-bottom:8px}
 .eme-aviso-ok:focus-visible{outline-color:#FFD043}
 
 /* Destaque exclusivo para baixar/exportar Excel: amarelo da paleta Raiar */
@@ -282,7 +283,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong id="versaoAplicativo">v2.0.125</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
+<header class="topbar"><div class="brand"><img src="icon-512.png" class="brand-icon" alt="Logo"><div><h1>Romaneio de Paletes 2.0</h1><p>Sistema local para controle de paletes · <strong id="versaoAplicativo">v2.0.126</strong></p></div></div><div class="status-pill" id="estadoConexaoOffline" aria-live="polite">Dados locais</div></header>
 
 <div class="romaneio-backup-actions" style="max-width:1220px;margin:0 auto 12px;text-align:right"><span id="indicadorFilaMovimentos" style="font-weight:700;color:#254D69;margin-right:10px">Movimentações pendentes: 0</span><button class="desktop-backup-action" type="button" onclick="consultarFilaMovimentos()" style="width:auto;background:#FFD043;color:#254D69;font-size:12px;padding:8px 12px;margin-right:6px">Pendências de sincronização</button><button class="desktop-backup-action" type="button" onclick="verificarBackupOffline()" style="width:auto;background:#254D69;color:#fff;font-size:12px;padding:8px 12px">Verificar cópia local</button><button class="mobile-sync-action" type="button" onclick="sincronizarRomaneioCelular()" style="width:auto;background:#5CDCF2;color:#254D69;font-weight:800;font-size:13px;padding:10px 18px;border-radius:12px;border:2px solid #254D69">SINCRONIZAR</button></div>
 <section class="dashboard"><div class="metric"><div class="ico">📋</div><div><b id="dashRegistros">0</b><span id="dashRegistrosLabel">Registros totais</span></div></div><div class="metric"><div class="ico">📦</div><div><b id="dashCaixas">0</b><span id="dashCaixasLabel">Caixas totais</span></div></div><div class="metric"><div class="ico">🧱</div><div><b id="dashPaletes">0</b><span id="dashPaletesLabel">Paletes totais</span></div></div><div class="metric"><div class="ico">📍</div><div><b id="dashDestinos">0</b><span id="dashDestinosLabel">Destinos totais</span></div></div><div class="metric"><div class="ico">🕒</div><div><b id="dashUltimo">--</b><span>Último registro</span></div></div></section>
@@ -401,7 +402,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.125";
+const APP_VERSION = "2.0.126";
 const versaoAplicativoEl=document.getElementById("versaoAplicativo");
 if(versaoAplicativoEl)versaoAplicativoEl.textContent="v"+APP_VERSION;
 const VERSION_URL = "version.json";
@@ -2965,6 +2966,8 @@ function mostrarNotificacaoDivergenciaTeste({chave,posturas,qtd,saldo}) {
   if(window.matchMedia('(max-width:767px)').matches)return;
   const overlay=document.createElement("div");
   overlay.className="eme-aviso-overlay";
+  overlay.dataset.tipo="divergencia-estoque-teste";
+  overlay.dataset.chave=chave;
   const card=document.createElement("section");
   card.className="eme-aviso-card";
   card.setAttribute("role","alertdialog");
@@ -2998,7 +3001,17 @@ function mostrarNotificacaoDivergenciaTeste({chave,posturas,qtd,saldo}) {
   const ok=document.createElement("button");
   ok.type="button";ok.className="eme-aviso-ok";ok.textContent="OK, entendi";
   ok.addEventListener("click",()=>{overlay.dataset.confirmado='1';overlay.remove()});
-  card.append(titulo,subtitulo,identificacao,dados,diferenca,nota,ok);
+  const todas=document.createElement("button");
+  todas.type="button";todas.className="eme-aviso-ok eme-aviso-todas";todas.textContent="CONFIRMAR LEITURA DE TODAS";
+  todas.addEventListener("click",()=>{
+    document.querySelectorAll('.eme-aviso-overlay[data-tipo="divergencia-estoque-teste"]').forEach(aviso=>{
+      const chaveAvisada=aviso.dataset.chave;
+      if(chaveAvisada)window.divergenciasAvisadasTeste?.add(chaveAvisada);
+      aviso.dataset.confirmado="1";
+      aviso.remove();
+    });
+  });
+  card.append(titulo,subtitulo,identificacao,dados,diferenca,nota,todas,ok);
   overlay.appendChild(card);
   document.body.appendChild(overlay);
   ok.focus();
