@@ -1,4 +1,4 @@
-import {controleEnviosCompartilhado} from './controle-tentativas.mjs?v=2.0.135';
+import {controleEnviosCompartilhado} from './controle-tentativas.mjs?v=2.0.136';
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
 /* 2.0.50: integração de envio sob comando explícito, desabilitada até homologação.
@@ -8,7 +8,7 @@ import {initializeApp,getApps,getApp} from 'https://www.gstatic.com/firebasejs/1
 import {getAuth} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {getFirestore,doc,getDocFromServer,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {criarPublicadorMovimentos} from './publicador-firestore.js?v=2.0.128';
-import {criarSincronizadorFila} from './sincronizador-fila.js?v=2.0.130';
+import {criarSincronizadorFila} from './sincronizador-fila.js?v=2.0.136';
 const config={apiKey:'AIzaSyCCy5uY1eAFQE9Vhykr7xNNayDtk_B-Hy4',authDomain:'romaneio-2-0-homologacao.firebaseapp.com',projectId:'romaneio-2-0-homologacao',storageBucket:'romaneio-2-0-homologacao.firebasestorage.app',messagingSenderId:'357381847782',appId:'1:357381847782:web:59ad8365c033bba8e79927'};
 exigirFirebaseHomologacao(config);
 const app=getApps().length?getApp():initializeApp(config),auth=getAuth(app),db=getFirestore(app);
@@ -26,7 +26,16 @@ const publicador=criarPublicadorMovimentos({
  obterUsuario:()=>auth.currentUser
 });
 const sincronizador=criarSincronizadorFila({ler,gravar,publicador,avisar:r=>window.dispatchEvent(new CustomEvent('romaneio:sincronizacao-resultado',{detail:r}))});
-export async function sincronizarMovimentos250({liberarEspera=false}={}){
+const PRAZO_RESPOSTA_ENVIO_MS=30000;
+let sincronizacaoEmAndamento=null;
+function aguardarResposta(promise,etapa){
+ let temporizador;
+ return Promise.race([
+  Promise.resolve(promise),
+  new Promise((_,reject)=>{temporizador=setTimeout(()=>reject(new Error('O sistema não respondeu em 30 segundos durante '+etapa+'. A fila foi preservada.')),PRAZO_RESPOSTA_ENVIO_MS);})
+ ]).finally(()=>clearTimeout(temporizador));
+}
+async function executarSincronizacao250({liberarEspera=false}={}){
  if(!habilitado)throw Error('Envio ainda não habilitado; fila preservada');
  if(!ler().length)return {confirmados:0,pendentes:0};
  if(!navigator.onLine)throw Error('Sem internet; fila local preservada');
@@ -38,7 +47,7 @@ export async function sincronizarMovimentos250({liberarEspera=false}={}){
  const controleEnvioId=controle.geracao;
  try{
   ambienteEnvio=null;
-  const vinculo=await resolverAmbienteUsuario({db,uid});if(auth.currentUser?.uid!==uid)throw Error('Sessão alterada durante a verificação');ambienteEnvio={uid,ambienteId:vinculo.ambienteId};
+  const vinculo=await aguardarResposta(resolverAmbienteUsuario({db,uid}),'a validação do acesso');if(auth.currentUser?.uid!==uid)throw Error('Sessão alterada durante a verificação');ambienteEnvio={uid,ambienteId:vinculo.ambienteId};
   const limiteLotes=Math.ceil(ler().length/50)+1;
   let confirmados=0;const falhas=[],rejeitados=[],tentadas=new Set();
   const assinatura=op=>JSON.stringify(op);
@@ -48,7 +57,7 @@ export async function sincronizarMovimentos250({liberarEspera=false}={}){
    if(!candidatas.length)break;
    const antes=filaAtual.length;
    for(const op of candidatas)tentadas.add(assinatura(op));
-   const parcial=await sincronizador.executar(candidatas);
+   const parcial=await aguardarResposta(sincronizador.executar(candidatas),'o envio da fila');
    confirmados+=parcial.confirmados||0;
    falhas.push(...(parcial.falhas||[]));
    rejeitados.push(...(parcial.rejeitados||[]));
@@ -64,6 +73,11 @@ export async function sincronizarMovimentos250({liberarEspera=false}={}){
   return {confirmados,pendentes,falhas,rejeitados};
  }catch(e){controle.falhou(e);throw e;}
  finally{controle.encerrar(controleEnvioId);}
+}
+export function sincronizarMovimentos250(opcoes={}){
+ if(sincronizacaoEmAndamento)return sincronizacaoEmAndamento;
+ sincronizacaoEmAndamento=executarSincronizacao250(opcoes).finally(()=>{sincronizacaoEmAndamento=null;});
+ return sincronizacaoEmAndamento;
 }
 export function estadoSincronizacao250(){return {habilitado,autenticado:!!auth.currentUser,pendentes:ler().length,erros:erros.slice(-10)};}
 

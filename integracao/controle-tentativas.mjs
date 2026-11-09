@@ -17,7 +17,7 @@ export function criarControleTentativas({agora=()=>Date.now(),prazoTravaMs=12000
  };
 }
 export function controleEnviosCompartilhado(uid,escopo=escopoCompartilhado()){
- const chave='__romaneioControleEnvios135';const controles=escopo[chave]||(escopo[chave]=new Map());
+ const chave='__romaneioControleEnvios136';const controles=escopo[chave]||(escopo[chave]=new Map());
  if(!controles.has(uid))controles.set(uid,criarControleTentativas());return controles.get(uid);
 }
 

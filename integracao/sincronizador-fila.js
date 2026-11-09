@@ -2,7 +2,7 @@
  * Remove somente IDs confirmados que ainda correspondem ao conteúdo enviado.
  * Preserva inclusões que chegarem durante a operação de rede.
  */
-export function criarSincronizadorFila({ler,gravar,publicador,avisar,agora=()=>Date.now(),prazoAndamentoMs=120000}){
+export function criarSincronizadorFila({ler,gravar,publicador,avisar,agora=()=>Date.now(),prazoAndamentoMs=30000}){
  if([ler,gravar,avisar].some(x=>typeof x!=='function')||!publicador||typeof publicador.publicar!=='function')throw TypeError('Dependências inválidas');
  let emAndamento=null,iniciadoEm=0,geracao=0;
  const assinatura=op=>JSON.stringify(op);
