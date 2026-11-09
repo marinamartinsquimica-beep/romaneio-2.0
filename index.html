@@ -401,7 +401,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.123";
+const APP_VERSION = "2.0.124";
 const VERSION_URL = "version.json";
 const ESTADO_OPERACIONAL_KEY = "romaneio_estado_operacional";
 const RASCUNHO_KEY = "romaneio_rascunho";
@@ -752,7 +752,7 @@ async function apagarDestino(destino) {
     }
     salvarLocalStorage();
     // As exclusões individuais já entram na fila durável do Firebase. Não geram baixa de estoque.
-    if(navigator.onLine){import('./integracao/envio-movimentos250.js?v=2.0.118').then(m=>m.sincronizarMovimentos250()).catch(err=>console.warn('Exclusão preservada na fila; sincronização pendente',err));}
+    if(navigator.onLine){import('./integracao/envio-movimentos250.js?v=2.0.124').then(m=>m.sincronizarMovimentos250()).catch(err=>console.warn('Exclusão preservada na fila; sincronização pendente',err));}
     alert(`Destino ${nomeDestino} apagado. As entradas dos demais Destinos foram mantidas.`);
 }
 
@@ -1803,7 +1803,7 @@ function diagnosticarFormatoEnvio(op){
  if(typeof op?.dispositivoId!=='string'||!op.dispositivoId.length||op.dispositivoId.length>160)m.push('Identificação do aparelho ausente ou inválida');
  if(typeof it?.sku!=='string'||!it.sku.trim()||it.sku.length>100)m.push('SKU deve ser texto preenchido (até 100 caracteres)');
  if(typeof it?.loteCompleto!=='string'||!it.loteCompleto.trim()||it.loteCompleto.length>150)m.push('Lote completo deve ser texto preenchido (até 150 caracteres)');
- if(!((Number.isInteger(it?.caixas)&&it.caixas>0&&it.caixas<=1000000)||(typeof it?.caixas==='string'&&/^[1-9][0-9]{0,5}$/.test(it.caixas))))m.push('Quantidade de caixas fora do formato aceito');
+ // Quantidade lida no Data Matrix não bloqueia a fila; itens confirmados continuam protegidos por ID.
  if(op?.tipo==='edicao'&&(!op.antes||typeof op.antes!=='object'||Array.isArray(op.antes)))m.push('Edição sem estado anterior válido');
  if(typeof op?.criadoEm!=='string'||!op.criadoEm.length||op.criadoEm.length>40)m.push('Data do movimento ausente ou inválida');
  return m;
@@ -1957,7 +1957,7 @@ async function guardarBackupIdentificacaoFila(copia){
   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('Cópia de segurança cancelada.'));
  });}finally{db.close();}
 }
-async function resolverPendenciasSincronizacao(botao,mensagem,carregar=()=>import('./integracao/envio-movimentos250.js?v=2.0.118')){
+async function resolverPendenciasSincronizacao(botao,mensagem,carregar=()=>import('./integracao/envio-movimentos250.js?v=2.0.124')){
  botao.disabled=true;mensagem.textContent='Enviando pendências. Aguarde a confirmação do sistema.';
  try{
   if(!navigator.onLine)throw Error('Sem internet. Reconecte este aparelho e tente novamente.');
@@ -2031,7 +2031,7 @@ function salvarLocalStorage() {
         registrarCopiaSegurancaOffline(dados);
     registrarMovimentosLocais(dados);
     // Envia a fila durável em segundo plano: cada operação só sai após confirmação do Firebase.
-    if (navigator.onLine) import('./integracao/envio-movimentos250.js?v=2.0.118')
+    if (navigator.onLine) import('./integracao/envio-movimentos250.js?v=2.0.124')
       .then(m=>m.sincronizarMovimentos250())
       .catch(e=>console.warn('Movimentações preservadas para próximo envio:',e));
     try { window.dispatchEvent(new CustomEvent("romaneio:entradas-salvas", {detail:{quantidade:dados.length}})); } catch(e) { console.warn("Evento de sincronização indisponível",e); }
@@ -3425,7 +3425,7 @@ async function sincronizarRomaneioCelular(){
  if(botao)botao.disabled=true;
  try {
   if(!navigator.onLine)throw Error('Sem internet. Os registros estão preservados para o próximo envio.');
-  const {sincronizarMovimentos250}=await import('./integracao/envio-movimentos250.js?v=2.0.118');
+  const {sincronizarMovimentos250}=await import('./integracao/envio-movimentos250.js?v=2.0.124');
   await sincronizarMovimentos250();
   localStorage.setItem('romaneio2_solicitar_sincronizacao_v1',String(Date.now()));
   const qtd=lerFilaMovimentos().length;
@@ -3649,7 +3649,7 @@ async function excluirRomaneiosSelecionados(selecao=chavesSelecionadas()){
   document.querySelector('#tabela tbody').replaceChildren();carregarLocalStorage();
   operadorAtualizarPainel();atualizarResumoReservaTeste();renderizarPendenciasConferenciaEstoque();atualizarIndicadorFilaMovimentos();atualizarDestinosBaixa();
   status.textContent=destinos.join(', ')+': '+cx+' caixas excluídas dos romaneios SEM BAIXA. Estoque preservado. Correções registradas na fila para sincronização.';
-  if(navigator.onLine)void import('./integracao/envio-movimentos250.js?v=2.0.118').then(m=>m.sincronizarMovimentos250()).catch(e=>console.warn('Exclusão preservada na fila:',e));
+  if(navigator.onLine)void import('./integracao/envio-movimentos250.js?v=2.0.124').then(m=>m.sincronizarMovimentos250()).catch(e=>console.warn('Exclusão preservada na fila:',e));
  }catch(e){status.textContent='Exclusão não concluída: '+e.message;await confirmarRaiar(status.textContent,{titulo:'Conferir exclusão',cancelar:'FECHAR',confirmar:'OK, ENTENDI'});}
  finally{exclusaoRomaneiosEmAndamento=false;}
 }
