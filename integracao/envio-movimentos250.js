@@ -1,4 +1,4 @@
-import {controleEnviosCompartilhado} from './controle-tentativas.mjs?v=2.0.117';
+import {controleEnviosCompartilhado} from './controle-tentativas.mjs?v=2.0.129';
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
 /* 2.0.50: integração de envio sob comando explícito, desabilitada até homologação.
@@ -33,7 +33,8 @@ export async function sincronizarMovimentos250(){
  await auth.authStateReady();
  if(!auth.currentUser)throw Error('Reconecte pela Central de Conexão');
  const uid=auth.currentUser.uid,controle=controleEnviosCompartilhado(uid);
- if(!controle.iniciar())return {confirmados:0,pendentes:ler().length,emEspera:true,aguardarMs:controle.restanteMs};
+ if(!controle.iniciar())return {confirmados:0,pendentes:ler().length,emEspera:true,aguardarMs:Math.max(controle.restanteMs,controle.restanteBloqueioMs)};
+ const controleEnvioId=controle.geracao;
  try{
   ambienteEnvio=null;
   const vinculo=await resolverAmbienteUsuario({db,uid});if(auth.currentUser?.uid!==uid)throw Error('Sessão alterada durante a verificação');ambienteEnvio={uid,ambienteId:vinculo.ambienteId};
@@ -61,7 +62,7 @@ export async function sincronizarMovimentos250(){
   else controle.sucesso();
   return {confirmados,pendentes,falhas,rejeitados};
  }catch(e){controle.falhou(e);throw e;}
- finally{controle.encerrar();}
+ finally{controle.encerrar(controleEnvioId);}
 }
 export function estadoSincronizacao250(){return {habilitado,autenticado:!!auth.currentUser,pendentes:ler().length,erros:erros.slice(-10)};}
 
