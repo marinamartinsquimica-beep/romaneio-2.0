@@ -14,7 +14,8 @@ export async function resetarDadosTesteAntigos({
  agora=()=>new Date()
 }={}){
  const entradasRaw=storage.getItem("entradas");
- const filaRaw=storage.getItem("romaneio2_movimentos_pendentes_v1")||"[]";
+ const filaRawOriginal=storage.getItem("romaneio2_movimentos_pendentes_v1");
+ const filaRaw=filaRawOriginal||"[]";
  let entradas,fila;
  try{entradas=entradasRaw?JSON.parse(entradasRaw):[];fila=JSON.parse(filaRaw);}
  catch{throw Error("Os dados locais não puderam ser lidos.");}
@@ -24,11 +25,11 @@ export async function resetarDadosTesteAntigos({
   "REINICIAR DADOS DESTE APARELHO?\n\nSerão removidos "+entradas.length+" registro(s), "+caixas+" caixa(s) e "+fila.length+" movimento(s) pendentes locais.\n\nAntes será baixada uma cópia JSON. O estoque importado, a conta e o histórico remoto do computador serão preservados."
  );
  if(!confirmado)return {cancelado:true};
- const backup={versao:"2.0.135",criadoEm:agora().toISOString(),dados:{}};
+ const backup={versao:"2.0.141",criadoEm:agora().toISOString(),dados:{}};
  for(const chave of CHAVES)backup.dados[chave]=storage.getItem(chave);
  const texto=JSON.stringify(backup,null,2);
  const checado=JSON.parse(texto);
- if(checado.dados["romaneio2_movimentos_pendentes_v1"]!==filaRaw||checado.dados.entradas!==entradasRaw)throw Error("A cópia de segurança ficou incompleta.");
+ if(CHAVES.some(chave=>checado.dados[chave]!==storage.getItem(chave)))throw Error("A cópia de segurança ficou incompleta.");
  const url=janela.URL.createObjectURL(new Blob([texto],{type:"application/json"}));
  const a=documento.createElement("a");a.href=url;a.download="romaneio-backup-antes-reset-"+agora().toISOString().replace(/[:.]/g,"-")+".json";
  documento.body.appendChild(a);a.click();a.remove();setTimeout(()=>janela.URL.revokeObjectURL(url),3000);
