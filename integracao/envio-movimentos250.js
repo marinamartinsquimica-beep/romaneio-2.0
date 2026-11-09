@@ -37,9 +37,22 @@ export async function sincronizarMovimentos250(){
  try{
   ambienteEnvio=null;
   const vinculo=await resolverAmbienteUsuario({db,uid});if(auth.currentUser?.uid!==uid)throw Error('Sessão alterada durante a verificação');ambienteEnvio={uid,ambienteId:vinculo.ambienteId};
-  const resultado=await sincronizador.executar();
-  if(resultado.falhas?.length)controle.falhou(resultado.falhas[0]);else controle.sucesso();
-  return resultado;
+  const limiteLotes=Math.ceil(ler().length/50)+1;
+  let confirmados=0;const falhas=[],rejeitados=[];
+  for(let lote=0;lote<limiteLotes;lote++){
+   const antes=ler().length;if(!antes)break;
+   const parcial=await sincronizador.executar();
+   confirmados+=parcial.confirmados||0;
+   falhas.push(...(parcial.falhas||[]));
+   rejeitados.push(...(parcial.rejeitados||[]));
+   const depois=ler().length;
+   if(!depois||depois>=antes||parcial.falhas?.length)break;
+  }
+  const pendentes=ler().length;
+  if(falhas.length)controle.falhou(falhas[0]);
+  else if(rejeitados.length||(pendentes&&confirmados===0))controle.falhou(new Error('Movimentações ainda pendentes de revisão'));
+  else controle.sucesso();
+  return {confirmados,pendentes,falhas,rejeitados};
  }catch(e){controle.falhou(e);throw e;}
  finally{controle.encerrar();}
 }

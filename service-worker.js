@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v2123-reparo-versao-anterior";
+const CACHE_NAME = "romaneio-2-0-cache-v2124-sincronizacao-pendentes";
 
 const FILES_TO_CACHE = [
   "./integracao/marcos-romaneios-fechados.mjs?v=2.0.121",
@@ -9,7 +9,7 @@ const FILES_TO_CACHE = [
   "./integracao/erro-publicacao-estoque.mjs?v=2.0.120",
   "./integracao/bases-compartilhadas.mjs?v=2.0.118",
   "./integracao/controle-tentativas.mjs?v=2.0.118",
-  "./integracao/envio-movimentos250.js?v=2.0.118",
+  "./integracao/envio-movimentos250.js?v=2.0.124",
   "./integracao/publicador-firestore.js?v=2.0.118",
   "./integracao/correcoes-lancamentos.mjs?v=2.0.118",
   "./integracao/comprovante-baixa-agrupada.mjs?v=2.0.106",
