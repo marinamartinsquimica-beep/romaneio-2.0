@@ -9,17 +9,18 @@ export function criarControleTentativas({agora=()=>Date.now(),prazoTravaMs=12000
   encerrar(id=geracao){if(id!==geracao)return;ocupado=false;iniciadoEm=0;},
   get geracao(){return geracao;},
   get restanteBloqueioMs(){return ocupado?Math.max(0,prazoTravaMs-(agora()-iniciadoEm)):0;},
-  falhou(e){tentativas++;metricas.falhas++;const quota=/resource-exhausted|quota/i.test(String(e?.code||e?.codigo||'')+' '+String(e?.message||e?.mensagem||e||''));const espera=quota?0:Math.min(300000,5000*2**Math.min(tentativas-1,6));proxima=agora()+espera;},
+  liberarEspera(){if(!ocupado)proxima=0;},
+  falhou(e){tentativas++;metricas.falhas++;const quota=/resource-exhausted|quota/i.test(String(e?.code||e?.codigo||'')+' '+String(e?.message||e?.mensagem||e||''));const espera=quota?900000:Math.min(300000,5000*2**Math.min(tentativas-1,6));proxima=agora()+espera;},
   sucesso(){tentativas=0;proxima=0;},
   get metricas(){return {...metricas};},
   get restanteMs(){return Math.max(0,proxima-agora());}
  };
 }
 export function controleEnviosCompartilhado(uid,escopo=escopoCompartilhado()){
- const chave='__romaneioControleEnvios131';const controles=escopo[chave]||(escopo[chave]=new Map());
+ const chave='__romaneioControleEnvios132';const controles=escopo[chave]||(escopo[chave]=new Map());
  if(!controles.has(uid))controles.set(uid,criarControleTentativas());return controles.get(uid);
 }
 
 export function metricasEnviosCompartilhados(escopo=escopoCompartilhado()){
- return [...(escopo.__romaneioControleEnvios131||new Map())].map(([conta,c])=>({conta,...c.metricas,esperaRestanteMs:c.restanteMs}));
+ return [...(escopo.__romaneioControleEnvios132||new Map())].map(([conta,c])=>({conta,...c.metricas,esperaRestanteMs:c.restanteMs}));
 }

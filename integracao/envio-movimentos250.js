@@ -1,4 +1,4 @@
-import {controleEnviosCompartilhado} from './controle-tentativas.mjs?v=2.0.130';
+import {controleEnviosCompartilhado} from './controle-tentativas.mjs?v=2.0.132';
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
 /* 2.0.50: integração de envio sob comando explícito, desabilitada até homologação.
@@ -26,13 +26,14 @@ const publicador=criarPublicadorMovimentos({
  obterUsuario:()=>auth.currentUser
 });
 const sincronizador=criarSincronizadorFila({ler,gravar,publicador,avisar:r=>window.dispatchEvent(new CustomEvent('romaneio:sincronizacao-resultado',{detail:r}))});
-export async function sincronizarMovimentos250(){
+export async function sincronizarMovimentos250({liberarEspera=false}={}){
  if(!habilitado)throw Error('Envio ainda não habilitado; fila preservada');
  if(!ler().length)return {confirmados:0,pendentes:0};
  if(!navigator.onLine)throw Error('Sem internet; fila local preservada');
  await auth.authStateReady();
  if(!auth.currentUser)throw Error('Reconecte pela Central de Conexão');
  const uid=auth.currentUser.uid,controle=controleEnviosCompartilhado(uid);
+ if(liberarEspera)controle.liberarEspera();
  if(!controle.iniciar())return {confirmados:0,pendentes:ler().length,emEspera:true,aguardarMs:Math.max(controle.restanteMs,controle.restanteBloqueioMs)};
  const controleEnvioId=controle.geracao;
  try{
