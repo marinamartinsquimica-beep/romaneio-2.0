@@ -1,4 +1,4 @@
-import {controleEnviosCompartilhado,erroTemporario} from './controle-tentativas.mjs?v=2.0.117';
+import {controleEnviosCompartilhado} from './controle-tentativas.mjs?v=2.0.117';
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
 /* 2.0.50: integração de envio sob comando explícito, desabilitada até homologação.
@@ -51,7 +51,7 @@ export async function sincronizarMovimentos250(){
    falhas.push(...(parcial.falhas||[]));
    rejeitados.push(...(parcial.rejeitados||[]));
    const depois=ler().length;
-   const falhaTemporaria=(parcial.falhas||[]).some(erroTemporario);
+   const falhaTemporaria=(parcial.falhas||[]).some(e=>/resource-exhausted|quota|unavailable|deadline-exceeded|network|permission-denied/i.test(String(e?.code||e?.codigo||'')+' '+String(e?.message||e?.mensagem||e||'')));
    if(!depois||falhaTemporaria)break;
    if(depois>=antes&&!ler().some(op=>!tentadas.has(assinatura(op))))break;
   }
