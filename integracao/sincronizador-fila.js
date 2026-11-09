@@ -2,12 +2,14 @@
  * Remove somente IDs confirmados que ainda correspondem ao conteúdo enviado.
  * Preserva inclusões que chegarem durante a operação de rede.
  */
-export function criarSincronizadorFila({ler,gravar,publicador,avisar}){
+export function criarSincronizadorFila({ler,gravar,publicador,avisar,agora=()=>Date.now(),prazoAndamentoMs=120000}){
  if([ler,gravar,avisar].some(x=>typeof x!=='function')||!publicador||typeof publicador.publicar!=='function')throw TypeError('Dependências inválidas');
- let emAndamento=null;
+ let emAndamento=null,iniciadoEm=0,geracao=0;
  const assinatura=op=>JSON.stringify(op);
  async function executar(operacoes){
-  if(emAndamento)return emAndamento;
+  const instante=agora();
+  if(emAndamento&&instante-iniciadoEm<prazoAndamentoMs)return emAndamento;
+  const id=++geracao;iniciadoEm=instante;
   emAndamento=(async()=>{
    const antes=ler();
    if(!Array.isArray(antes))throw TypeError('Fila inválida');
@@ -28,7 +30,7 @@ export function criarSincronizadorFila({ler,gravar,publicador,avisar}){
    gravar(restante);
    avisar({confirmados:atual.length-restante.length,pendentes:restante.length,rejeitados:resultado.rejeitados||[]});
    return {confirmados:atual.length-restante.length,pendentes:restante.length,falhas:(resultado.confirmacoes||[]).filter(x=>x.confirmado!==true),rejeitados:resultado.rejeitados||[]};
-  })().finally(()=>{emAndamento=null});
+  })().finally(()=>{if(geracao===id){emAndamento=null;iniciadoEm=0;}});
   return emAndamento;
  }
  return {executar};

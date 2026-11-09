@@ -16,10 +16,10 @@ export function criarControleTentativas({agora=()=>Date.now(),prazoTravaMs=12000
  };
 }
 export function controleEnviosCompartilhado(uid,escopo=escopoCompartilhado()){
- const chave='__romaneioControleEnvios129';const controles=escopo[chave]||(escopo[chave]=new Map());
+ const chave='__romaneioControleEnvios130';const controles=escopo[chave]||(escopo[chave]=new Map());
  if(!controles.has(uid))controles.set(uid,criarControleTentativas());return controles.get(uid);
 }
 
 export function metricasEnviosCompartilhados(escopo=escopoCompartilhado()){
- return [...(escopo.__romaneioControleEnvios129||new Map())].map(([conta,c])=>({conta,...c.metricas,esperaRestanteMs:c.restanteMs}));
+ return [...(escopo.__romaneioControleEnvios130||new Map())].map(([conta,c])=>({conta,...c.metricas,esperaRestanteMs:c.restanteMs}));
 }
