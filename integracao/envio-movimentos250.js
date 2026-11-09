@@ -29,6 +29,7 @@ const sincronizador=criarSincronizadorFila({ler,gravar,publicador,avisar:r=>wind
 export async function sincronizarMovimentos250({liberarEspera=false}={}){
  const PRAZO_RESPOSTA_ENVIO_MS=30000;
  const aguardarResposta=(promise,etapa)=>{
+  if(typeof window==='undefined')return promise;
   let temporizador;
   return Promise.race([
    Promise.resolve(promise),
