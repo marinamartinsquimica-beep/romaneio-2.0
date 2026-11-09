@@ -26,15 +26,15 @@ const publicador=criarPublicadorMovimentos({
  obterUsuario:()=>auth.currentUser
 });
 const sincronizador=criarSincronizadorFila({ler,gravar,publicador,avisar:r=>window.dispatchEvent(new CustomEvent('romaneio:sincronizacao-resultado',{detail:r}))});
-const PRAZO_RESPOSTA_ENVIO_MS=30000;
-function aguardarResposta(promise,etapa){
- let temporizador;
- return Promise.race([
-  Promise.resolve(promise),
-  new Promise((_,reject)=>{temporizador=setTimeout(()=>reject(new Error('O sistema não respondeu em 30 segundos durante '+etapa+'. A fila foi preservada.')),PRAZO_RESPOSTA_ENVIO_MS);})
- ]).finally(()=>clearTimeout(temporizador));
-}
 export async function sincronizarMovimentos250({liberarEspera=false}={}){
+ const PRAZO_RESPOSTA_ENVIO_MS=30000;
+ const aguardarResposta=(promise,etapa)=>{
+  let temporizador;
+  return Promise.race([
+   Promise.resolve(promise),
+   new Promise((_,reject)=>{temporizador=setTimeout(()=>reject(new Error('O sistema não respondeu em 30 segundos durante '+etapa+'. A fila foi preservada.')),PRAZO_RESPOSTA_ENVIO_MS);})
+  ]).finally(()=>clearTimeout(temporizador));
+ };
  if(!habilitado)throw Error('Envio ainda não habilitado; fila preservada');
  if(!ler().length)return {confirmados:0,pendentes:0};
  if(!navigator.onLine)throw Error('Sem internet; fila local preservada');
