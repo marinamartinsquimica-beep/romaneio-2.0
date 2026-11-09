@@ -30,10 +30,8 @@ export function criarPublicadorMovimentos({transacionar,referencia,registrarErro
     confirmacoes.push(...estados);
    }catch(erroLote){
     if(erroTemporario(erroLote)){
-     for(const op of lote){
-      const falha={id:op.id,mensagem:String(erroLote?.message||erroLote),codigo:String(erroLote?.code||'')};
-      registrarErro(falha);confirmacoes.push({...falha,confirmado:false});
-     }
+     const op=lote[0],falha={id:op.id,mensagem:String(erroLote?.message||erroLote),codigo:String(erroLote?.code||'')};
+     registrarErro(falha);confirmacoes.push({...falha,confirmado:false});
     }else{
      // Isole falhas permanentes para que um item problemático não bloqueie os demais.
      for(const op of lote){
