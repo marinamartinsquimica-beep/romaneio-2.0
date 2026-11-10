@@ -1,3 +1,4 @@
+import {transacaoSinalizada,assinarPorAtividade} from './sincronizacao-por-eventos.mjs?v=2.0.145';
 import {adquirirBaseCompartilhada} from './bases-compartilhadas.mjs?v=2.0.118';
 import {validarSelecaoSemCancelamentos} from './correcoes-lancamentos.mjs?v=2.0.123';
 import {registroBaixadoNoEstoque} from './status-baixa-romaneio.mjs?v=2.0.110';
@@ -9,12 +10,13 @@ import {guardarModeloEmbalado} from './modelo-estoque-persistente.mjs';
 import {descreverErroPublicacao} from './erro-publicacao-estoque.mjs?v=2.0.120';
 import {initializeApp,getApp,getApps} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getFirestore,doc,getDocFromServer,collection,query,orderBy,limit,onSnapshot,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {getFirestore,doc,getDocFromServer,collection,query,orderBy,limit,where,startAfter,getDocsFromServer,onSnapshot,runTransaction as runTransactionOriginal} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {publicarEstoqueOficial} from './publicacao-estoques.mjs';
 import {conferirEstoques} from './conferencia-estoques.mjs';
 const config={apiKey:'AIzaSyCCy5uY1eAFQE9Vhykr7xNNayDtk_B-Hy4',authDomain:'romaneio-2-0-homologacao.sistemaapp.com',projectId:'romaneio-2-0-homologacao',storageBucket:'romaneio-2-0-homologacao.sistemastorage.app',messagingSenderId:'357381847782',appId:'1:357381847782:web:59ad8365c033bba8e79927'};
 exigirFirebaseHomologacao(config);
 const app=getApps().length?getApp():initializeApp(config),auth=getAuth(app),db=getFirestore(app);
+const runTransaction=(base,fn,opcoes)=>transacaoSinalizada({db:base,doc,runTransaction:runTransactionOriginal,raiz:()=>['romaneio_ambientes',ambienteAtual.ambienteId]},fn,opcoes);
 let unsub=[],versoes={embalado:'',paripassu:''},ambienteAtual=null,usuarioAtual=null;
 window.__comprovantesBaixaConfirmados=[];
 window.romaneioPossuiBaixaConfirmada=registro=>registroBaixadoNoEstoque(registro,window.__comprovantesBaixaConfirmados||[]);
@@ -75,7 +77,7 @@ function observar(uid,ambienteId=null){
  if(!ambienteId)throw Error('Homologação sem ambiente compartilhado');
  const raiz=['romaneio_ambientes',ambienteId];
  for(const tipo of ['embalado','paripassu']){
-  unsub.push(onSnapshot(doc(db,...raiz,'estoques_oficiais',tipo),snap=>{
+  unsub.push(assinarPorAtividade({db,raiz,nome:tipo,doc,collection,query,where,orderBy,limit,startAfter,getDocsFromServer,getDocFromServer,onSnapshot},snap=>{
    const d=snap.exists()?snap.data():null;versoes[tipo]=d?.versao||'';window.__etapa4Versoes=window.__etapa4Versoes||{};window.__etapa4Versoes[tipo]=versoes[tipo];
    if(tipo==='embalado'&&d?.itens?.length){window.estoqueTesteConsulta=new Map(d.itens.map((x,i)=>[String(i),x]));window.reservaTesteAtiva=true;for(const fn of ['atualizarResumoReservaTeste','renderizarEstoqueCompletoTeste','operadorAtualizarCardsEstoque','renderizarPendenciasConferenciaEstoque'])try{window[fn]?.()}catch{}}
    window.__etapa4=window.__etapa4||{};window.__etapa4[tipo]=d?.itens||null;
@@ -175,7 +177,7 @@ function observar(uid,ambienteId=null){
  unsub.push(()=>{window.removeEventListener('online',aoReconectar);document.removeEventListener('visibilitychange',aoRetornar);if(window.atualizarConsultaCompartilhada===atualizarPaletesCompartilhados)delete window.atualizarConsultaCompartilhada;});
  // Uma assinatura por coleção; mudanças atualizam a base já recebida.
  const erroRecepcao=e=>mostrar('Consulta compartilhada: '+e.message);
- const assinar=(nome,ok,erro)=>onSnapshot(query(collection(db,...raiz,nome),orderBy('__name__'),limit(LIMITE_COLECAO_INCREMENTAL)),{includeMetadataChanges:true},ok,erro);
+ const assinar=(nome,ok,erro)=>assinarPorAtividade({db,raiz,nome,doc,collection,query,where,orderBy,limit,startAfter,getDocsFromServer,getDocFromServer,onSnapshot},ok,erro);
  const movimentosRecebidos=adquirirBaseCompartilhada({chave:uid+':'+ambienteId+':movimentos',criar:callbacks=>criarColecaoIncremental({assinar:(ok,erro)=>assinar('movimentos',ok,erro),online:()=>navigator.onLine,...callbacks}),aoErro:erroRecepcao,
   aoMudar:snapshot=>{renderizarDestinosExcluidos(snapshot.docs.map(d=>d.data()));agendarConsultaCompartilhada();}
  });
@@ -196,6 +198,8 @@ $('etapa4Publicar')?.addEventListener('click',async()=>{
   await auth.authStateReady();const u=auth.currentUser;if(!u)throw Error('Autenticação necessária na Central de Conexão.');
   const tipo=$('etapa4Tipo').value,file=$('etapa4Arquivo').files?.[0],itens=await importar(file,tipo);
   if(tipo==='embalado')window.__etapa4ArquivoEmbalado=file;
+  const vigente=await getDocFromServer(doc(db,'romaneio_ambientes',ambienteAtual.ambienteId,'estoques_oficiais',tipo));
+  versoes[tipo]=vigente.exists()?vigente.data().versao||'':'';
   if(!navigator.onLine)throw Error('Sem conexão. Arquivo não publicado.');
   if(new TextEncoder().encode(JSON.stringify(itens)).length>750000)throw Error('Estoque excede tamanho seguro para um documento sistema; publicação cancelada sem perda de dados.');
   if(!await window.confirmarRaiar('Publicar '+itens.length+' lotes de '+tipo+' para os aparelhos autenticados? A planilha oficial não será modificada.'))return;
@@ -270,4 +274,5 @@ window.substituirEstoqueEmbaladoPeloInventario=async ({resultado,versaoInicial})
   doc,runTransaction,autorizado:true,ambienteId:ambienteAtual.ambienteId
  });
 };
+
 

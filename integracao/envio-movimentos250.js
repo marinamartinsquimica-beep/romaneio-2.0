@@ -1,3 +1,4 @@
+import {transacaoSinalizada,assinarPorAtividade} from './sincronizacao-por-eventos.mjs?v=2.0.145';
 import {controleEnviosCompartilhado} from './controle-tentativas.mjs?v=2.0.144';
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
@@ -6,12 +7,13 @@ import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
  */
 import {initializeApp,getApps,getApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getFirestore,doc,getDocFromServer,runTransaction} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-import {criarPublicadorMovimentos} from './publicador-firestore.js?v=2.0.128';
+import {getFirestore,doc,getDocFromServer,runTransaction as runTransactionOriginal} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {criarPublicadorMovimentos} from './publicador-firestore.js?v=2.0.145';
 import {criarSincronizadorFila} from './sincronizador-fila.js?v=2.0.137';
 const config={apiKey:'AIzaSyCCy5uY1eAFQE9Vhykr7xNNayDtk_B-Hy4',authDomain:'romaneio-2-0-homologacao.firebaseapp.com',projectId:'romaneio-2-0-homologacao',storageBucket:'romaneio-2-0-homologacao.firebasestorage.app',messagingSenderId:'357381847782',appId:'1:357381847782:web:59ad8365c033bba8e79927'};
 exigirFirebaseHomologacao(config);
 const app=getApps().length?getApp():initializeApp(config),auth=getAuth(app),db=getFirestore(app);
+const runTransaction=(base,fn,opcoes)=>transacaoSinalizada({db:base,doc,runTransaction:runTransactionOriginal,raiz:()=>raizEnvio()},fn,opcoes);
 const CHAVE='romaneio2_movimentos_pendentes_v1';
 let ambienteEnvio=null;
 const raizEnvio=()=>{if(!ambienteEnvio||ambienteEnvio.uid!==auth.currentUser?.uid)throw Error('Homologação sem ambiente compartilhado válido');return ['romaneio_ambientes',ambienteEnvio.ambienteId];};
@@ -87,3 +89,4 @@ export async function regularizarIdentificacaoPendencias({dispositivoId,guardarB
   consultarServidor:async id=>{validarSessao();return (await getDocFromServer(doc(db,'romaneio_ambientes',vinculo.ambienteId,'movimentos',id))).exists();}
  });
 }
+

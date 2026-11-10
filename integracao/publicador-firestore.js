@@ -1,7 +1,7 @@
 import {erroTemporario} from './controle-tentativas.mjs?v=2.0.117';
 /* Lotes atômicos e idempotentes; envia apenas movimentos para a coleção compartilhada. */
 import {prepararLoteMovimentos,reconciliarConfirmacoes} from './protocolo-movimentos.js?v=2.0.97';
-const canonico=x=>JSON.stringify(x,(_,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a.localeCompare(b))):v);
+const canonico=x=>JSON.stringify(x,(k,v)=>k==='syncSeq'?undefined:v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a.localeCompare(b))):v);
 export function criarPublicadorMovimentos({transacionar,referencia,registrarErro,obterUsuario}){
  if([transacionar,referencia,registrarErro,obterUsuario].some(fn=>typeof fn!=='function'))throw new TypeError('Dependências ausentes');
  async function publicar(fila,{limite=50}={}){
@@ -60,3 +60,4 @@ export function criarPublicadorMovimentos({transacionar,referencia,registrarErro
  }
  return {publicar};
 }
+

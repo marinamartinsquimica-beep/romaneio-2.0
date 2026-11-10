@@ -22,6 +22,8 @@ function ambiente({mobile=false,entradas=[]}={}){
  const c={adquirirBaseCompartilhada:op=>adquirirBaseCompartilhada({...op,escopo}),identificarCorrecoes,criarColecaoIncremental,LIMITE_COLECAO_INCREMENTAL,db:{},auth:{currentUser:{uid:'marina'},authStateReady:async()=>{}},navigator:{onLine:true},
   receberEntradasNoAparelho:()=>!mobile,raizOperacional:uid=>['romaneio_ambientes','sala-ovos'],queueMicrotask,
   cancelarMudancasRemotas:null,contaObservada:null,ultimaAssinaturaRemota:null,revisaoExpedicoesRemotas:0,cicloSolicitadoDuranteConsulta:false,cicloAutomatico:()=>ciclos++,
+  doc:()=>{},where:()=>{},startAfter:()=>{},getDocsFromServer:()=>{throw Error('Consulta não esperada')},getDocFromServer:()=>{throw Error('Consulta não esperada')},
+  assinarPorAtividade:({nome},ok,erro)=>{fontes.set(nome,{ok,erro,ativa:true});return ()=>{fontes.get(nome).ativa=false;};},
   collection:(_db,...path)=>({nome:path.at(-1)}),orderBy:()=>{},limit:n=>{assert.ok(n<=10000,'Consulta excede o máximo aceito pelo serviço');return n;},query:ref=>ref,
   onSnapshot(ref,opcoes,ok,erro){assert.equal(opcoes.includeMetadataChanges,true);fontes.set(ref.nome,{ok,erro,ativa:true});return ()=>{fontes.get(ref.nome).ativa=false;};},
   $:id=>{if(!elementos.has(id))elementos.set(id,{disabled:false,textContent:''});return elementos.get(id);},
@@ -79,3 +81,4 @@ test('baixa recebida durante a conferência cancela a imagem anterior antes de g
  const antes=a.dados.get('entradas');await a.c.aplicarUniaoSeguraOperacional();
  assert.equal(a.dados.get('entradas'),antes);assert.match(a.elementos.get('resultadoAplicarUniao').textContent,/mudou durante/);
 });
+

@@ -24,6 +24,29 @@ service cloud.firestore {
     match /romaneio_ambientes/{ambiente} {
       allow get: if membroAtivo(ambiente);
       allow list, create, update, delete: if false;
+      // Aviso econômico: uma sequência por transação com dados novos.
+      match /sync_meta/atividade {
+        function formatoAtividade() {
+          let d = request.resource.data;
+          return d.keys().hasOnly(['sequencia','movimentos','expedicoes','embalado','paripassu'])
+            && d.keys().hasAll(['sequencia','movimentos','expedicoes','embalado','paripassu'])
+            && d.sequencia is int && d.sequencia > 0
+            && d.movimentos is int && d.movimentos >= 0 && d.movimentos <= d.sequencia
+            && d.expedicoes is int && d.expedicoes >= 0 && d.expedicoes <= d.sequencia
+            && d.embalado is int && d.embalado >= 0 && d.embalado <= d.sequencia
+            && d.paripassu is int && d.paripassu >= 0 && d.paripassu <= d.sequencia;
+        }
+        allow get: if membroAtivo(ambiente);
+        allow list, delete: if false;
+        allow create: if operadorAutorizado(ambiente) && formatoAtividade()
+          && request.resource.data.sequencia == 1;
+        allow update: if operadorAutorizado(ambiente) && formatoAtividade()
+          && request.resource.data.sequencia == resource.data.sequencia + 1
+          && request.resource.data.movimentos >= resource.data.movimentos
+          && request.resource.data.expedicoes >= resource.data.expedicoes
+          && request.resource.data.embalado >= resource.data.embalado
+          && request.resource.data.paripassu >= resource.data.paripassu;
+      }
       match /membros/{uid} {
         allow get: if membroAtivo(ambiente) && (request.auth.uid == uid || administrador(ambiente));
         allow list: if administrador(ambiente);
@@ -52,8 +75,9 @@ service cloud.firestore {
         function valido(d) {
           return operadorAutorizado(ambiente)
             && id.matches('^[a-zA-Z0-9_-]{8,160}$')
-            && d.keys().hasOnly(['id','autorUid','dispositivoId','tipo','item','antes','criadoEm'])
+            && d.keys().hasOnly(['id','autorUid','dispositivoId','tipo','item','antes','criadoEm','syncSeq'])
             && d.keys().hasAll(['id','autorUid','dispositivoId','tipo','item','antes','criadoEm'])
+            && (!('syncSeq' in d) || (d.syncSeq is int && d.syncSeq == getAfter(/databases/$(database)/documents/romaneio_ambientes/$(ambiente)/sync_meta/atividade).data.sequencia))
             && d.id == id && d.autorUid == request.auth.uid
             && d.dispositivoId is string && d.dispositivoId.size() > 0
             && d.dispositivoId.size() <= 160
@@ -78,15 +102,18 @@ service cloud.firestore {
         allow create: if operadorAutorizado(ambiente)
           && request.resource.data.keys().hasAll(['destino','estado','criadoEm','autorUid'])
           && request.resource.data.autorUid == request.auth.uid
-          && request.resource.data.estado == 'PENDENTE_BAIXA';
+          && request.resource.data.estado == 'PENDENTE_BAIXA'
+          && (!('syncSeq' in request.resource.data) || (request.resource.data.syncSeq is int && request.resource.data.syncSeq == getAfter(/databases/$(database)/documents/romaneio_ambientes/$(ambiente)/sync_meta/atividade).data.sequencia));
         allow update: if operadorAutorizado(ambiente)
           && resource.data.estado == 'PENDENTE_BAIXA'
           && request.resource.data.estado == 'BAIXA_CONCLUIDA'
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','baixaConfirmadaEm','confirmadoPor'])
-          && request.resource.data.confirmadoPor == request.auth.uid;
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','baixaConfirmadaEm','confirmadoPor','syncSeq'])
+          && request.resource.data.confirmadoPor == request.auth.uid
+          && (!('syncSeq' in request.resource.data) || (request.resource.data.syncSeq is int && request.resource.data.syncSeq == getAfter(/databases/$(database)/documents/romaneio_ambientes/$(ambiente)/sync_meta/atividade).data.sequencia));
         allow delete: if false;
       }
     }
     match /{document=**} { allow read, write: if false; }
   }
 }
+
