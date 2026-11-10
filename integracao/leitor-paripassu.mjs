@@ -64,13 +64,14 @@ export function extrairParipassu(linhas){
   }else mapa.set(chave,{sku,lote,postura,ovos,ovosPorCaixa});
   linhasValidas++;
  }
- if(semSku)throw Error(semSku+' produtos sem SKU ou ovos/caixa identificados. Exemplos: '+naoIdentificados.join(' | ')+'. Nenhuma publicação realizada.');
- if(!mapa.size)throw Error('Nenhum produto embalado reconhecido no PariPassu.');
+ // Produtos não identificados ficam no aviso; as linhas válidas continuam importáveis.
+ if(!mapa.size)throw Error('Nenhum produto embalado reconhecido no PariPassu. '+semSku+' produtos sem SKU ou ovos/caixa identificados. '+naoIdentificados.join(' | '));
  const itens=[...mapa.values()].map(x=>{
   if(x.ovos%x.ovosPorCaixa!==0)fracionadas++;
   return {sku:x.sku,lote:x.lote,postura:x.postura,saldo:x.ovos/x.ovosPorCaixa,ovos:x.ovos,ovosPorCaixa:x.ovosPorCaixa};
  });
  // Caixas fracionadas são divergências de conferência, não motivo para bloquear a importação.
- return {itens,industriaisIgnorados:industriais,linhasValidas,caixasFracionadas:fracionadas,duplicadosIgnorados:duplicados,conflitosRastreabilidade:conflitos};
+ return {itens,produtosNaoIdentificados:semSku,divergenciasIdentificacao:naoIdentificados,industriaisIgnorados:industriais,linhasValidas,caixasFracionadas:fracionadas,duplicadosIgnorados:duplicados,conflitosRastreabilidade:conflitos};
 }
+
 

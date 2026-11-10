@@ -3,6 +3,17 @@ import assert from 'node:assert/strict';
 import {extrairParipassu} from './leitor-paripassu.mjs';
 const cab=['Empresa','Código de Rastreamento','Lote','Tipo Produto','Capacidade da Embalagem','Unidade','Quantidade','Qtd. Caixas'];
 const linha=(lote,produto,ovos,caixas=1)=>['Raiar','CT',lote,produto,1,'un',ovos,caixas];
+test('publica linhas identificadas e informa produto sem SKU sem bloquear o arquivo',()=>{
+ const r=extrairParipassu([cab,linha('L1','5008-CAIXA (240)-GRANDE',480),linha('L2','Ovo Caipira Orgânico',120)]);
+ assert.equal(r.itens.length,1);assert.equal(r.itens[0].saldo,2);
+ assert.equal(r.produtosNaoIdentificados,1);assert.match(r.divergenciasIdentificacao[0],/Ovo Caipira Orgânico.*SKU não identificado/);
+ assert.equal(validarEstoqueOficial({tipo:'paripassu',nome:'arquivo.xlsx',versao:'nova',itens:r.itens},'paripassu').itens.length,1);
+});
+test('capacidade ausente gera aviso sem inferir saldo nem impedir outras linhas válidas',()=>{
+ const r=extrairParipassu([cab,linha('L1','5008-CAIXA (240)-GRANDE',480),linha('L2','12209-ESTOJO 10',120)]);
+ assert.equal(r.itens.length,1);assert.equal(r.produtosNaoIdentificados,1);
+ assert.match(r.divergenciasIdentificacao[0],/falta informar ovos por caixa/);
+});
 test('ignora industrial e calcula caixas pela quantidade de ovos, nunca Qtd. Caixas',()=>{
  const r=extrairParipassu([['Gerado por'],cab,linha('L1','INDUSTRIAL',240),linha('L2','5008-CAIXA (240)-GRANDE BLISTER-20 UNIDADES',2400)]);
  assert.equal(r.industriaisIgnorados,1);assert.equal(r.itens.length,1);assert.equal(r.itens[0].saldo,10);
@@ -100,3 +111,4 @@ test('capacidade declarada conflitante do SKU 10775 exige conferência antes de 
 test('correspondência confirmada não é aplicada a outro SKU com nome semelhante',()=>{
  assert.throws(()=>extrairParipassu([cab,linha('L1','10776 - OVO CAIPIRA ORGÂNICO BENASSI- GRANDE - EST',960)]),/falta informar ovos por caixa/);
 });
+

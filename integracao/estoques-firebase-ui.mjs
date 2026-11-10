@@ -38,13 +38,24 @@ function lerEmbalado(linhas){
  for(const row of linhas.slice(i+1)){const sku=String(row[s]??'').trim(),lote=String(row[l]??'').trim();if(!sku&&!lote)continue;if(!sku||!lote)throw Error('Linha de estoque sem SKU/lote.');const saldo=Number(row[q]);if(!Number.isSafeInteger(saldo)||saldo<0)throw Error('Saldo de caixas inválido no lote '+lote);const k=JSON.stringify([N(sku),N(lote)]),a=map.get(k);if(a)a.saldo+=saldo;else map.set(k,{sku,lote,saldo,postura:p<0?'':String(row[p]??'')});}
  if(!map.size)throw Error('Estoque Embalado vazio.');return [...map.values()];
 }
+let ultimaLeituraParipassu=null;
+const CHAVE_AVISOS_IMPORTACAO='romaneio2_paripassu_avisos_importacao_v1';
+function mostrarDivergenciasImportacao(relatorio){
+ const status=$('etapa4FirebaseStatus');if(!status)return;
+ let aviso=$('etapa4DivergenciasImportacao');
+ if(!aviso){aviso=document.createElement('output');aviso.id='etapa4DivergenciasImportacao';aviso.setAttribute('role','status');aviso.style.cssText='display:block;white-space:pre-wrap;color:#8a4300;background:#fff4db;padding:12px;margin-top:10px;border-left:4px solid #e99c22';status.after(aviso);}
+ aviso.hidden=!relatorio?.quantidade;
+ aviso.textContent=relatorio?.quantidade?'Divergências na planilha '+relatorio.nome+': '+relatorio.quantidade+' produto(s) sem SKU ou ovos por caixa identificados. As linhas identificadas foram publicadas. Produtos pendentes não tiveram SKU ou quantidade presumidos.\n'+(relatorio.exemplos||[]).join('\n'):'';
+}
+try{mostrarDivergenciasImportacao(JSON.parse(localStorage.getItem(CHAVE_AVISOS_IMPORTACAO)||'null'));}catch{}
 async function importar(file,tipo){
  if(!file)throw Error('Selecione o arquivo.');if(typeof XLSX==='undefined')throw Error('Biblioteca Excel indisponível.');
  const w=XLSX.read(await file.arrayBuffer(),{type:'array'}),aba=w.SheetNames.find(n=>N(n)===N(tipo==='embalado'?'ESTOQUE':'1. ESTOQUE'));
  if(!aba)throw Error('Aba de estoque não encontrada.');
  const linhas=XLSX.utils.sheet_to_json(w.Sheets[aba],{header:1,defval:'',raw:true});
  if(tipo==='embalado')return lerEmbalado(linhas);
- const {extrairParipassu}=await import('./leitor-paripassu.mjs?v=2.0.120');return extrairParipassu(linhas).itens;
+ const {extrairParipassu}=await import('./leitor-paripassu.mjs?v=2.0.147');
+ const resultado=extrairParipassu(linhas);ultimaLeituraParipassu={nome:file.name,quantidade:resultado.produtosNaoIdentificados,exemplos:resultado.divergenciasIdentificacao};return resultado.itens;
 }
 let avisoPariAtual=null,assinaturaPariAtual='';
 function mostrarAvisoParipassu(qtd,assinatura){
@@ -207,6 +218,7 @@ $('etapa4Publicar')?.addEventListener('click',async()=>{
   if(ambienteAtual&&!ambienteAtual.permissoes.publicarExcel)throw Error('Usuário sem permissão para publicar Excel.');
   const r=await publicarEstoqueOficial({db,uid:u.uid,tipo,dados:{tipo,nome:file.name,versao,itens},versaoEsperada:versoes[tipo],doc,runTransaction,autorizado:true,ambienteId:ambienteAtual?.ambienteId||null});
   if(tipo==='embalado'){try{await guardarModeloEmbalado(file)}catch(err){mostrar('Publicado no sistema, mas a cópia local do Excel não foi preservada: '+err.message);return;}}
+  if(tipo==='paripassu'){mostrarDivergenciasImportacao(ultimaLeituraParipassu);try{localStorage.setItem(CHAVE_AVISOS_IMPORTACAO,JSON.stringify(ultimaLeituraParipassu));}catch{}}
   mostrar('Publicado no sistema: '+r.quantidadeLotes+' lotes, versão '+r.versao);
  }catch(e){mostrar('Publicação não concluída: '+descreverErroPublicacao(e))}finally{b.disabled=false}
 });
