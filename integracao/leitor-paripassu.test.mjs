@@ -92,7 +92,7 @@ test('quantidade permanece em ovos e não usa Qtd. Caixas nem ESTOJO 10 como sal
  assert.equal(r.itens[0].saldo,5);
  assert.equal(r.itens[0].ovos,600);
 });
-test('SKU desconhecido e capacidade ausente ainda bloqueiam estoque incompleto',()=>{
+test('arquivo sem nenhuma linha identificável não substitui o estoque por vazio',()=>{
  assert.throws(()=>extrairParipassu([cab,linha('L1','SEM IDENTIFICACAO (CAIXA 120 UN.)',120)]),/sem SKU ou ovos\/caixa/);
 });
 
