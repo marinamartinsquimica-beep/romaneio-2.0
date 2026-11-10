@@ -1,4 +1,4 @@
-import {controleEnviosCompartilhado} from './controle-tentativas.mjs?v=2.0.137';
+import {controleEnviosCompartilhado} from './controle-tentativas.mjs?v=2.0.144';
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
 /* 2.0.50: integração de envio sob comando explícito, desabilitada até homologação.
