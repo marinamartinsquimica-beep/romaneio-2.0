@@ -1,9 +1,9 @@
-const CACHE_NAME = "romaneio-2-0-cache-v2145-eventos";
+const CACHE_NAME = "romaneio-2-0-cache-v2146-exclusao-legados";
 
 const FILES_TO_CACHE = [
   "./integracao/sincronizacao-por-eventos.mjs?v=2.0.145",
   "./integracao/marcos-romaneios-fechados.mjs?v=2.0.121",
-  "./integracao/selecao-romaneios.mjs?v=2.0.123",
+  "./integracao/selecao-romaneios.mjs?v=2.0.146",
   "./integracao/correcoes-lancamentos.mjs?v=2.0.123",
   "./integracao/leitor-paripassu.mjs",
   "./integracao/leitor-paripassu.mjs?v=2.0.120",

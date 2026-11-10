@@ -2,9 +2,28 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {chaveSelecao,selecionarRomaneios,assinaturaRegistros,planejarExclusao,gravarExclusaoLocal} from './selecao-romaneios.mjs';
 import {conciliarCorrecoes} from './correcoes-lancamentos.mjs';
+import {fontesOperacionais} from './selecao-romaneios.mjs';
 const r=(n,extra={})=>({registroId:'registro-'+n,data:'23/10/2026',sku:'3938',destino:'DESTINO '+n,palete:'1',loteCompleto:'LOTE-'+n,caixas:32,...extra});
 const arquivo=[1,2,3,4,5].map(n=>r(n,{movimentoExclusaoId:'exclusao-'+n,estado:'EXCLUIDO_NO_CELULAR_AGUARDANDO_BAIXA'}));
 const selecao=[1,3,5].map(n=>chaveSelecao('arquivo','DESTINO '+n));
+test('legado sem ID pode ser excluído com auditoria sem gerar envio e sem reaparecer',()=>{
+ const antigo=r(1,{registroId:undefined,movimentoExclusaoId:undefined,estado:'EXCLUIDO_NO_CELULAR_AGUARDANDO_BAIXA'});
+ const p=plano({arquivo:[antigo],selecao:[chaveSelecao('arquivo',antigo.destino)]});
+ assert.equal(p.movimentos.length,0);assert.equal(p.arquivo[0].exclusaoLegadaLocal,true);
+ assert.equal(p.arquivo[0].estado,'ARQUIVADA_APOS_CONFERENCIA');
+ assert.deepEqual(fontesOperacionais({entradas:[],arquivo:[...p.arquivo,antigo]}).arquivo,[]);
+ const novo={...antigo,registroId:'novo-registro'};
+ assert.deepEqual(fontesOperacionais({entradas:[novo],arquivo:p.arquivo}).entradas,[novo]);
+ const dados=new Map(),storage={getItem:k=>dados.get(k)||null,setItem:(k,v)=>dados.set(k,v),removeItem:k=>dados.delete(k)};
+ gravarExclusaoLocal(storage,p,{filaKey:'fila',baseKey:'base',arquivoKey:'arquivo',auditoriaKey:'auditoria',agora:'agora'});
+ assert.equal(JSON.parse(dados.get('fila')).length,0);assert.equal(JSON.parse(dados.get('auditoria'))[0].registros.length,1);
+});
+test('seleção mista exclui legado e mantém sincronização somente para registro identificado',()=>{
+ const antigo=r(1,{registroId:undefined}),atual=r(2);
+ const p=plano({entradas:[antigo,atual],arquivo:[],selecao:[chaveSelecao('ativo',antigo.destino),chaveSelecao('ativo',atual.destino)]});
+ assert.equal(p.entradas.length,0);assert.equal(p.registros.length,2);assert.equal(p.movimentos.length,1);
+ assert.equal(p.movimentos[0].registroId,atual.registroId);
+});
 function plano(extra={}){let id=0;return planejarExclusao({entradas:[],arquivo,selecao,agora:'2026-10-23T12:00:00Z',criarId:()=>String(++id).padStart(8,'0'),dispositivoId:'computador',...extra});}
 test('seleciona três entre cinco destinos, preservando os outros dois',()=>{
  const p=plano();assert.equal(p.registros.length,3);assert.equal(p.arquivo.filter(x=>x.estado==='ARQUIVADA_APOS_CONFERENCIA').length,3);
@@ -85,3 +104,4 @@ test('exclusão explícita de registro já baixado preserva comprovante e impede
  assert.equal(remoto.entradas.length,0);assert.deepEqual(remoto.arquivo[0],recibo);
  assert.ok(remoto.arquivo.some(x=>x.estado==='ARQUIVADA_APOS_CONFERENCIA'));
 });
+
