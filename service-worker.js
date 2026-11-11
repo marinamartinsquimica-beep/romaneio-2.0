@@ -1,7 +1,7 @@
-const CACHE_NAME = "romaneio-2-0-cache-v2147-paripassu-avisos";
+const CACHE_NAME = "romaneio-2-0-cache-v2148-paripassu-avisos";
 
 const FILES_TO_CACHE = [
-  "./integracao/sincronizacao-por-eventos.mjs?v=2.0.145",
+  "./integracao/sincronizacao-por-eventos.mjs?v=2.0.148",
   "./integracao/marcos-romaneios-fechados.mjs?v=2.0.121",
   "./integracao/selecao-romaneios.mjs?v=2.0.146",
   "./integracao/correcoes-lancamentos.mjs?v=2.0.123",
@@ -11,7 +11,7 @@ const FILES_TO_CACHE = [
   "./integracao/bases-compartilhadas.mjs?v=2.0.118",
   "./integracao/controle-tentativas.mjs?v=2.0.137",
   "./integracao/resetar-dados-teste.mjs?v=2.0.141",
-  "./integracao/envio-movimentos250.js?v=2.0.145",
+  "./integracao/envio-movimentos250.js?v=2.0.148",
   "./integracao/sincronizador-fila.js?v=2.0.137",
   "./integracao/publicador-firestore.js?v=2.0.145",
   "./integracao/correcoes-lancamentos.mjs?v=2.0.118",
@@ -34,7 +34,7 @@ const FILES_TO_CACHE = [
   "./integracao/modelo-estoque-persistente.mjs?v=2.0.118",
   "./integracao/controle-leituras-automaticas.mjs?v=2.0.99",
   "./integracao/erro-publicacao-estoque.mjs?v=2.0.99",
-  "./integracao/estoques-firebase-ui.mjs?v=2.0.147",
+  "./integracao/estoques-firebase-ui.mjs?v=2.0.148",
   "./integracao/baixa-transacional.mjs",
   "./integracao/baixa-transacional.mjs?v=2.0.118",
   "./integracao/filtro-expedicoes-baixadas.mjs",
