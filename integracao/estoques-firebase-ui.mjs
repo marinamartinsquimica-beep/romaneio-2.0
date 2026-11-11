@@ -1,4 +1,4 @@
-import {transacaoSinalizada,assinarPorAtividade} from './sincronizacao-por-eventos.mjs?v=2.0.145';
+import {transacaoSinalizada,assinarPorAtividade} from './sincronizacao-por-eventos.mjs?v=2.0.148';
 import {adquirirBaseCompartilhada} from './bases-compartilhadas.mjs?v=2.0.118';
 import {validarSelecaoSemCancelamentos} from './correcoes-lancamentos.mjs?v=2.0.123';
 import {registroBaixadoNoEstoque} from './status-baixa-romaneio.mjs?v=2.0.110';

@@ -403,7 +403,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.147";
+const APP_VERSION = "2.0.148";
 const versaoAplicativoEl=document.getElementById("versaoAplicativo");
 if(versaoAplicativoEl)versaoAplicativoEl.textContent="v"+APP_VERSION;
 const VERSION_URL = "version.json";
@@ -3623,7 +3623,7 @@ btn?.addEventListener('click',async()=>{
  }catch(e){resumo.textContent='Conferência não realizada: '+e.message;}finally{btn.disabled=false;}
 });
 </script>
-<script type="module" src="./integracao/estoques-firebase-ui.mjs?v=2.0.147"></script>
+<script type="module" src="./integracao/estoques-firebase-ui.mjs?v=2.0.148"></script>
 <script type="module">
 import {prepararBaixa,prepararAjuste} from './integracao/operacoes-estoque.mjs';
 import {selecionarRomaneios,chaveSelecao,assinaturaRegistros,planejarExclusao,gravarExclusaoLocal,pendente,fontesOperacionais} from './integracao/selecao-romaneios.mjs?v=2.0.146';

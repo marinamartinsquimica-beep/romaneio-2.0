@@ -24,15 +24,50 @@ export async function transacaoSinalizada({db,doc,runTransaction,raiz},executar,
 }
 export const semSequencia=d=>{const {syncSeq,...conteudo}=d;return conteudo;};
 
+const CACHE_DB_EVENTOS='romaneio2-eventos-cache-v1',CACHE_STORE_EVENTOS='feeds';
+function operarCacheEventos(idb,modo,chave,valor){
+ return new Promise((resolve,reject)=>{
+  if(!idb){reject(Error('IndexedDB indisponível'));return;}
+  const pedido=idb.open(CACHE_DB_EVENTOS,1);
+  pedido.onupgradeneeded=()=>{if(!pedido.result.objectStoreNames.contains(CACHE_STORE_EVENTOS))pedido.result.createObjectStore(CACHE_STORE_EVENTOS);};
+  pedido.onerror=()=>reject(pedido.error||Error('Não foi possível abrir o cache local.'));
+  pedido.onsuccess=()=>{
+   const dbCache=pedido.result;let finalizado=false;
+   const concluir=(fn,v)=>{if(finalizado)return;finalizado=true;dbCache.close();fn(v);};
+   try{
+    const tx=dbCache.transaction(CACHE_STORE_EVENTOS,modo),store=tx.objectStore(CACHE_STORE_EVENTOS);
+    const req=modo==='readonly'?store.get(chave):store.put(valor,chave);let resultado;
+    req.onsuccess=()=>{resultado=req.result;};
+    req.onerror=()=>concluir(reject,req.error||Error('Falha ao acessar o cache local.'));
+    tx.oncomplete=()=>concluir(resolve,resultado);
+    tx.onerror=()=>concluir(reject,tx.error||Error('Falha ao gravar o cache local.'));
+    tx.onabort=()=>concluir(reject,tx.error||Error('Gravação do cache local cancelada.'));
+   }catch(e){concluir(reject,e);}
+  };
+ });
+}
+function cacheEventosValido(x){return x&&x.cursor&&x.dados?x:null;}
+async function carregarCacheEventos(idb,armazenamento,chave,chaveCache){
+ try{const atual=cacheEventosValido(await operarCacheEventos(idb,'readonly',chave));if(atual)return atual;}catch{}
+ let legado=null;
+ try{legado=cacheEventosValido(JSON.parse(armazenamento.getItem(chaveCache)||'null'));}catch{}
+ if(!legado)return {cursor:{},dados:{}};
+ try{await operarCacheEventos(idb,'readwrite',chave,legado);try{armazenamento.removeItem(chaveCache);}catch{}}catch{}
+ return legado;
+}
+async function salvarCacheEventos(idb,armazenamento,chave,chaveCache,estado){
+ try{await operarCacheEventos(idb,'readwrite',chave,estado);try{armazenamento.removeItem(chaveCache);}catch{}}
+ catch(erro){armazenamento.setItem(chaveCache,JSON.stringify(estado));}
+}
+
 export function assinarPorAtividade({db,raiz,nome,doc,collection,query,where,orderBy,limit,startAfter,getDocsFromServer,getDocFromServer,onSnapshot},ok,erro){
  let escopo=window;try{if(window.parent.location.origin===location.origin)escopo=window.parent;}catch{}
  const registro=escopo.__romaneioAtividade145||(escopo.__romaneioAtividade145=new Map());
  const chave=raiz.join('/');let feed=registro.get(chave);
  if(!feed){
   const armazenamento=escopo.localStorage,chaveCache='romaneio2_eventos145:'+chave;
-  let estado;try{estado=JSON.parse(armazenamento.getItem(chaveCache)||'null');}catch{}
-  estado=estado&&estado.cursor&&estado.dados?estado:{cursor:{},dados:{}};
-  feed={ouvintes:new Map(),estado,confirmado:false,ocupado:false,alvo:{},parado:false};
+  feed={ouvintes:new Map(),estado:{cursor:{},dados:{}},confirmado:false,ocupado:false,alvo:{},parado:false};
+  feed.cachePronto=carregarCacheEventos(escopo.indexedDB,armazenamento,chave,chaveCache).then(estado=>{feed.estado=estado;if(feed.confirmado)void feed.buscar();return estado;});
   registro.set(chave,feed);
   const emitir=tipo=>{
    const dados=feed.estado.dados[tipo]||{};
@@ -52,6 +87,8 @@ export function assinarPorAtividade({db,raiz,nome,doc,collection,query,where,ord
    let falhou=false;
    feed.ocupado=true;
    try{
+    await feed.cachePronto;
+    if(feed.parado)return;
     for(const tipo of feed.ouvintes.keys()){
      const alvo=Number(feed.alvo[tipo])||0,atual=Number(feed.estado.cursor[tipo])||0;
      if(alvo<=atual){emitir(tipo);continue;}
@@ -81,7 +118,7 @@ export function assinarPorAtividade({db,raiz,nome,doc,collection,query,where,ord
      }
      if(feed.parado)return;
      const proximo={cursor:{...feed.estado.cursor,[tipo]:alvo},dados:{...feed.estado.dados,[tipo]:dados}};
-     armazenamento.setItem(chaveCache,JSON.stringify(proximo));feed.estado=proximo;emitir(tipo);
+     await salvarCacheEventos(escopo.indexedDB,armazenamento,chave,chaveCache,proximo);feed.estado=proximo;emitir(tipo);
     }
    }catch(e){falhou=true;for(const os of feed.ouvintes.values())for(const o of os)o.erro(e);}
    finally{feed.ocupado=false;}
