@@ -1,4 +1,4 @@
-import {transacaoSinalizada,assinarPorAtividade} from './sincronizacao-por-eventos.mjs?v=2.0.145';
+import {transacaoSinalizada,assinarPorAtividade} from './sincronizacao-por-eventos.mjs?v=2.0.148';
 import {controleEnviosCompartilhado} from './controle-tentativas.mjs?v=2.0.144';
 import {exigirFirebaseHomologacao} from './guarda-firebase-homologacao.mjs';
 import {resolverAmbienteUsuario} from './ambiente-compartilhado.mjs';
