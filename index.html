@@ -403,7 +403,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.148";
+const APP_VERSION = "2.0.149";
 const versaoAplicativoEl=document.getElementById("versaoAplicativo");
 if(versaoAplicativoEl)versaoAplicativoEl.textContent="v"+APP_VERSION;
 const VERSION_URL = "version.json";
@@ -756,7 +756,7 @@ async function apagarDestino(destino) {
     }
     salvarLocalStorage();
     // As exclusões individuais já entram na fila durável do Firebase. Não geram baixa de estoque.
-    if(navigator.onLine){import('./integracao/envio-movimentos250.js?v=2.0.145').then(m=>m.sincronizarMovimentos250()).catch(err=>console.warn('Exclusão preservada na fila; sincronização pendente',err));}
+    if(navigator.onLine){import('./integracao/envio-movimentos250.js?v=2.0.149').then(m=>m.sincronizarMovimentos250()).catch(err=>console.warn('Exclusão preservada na fila; sincronização pendente',err));}
     alert(`Destino ${nomeDestino} apagado. As entradas dos demais Destinos foram mantidas.`);
 }
 
@@ -1961,7 +1961,7 @@ async function guardarBackupIdentificacaoFila(copia){
   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('Cópia de segurança cancelada.'));
  });}finally{db.close();}
 }
-async function resolverPendenciasSincronizacao(botao,mensagem,carregar=()=>import('./integracao/envio-movimentos250.js?v=2.0.145')){
+async function resolverPendenciasSincronizacao(botao,mensagem,carregar=()=>import('./integracao/envio-movimentos250.js?v=2.0.149')){
  botao.disabled=true;mensagem.textContent='Enviando pendências. Aguarde a confirmação do sistema.';
  try{
   if(!navigator.onLine)throw Error('Sem internet. Reconecte este aparelho e tente novamente.');
@@ -2030,6 +2030,12 @@ function salvarLocalStorage() {
         });
     }
 
+    // Inicializa a base com o estado anterior, para a primeira inclusão também entrar na fila.
+    if(localStorage.getItem(BASE_MOVIMENTOS_KEY)===null){
+        let anteriores=null;
+        try{anteriores=JSON.parse(localStorage.getItem("entradas")||"[]");}catch{}
+        if(Array.isArray(anteriores))localStorage.setItem(BASE_MOVIMENTOS_KEY,JSON.stringify(anteriores));
+    }
     localStorage.setItem("entradas", JSON.stringify(dados));
     // 2.0.50: evento local, sem envio remoto e sem bloquear salvamento offline.
         registrarCopiaSegurancaOffline(dados);
@@ -3442,7 +3448,7 @@ function operadorVerPendencias(){if(typeof consultarFilaMovimentos==='function')
 let envioFilaMovimentosAtivo=null;
 function iniciarEnvioFilaMovimentos(opcoes={}){
  if(envioFilaMovimentosAtivo)return envioFilaMovimentosAtivo;
- const atual=import('./integracao/envio-movimentos250.js?v=2.0.145')
+ const atual=import('./integracao/envio-movimentos250.js?v=2.0.149')
   .then(m=>m.sincronizarMovimentos250(opcoes))
   .finally(()=>{envioFilaMovimentosAtivo=null;});
  envioFilaMovimentosAtivo=atual;
@@ -3476,8 +3482,14 @@ async function sincronizarRomaneioCelular(){
     const detalhe=causas.length?' Motivo: '+causas[0].replace(/Firebase|Firestore/gi,'sistema').slice(0,180)+'.':' Abra “Pendências de sincronização” para ver o diagnóstico.';
     throw Error(qtd+' movimentação(ões) continuam pendentes. '+detalhe+' A fila foi preservada.');
    }
-   if(botao)botao.textContent='SINCRONIZADO';
-   mostrar('Sincronização concluída. Nenhuma movimentação ficou pendente.');
+   const confirmados=Math.max(0,Number(retorno?.confirmados)||0);
+   if(!confirmados){
+    if(botao)botao.textContent='SEM MOVIMENTAÇÕES NOVAS';
+    mostrar('Nenhuma movimentação foi enviada nesta ação. A fila estava vazia; confira se os registros foram salvos no aparelho.');
+   }else{
+    if(botao)botao.textContent='SINCRONIZADO';
+    mostrar('Sincronização concluída. '+confirmados+' movimentação(ões) confirmada(s); nenhuma ficou pendente.');
+   }
    setTimeout(()=>{if(botao)botao.textContent='SINCRONIZAR';},2500);
    return true;
   }catch(e){
@@ -3623,7 +3635,7 @@ btn?.addEventListener('click',async()=>{
  }catch(e){resumo.textContent='Conferência não realizada: '+e.message;}finally{btn.disabled=false;}
 });
 </script>
-<script type="module" src="./integracao/estoques-firebase-ui.mjs?v=2.0.148"></script>
+<script type="module" src="./integracao/estoques-firebase-ui.mjs?v=2.0.149"></script>
 <script type="module">
 import {prepararBaixa,prepararAjuste} from './integracao/operacoes-estoque.mjs';
 import {selecionarRomaneios,chaveSelecao,assinaturaRegistros,planejarExclusao,gravarExclusaoLocal,pendente,fontesOperacionais} from './integracao/selecao-romaneios.mjs?v=2.0.146';
@@ -3700,7 +3712,7 @@ async function excluirRomaneiosSelecionados(selecao=chavesSelecionadas()){
   document.querySelector('#tabela tbody').replaceChildren();carregarLocalStorage();
   operadorAtualizarPainel();atualizarResumoReservaTeste();renderizarPendenciasConferenciaEstoque();atualizarIndicadorFilaMovimentos();atualizarDestinosBaixa();
   status.textContent=destinos.join(', ')+': '+cx+' caixas excluídas dos romaneios SEM BAIXA. Estoque preservado. '+(plano.movimentos.length?'Correções identificadas registradas na fila para sincronização.':'Entradas antigas encerradas localmente com auditoria.');
-  if(plano.movimentos.length&&navigator.onLine)void import('./integracao/envio-movimentos250.js?v=2.0.145').then(m=>m.sincronizarMovimentos250()).catch(e=>console.warn('Exclusão preservada na fila:',e));
+  if(plano.movimentos.length&&navigator.onLine)void import('./integracao/envio-movimentos250.js?v=2.0.149').then(m=>m.sincronizarMovimentos250()).catch(e=>console.warn('Exclusão preservada na fila:',e));
  }catch(e){status.textContent='Exclusão não concluída: '+e.message;await confirmarRaiar(status.textContent,{titulo:'Conferir exclusão',cancelar:'FECHAR',confirmar:'OK, ENTENDI'});}
  finally{exclusaoRomaneiosEmAndamento=false;}
 }
