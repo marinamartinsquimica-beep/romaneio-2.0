@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v2149-paripassu-avisos";
+const CACHE_NAME = "romaneio-2-0-cache-v2150-paripassu-avisos";
 
 const FILES_TO_CACHE = [
   "./integracao/sincronizacao-por-eventos.mjs?v=2.0.148",
