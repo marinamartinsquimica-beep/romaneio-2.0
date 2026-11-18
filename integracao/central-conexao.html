@@ -1217,6 +1217,34 @@ window.addEventListener('message',e=>{
  revisaoExpedicoesRemotas++;
  void cicloAutomatico();
 });
+let sincronizacaoOperadorEmAndamento=false;
+window.addEventListener('message',e=>{
+ if(e.origin!==location.origin||e.source!==window.parent||window.parent===window)return;
+ if(e.data?.origem!=='romaneio-sync-operador'||e.data?.acao!=='receber-agora')return;
+ const requestId=String(e.data.requestId||'');
+ const responder=(estado,mensagem)=>window.parent.postMessage({origem:'romaneio-sync-operador',requestId,estado,mensagem},location.origin);
+ if(sincronizacaoOperadorEmAndamento){responder('erro','Já existe uma sincronização em andamento. Aguarde o resultado.');return;}
+ sincronizacaoOperadorEmAndamento=true;
+ void (async()=>{
+  try{
+   await auth.authStateReady();
+   if(!receberEntradasNoAparelho())throw Error('O recebimento é feito no computador; o celular somente envia.');
+   if(!auth.currentUser||!navigator.onLine)throw Error('Conecte o computador à internet e entre na conta operacional.');
+   if(lerOperacional().length)throw Error('Há movimentações pendentes neste computador. A fila foi preservada; resolva-a antes de receber.');
+   const prazo=Date.now()+30000;
+   while(recebimentoAutomaticoEmAndamento&&Date.now()<prazo)await new Promise(resolve=>setTimeout(resolve,100));
+   if(recebimentoAutomaticoEmAndamento)throw Error('Um recebimento anterior ainda está em andamento. Tente novamente em instantes.');
+   if(!baseRecebida)await cicloAutomatico();
+   if(!baseRecebida)throw Error('A conexão compartilhada ainda não está pronta. Tente novamente.');
+   $('resultadoAplicarUniao').textContent='Recebimento solicitado pelo Painel do Operador...';
+   await receberAutomaticamente();
+   const mensagem=$('resultadoAplicarUniao').textContent;
+   if(!/^(UNIÃO APLICADA|SINCRONIZAÇÃO EM DIA|SINCRONIZAÇÃO PARCIAL)/.test(mensagem))throw Error(mensagem||'O sistema não confirmou a aplicação.');
+   responder('ok',mensagem);
+  }catch(err){responder('erro',err.message||String(err));}
+  finally{sincronizacaoOperadorEmAndamento=false;}
+ })();
+});
 // Repetir somente envios já solicitados e ainda pendentes; fila vazia não consulta.
 setInterval(()=>{if(navigator.onLine&&escopoOperacionalPronto)void enviarFilaAutomaticamente();},5000);
 auth.authStateReady().then(()=>cicloAutomatico()).catch(()=>{});
