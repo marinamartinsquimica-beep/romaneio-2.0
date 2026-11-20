@@ -726,6 +726,7 @@ async function aplicarUniaoSeguraOperacional(){
   let edicoesRecebidas=0,exclusoesRecebidas=0;
   const exclusoesArquivadas=[];
   const conflitosRecebidos=[];
+  let inclusoesDuplicadasJaPresentes=0;
   const idRegistro=x=>String(x?.registroId||'');
   const localizarAnterior=(antes)=>{
    const id=idRegistro(antes);
@@ -752,6 +753,13 @@ async function aplicarUniaoSeguraOperacional(){
       .map(v=>String(v??'').trim().toUpperCase()).join('|');
     const alvo=identidade(ultimo.item||inicio);
     indices=resultado.map((item,i)=>({item,i})).filter(x=>identidade(x.item)===alvo);
+   }
+   // Uma inclusão idêntica pode já estar no computador em duplicidade histórica.
+   // Reconhece somente se TODAS as linhas com o mesmo registroId forem iguais
+   // ao evento remoto; preserva cada linha existente e não cria outra cópia.
+   if(indices.length>1&&ultimo.tipo==='inclusao'&&indices.every(x=>chave(x.item)===chave(ultimo.item))){
+    inclusoesDuplicadasJaPresentes++;
+    continue;
    }
    if(indices.length!==1){
     // Exclusões são avisos, não removem registros nem devem bloquear inclusões.
@@ -863,7 +871,7 @@ async function aplicarUniaoSeguraOperacional(){
   if(JSON.stringify(resultado)===JSON.stringify(entradas)){
    if(uniaoAutomaticaEmAndamento)await removerBackupAutomatico();
    backupUniaoNestaSessao=false;
-   saida.textContent=conflitosRecebidos.length?'SINCRONIZAÇÃO PARCIAL: '+entradas.length+' entradas preservadas. '+conflitosRecebidos.length+' conflito(s) requerem conferência: '+conflitosRecebidos.slice(0,2).join('; '):'SINCRONIZAÇÃO EM DIA: '+entradas.length+' entradas conferidas. Nenhuma alteração necessária.';
+   saida.textContent=(conflitosRecebidos.length?'SINCRONIZAÇÃO PARCIAL: '+entradas.length+' entradas preservadas. '+conflitosRecebidos.length+' conflito(s) requerem conferência: '+conflitosRecebidos.slice(0,2).join('; '):'SINCRONIZAÇÃO EM DIA: '+entradas.length+' entradas conferidas. Nenhuma alteração necessária.')+(inclusoesDuplicadasJaPresentes?' Inclusões remotas já presentes com mesmo ID e conteúdo: '+inclusoesDuplicadasJaPresentes+'. Nenhuma cópia extra foi criada.':'');
    return;
   }
   if(localStorage.getItem('entradas')!==entradasBrutas||localStorage.getItem('romaneio2_movimentos_pendentes_v1')!==filaBruta||localStorage.getItem(baseChave)!==baseBruta)throw Error('Dados locais mudaram durante a conferência. Recomece.');
@@ -892,7 +900,7 @@ async function aplicarUniaoSeguraOperacional(){
   backupUniaoNestaSessao=false;
   if(uniaoAutomaticaEmAndamento)await removerBackupAutomatico();
   if(conflitosRecebidos.length&&window.parent!==window)window.parent.postMessage({origem:'romaneio-sync',estado:'erro',mensagem:conflitosRecebidos.slice(0,2).join('; ')},location.origin);
-  saida.textContent='UNIÃO APLICADA NESTE APARELHO: '+resultado.length+' entradas, sem baixa de estoque. '+(conflitosRecebidos.length?'ATENÇÃO: '+conflitosRecebidos.length+' conflito(s) isolados, sem sobrescrever: '+conflitosRecebidos.slice(0,2).join('; '):'Nenhum conflito pendente.');
+  saida.textContent='UNIÃO APLICADA NESTE APARELHO: '+resultado.length+' entradas, sem baixa de estoque. '+(conflitosRecebidos.length?'ATENÇÃO: '+conflitosRecebidos.length+' conflito(s) isolados, sem sobrescrever: '+conflitosRecebidos.slice(0,2).join('; '):'Nenhum conflito pendente.')+(inclusoesDuplicadasJaPresentes?' Inclusões já presentes: '+inclusoesDuplicadasJaPresentes+'. Nenhuma cópia extra foi criada.':'');
  }catch(e){
   const mensagem='União não aplicada: '+(e.message||String(e))+'. Verifique os dados antes de tentar novamente.';
   saida.textContent=mensagem;
