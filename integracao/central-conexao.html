@@ -491,16 +491,47 @@ $('prepararPublicacaoLocal').onclick=async()=>{
 let backupUniaoNestaSessao=false;
 let uniaoAutomaticaEmAndamento=false;
 const CHAVE_BACKUP_AUTOMATICO='romaneio2_backup_automatico_pre_uniao_v1';
-function salvarBackupAutomatico(){
+const BANCO_BACKUP_AUTOMATICO='romaneio2_recuperacao_local_v1';
+function operarBackupAutomatico(acao,valor){
+ return new Promise((resolve,reject)=>{
+  const abertura=indexedDB.open(BANCO_BACKUP_AUTOMATICO,1);
+  abertura.onupgradeneeded=()=>{if(!abertura.result.objectStoreNames.contains('backups'))abertura.result.createObjectStore('backups');};
+  abertura.onerror=()=>reject(abertura.error||Error('Não foi possível abrir o armazenamento de recuperação.'));
+  abertura.onsuccess=()=>{
+   const db=abertura.result;let resultado;
+   try{
+    const tx=db.transaction('backups',acao==='ler'?'readonly':'readwrite');
+    const store=tx.objectStore('backups');
+    const req=acao==='ler'?store.get(CHAVE_BACKUP_AUTOMATICO):acao==='gravar'?store.put(valor,CHAVE_BACKUP_AUTOMATICO):store.delete(CHAVE_BACKUP_AUTOMATICO);
+    req.onsuccess=()=>{resultado=req.result;};
+    req.onerror=()=>{try{db.close();}catch{}reject(req.error||Error('Falha no armazenamento de recuperação.'));};
+    tx.oncomplete=()=>{db.close();resolve(acao==='ler'?resultado:true);};
+    tx.onerror=()=>{db.close();reject(tx.error||Error('Falha no armazenamento de recuperação.'));};
+    tx.onabort=()=>{db.close();reject(tx.error||Error('Gravação de recuperação cancelada.'));};
+   }catch(e){db.close();reject(e);}
+  };
+ });
+}
+async function salvarBackupAutomatico(){
  const chaves=['entradas','romaneio2_movimentos_pendentes_v1','romaneio2_ultimo_estado_movimentos_v1','romaneio2_historico_correcoes'];
  const dados={};
  for(const chave of chaves)dados[chave]=localStorage.getItem(chave);
  const entradas=JSON.parse(dados.entradas||'[]');
  if(!Array.isArray(entradas))throw Error('Entradas inválidas: união automática bloqueada');
- // Uma cópia anterior só é substituída após uma união segura; não descartar backup de recuperação.
- if(localStorage.getItem(CHAVE_BACKUP_AUTOMATICO))return true; // preservar o primeiro backup e permitir novas tentativas seguras
- localStorage.setItem(CHAVE_BACKUP_AUTOMATICO,JSON.stringify({criadoEm:new Date().toISOString(),dados}));
+ // Preserve o primeiro backup recuperável; IndexedDB aceita cópias maiores que localStorage.
+ if(await operarBackupAutomatico('ler')){try{localStorage.removeItem(CHAVE_BACKUP_AUTOMATICO);}catch{}return true;}
+ const legado=localStorage.getItem(CHAVE_BACKUP_AUTOMATICO);
+ if(legado){
+  await operarBackupAutomatico('gravar',JSON.parse(legado));
+  try{localStorage.removeItem(CHAVE_BACKUP_AUTOMATICO);}catch{}
+  return true;
+ }
+ await operarBackupAutomatico('gravar',{criadoEm:new Date().toISOString(),dados});
  return true;
+}
+async function removerBackupAutomatico(){
+ try{await operarBackupAutomatico('remover');}catch(e){console.warn('Cópia de recuperação preservada:',e);}
+ try{localStorage.removeItem(CHAVE_BACKUP_AUTOMATICO);}catch{}
 }
 async function lerHistoricoRecebido(uid){
  const base=obterBaseRecebida(uid);
@@ -663,7 +694,7 @@ async function aplicarUniaoSeguraOperacional(){
    localStorage.setItem('entradas',JSON.stringify(proximo));
    localStorage.setItem(baseChave,JSON.stringify(proximo));
    backupUniaoNestaSessao=false;
-   if(uniaoAutomaticaEmAndamento)localStorage.removeItem(CHAVE_BACKUP_AUTOMATICO);
+   if(uniaoAutomaticaEmAndamento)await removerBackupAutomatico();
    saida.textContent='SINCRONIZAÇÃO PARCIAL SEGURA: '+seguros.remotos.length+
     ' entrada(s) recuperada(s) no computador; '+seguros.incertos.length+
     ' identificador(es) aguardam revisão. Estoque e fila intactos.';
@@ -830,7 +861,7 @@ async function aplicarUniaoSeguraOperacional(){
   }
   // Não regravar entradas idênticas: evita atualizações repetidas entre tela principal e agente.
   if(JSON.stringify(resultado)===JSON.stringify(entradas)){
-   if(uniaoAutomaticaEmAndamento)localStorage.removeItem(CHAVE_BACKUP_AUTOMATICO);
+   if(uniaoAutomaticaEmAndamento)await removerBackupAutomatico();
    backupUniaoNestaSessao=false;
    saida.textContent=conflitosRecebidos.length?'SINCRONIZAÇÃO PARCIAL: '+entradas.length+' entradas preservadas. '+conflitosRecebidos.length+' conflito(s) requerem conferência: '+conflitosRecebidos.slice(0,2).join('; '):'SINCRONIZAÇÃO EM DIA: '+entradas.length+' entradas conferidas. Nenhuma alteração necessária.';
    return;
@@ -859,7 +890,7 @@ async function aplicarUniaoSeguraOperacional(){
    throw erro;
   }
   backupUniaoNestaSessao=false;
-  if(uniaoAutomaticaEmAndamento)localStorage.removeItem(CHAVE_BACKUP_AUTOMATICO);
+  if(uniaoAutomaticaEmAndamento)await removerBackupAutomatico();
   if(conflitosRecebidos.length&&window.parent!==window)window.parent.postMessage({origem:'romaneio-sync',estado:'erro',mensagem:conflitosRecebidos.slice(0,2).join('; ')},location.origin);
   saida.textContent='UNIÃO APLICADA NESTE APARELHO: '+resultado.length+' entradas, sem baixa de estoque. '+(conflitosRecebidos.length?'ATENÇÃO: '+conflitosRecebidos.length+' conflito(s) isolados, sem sobrescrever: '+conflitosRecebidos.slice(0,2).join('; '):'Nenhum conflito pendente.');
  }catch(e){
@@ -914,7 +945,7 @@ async function receberAutomaticamente(){
  if(!receberEntradasNoAparelho()||recebimentoAutomaticoEmAndamento||!navigator.onLine||!auth.currentUser||lerOperacional().length)return;
  recebimentoAutomaticoEmAndamento=true;
  try{
-  if(!salvarBackupAutomatico())return; // exige revisão de backup anterior
+  if(!await salvarBackupAutomatico())return; // exige revisão de backup anterior
   await registrarExclusoesRecebidas(await obterBaseRecebida(auth.currentUser.uid).movimentos.ler());
   uniaoAutomaticaEmAndamento=true;
   backupUniaoNestaSessao=true;
