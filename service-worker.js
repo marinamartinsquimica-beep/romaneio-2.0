@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v2156-sharepoint";
+const CACHE_NAME = "romaneio-2-0-cache-v2157-sharepoint";
 
 const FILES_TO_CACHE = [
   "./integracao/sincronizacao-por-eventos.mjs?v=2.0.148",
@@ -43,11 +43,12 @@ const FILES_TO_CACHE = [
   "./qr-parser.js",
   "./manifest.json",
   "./icon-192.png",
-  "./icon-512.png"
+  "./icon-512.png",
   "./integracao/sharepoint-config.mjs",
   "./integracao/sharepoint-client.mjs",
   "./integracao/sharepoint-sync.mjs",
   "./integracao/sharepoint-estoques-ui.mjs",
+  "./integracao/sharepoint-stock.mjs",
   "./integracao/central-conexao.html"
 ];
 

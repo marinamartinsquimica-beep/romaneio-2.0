@@ -296,14 +296,12 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  <div class="operator-metrics"><div class="operator-metric"><span>Caixas no estoque</span><strong id="opEstoqueCaixas">—</strong></div><div class="operator-metric"><span>SKUs distintos no estoque</span><strong id="opEstoqueSkus">—</strong></div></div>
  <section class="operator-pending" id="historicoDestinosExcluidos" style="margin-bottom:12px"><h3>Destinos removidos do celular — aguardando baixa no computador</h3><p>Estes paletes já foram apagados no celular. Permanecem somente no computador para conferência e baixa; não são paletes ativos no celular.</p><div id="listaDestinosExcluidos"></div></section><div id="etapa4ResumoVisao" role="status" aria-live="polite" style="padding:10px 14px;margin:12px 0;background:#fff;border-left:4px solid #5CDCF2;border-radius:6px">Conferência PariPassu: aguardando os dois estoques.</div><div class="operator-workspace"><div class="operator-box"><h3>Paletes registrados</h3><div style="overflow-x:auto"><table class="operator-table"><thead><tr><th>Palete</th><th>Destino</th><th>SKU</th><th>Caixas</th><th>Ação</th></tr></thead><tbody id="opTabelaDestinos"></tbody></table></div><p class="operator-status">As correções serão feitas pelas funções atuais do romaneio até a etapa de edição e histórico ser concluída.</p></div><div class="operator-box"><h3>Controle de estoque</h3><p id="opResumoEstoque" class="operator-status">Consulta local disponível após importação de uma cópia do estoque.</p><div class="operator-pending"><h4>Pendências de conferência</h4><p id="opPendenciasEstoqueResumo">Consulte o estoque compartilhado para verificar as entradas.</p><button type="button" onclick="operadorSelecionarAba('estoque');document.getElementById('pendenciasConferenciaEstoque')?.scrollIntoView({behavior:'smooth',block:'start'})">VER PENDÊNCIAS</button></div><div class="operator-note">Baixa e ajuste disponíveis na aba própria. A alteração do estoque compartilhado ocorre somente após a publicação do Excel atualizado.</div><p id="opUltimaConsulta" class="operator-status"></p></div></div>
 <section class="operator-box" id="operadorHistoricoFechamentos" aria-label="Histórico de romaneios encerrados"><details id="historicoFechamentosRecolhivel"><summary class="historico-fechamentos-resumo"><span>Histórico de romaneios encerrados</span><span id="quantidadeHistoricoFechamentos" class="historico-fechamentos-total"></span></summary><p class="operator-status">Cópias anteriores preservadas neste dispositivo, sem alterar o estoque. Baixe o Excel antes de apagar um histórico que deseje guardar.</p><p>Cópias locais dos romaneios encerrados: retenção de 5 dias. Históricos com pendências não resolvidas são preservados.</p><div id="historicoFechamentos"></div></details></section>
-</div><div id="opAbaImportacao" role="tabpanel" class="hidden"><section class="card" style="margin:14px 0;padding:20px"><h2>Importação de estoques</h2><p>Envie uma planilha de cada tipo. Ao publicar no sistema, a conferência acontece automaticamente para todos os dispositivos.</p><section id="etapa4SharePoint" style="padding:14px;margin:12px 0;border:1px solid #a7b8cd;border-radius:12px;background:#eef6ff">
-<h3>Estoques compartilhados</h3>
-<p style="color:#334155">Os arquivos são publicados como consulta compartilhada. A publicação substitui somente a versão compartilhada no sistema; nenhuma planilha é alterada automaticamente.</p>
-<label for="etapa4Tipo">Estoque</label><select id="etapa4Tipo"><option value="embalado">Estoque Embalado</option><option value="paripassu">Estoque PariPassu</option></select>
-<label for="etapa4Arquivo">Planilha atualizada</label><input type="file" id="etapa4Arquivo" accept=".xlsx,.xls">
-<button type="button" id="etapa4Publicar">PUBLICAR ESTOQUE COMPARTILHADO</button>
-<p id="etapa4SharePointStatus" role="status">Aguardando conexão autenticada.</p>
-
+</div><div id="opAbaImportacao" role="tabpanel" class="hidden"><section class="card" style="margin:14px 0;padding:20px"><h2>Estoques do SharePoint</h2><p>O sistema lê Embalado e PariPassu diretamente da pasta configurada. SINCRONIZAR AGORA atualiza somente os arquivos que mudaram.</p><section id="etapa4SharePoint" style="padding:14px;margin:12px 0;border:1px solid #a7b8cd;border-radius:12px;background:#eef6ff">
+<h3>Arquivos oficiais</h3>
+<p style="color:#334155">A baixa confirmada atualiza o mesmo arquivo oficial do Estoque Embalado. PariPassu é somente leitura. O download do Embalado atualizado permanece disponível.</p>
+<button type="button" id="etapa4Publicar">ATUALIZAR ESTOQUES DO SHAREPOINT</button>
+<button type="button" id="etapa4BaixarEstoque">BAIXAR ESTOQUE EMBALADO ATUALIZADO</button>
+<p id="etapa4SharePointStatus" role="status">Aguardando conexão autenticada e configuração da pasta.</p>
 </section>
 <p id="etapa4AvisosStatus" role="status">Avisos de divergência aparecem no próprio Romaneio 2.0.</p></section></div><div id="opAbaParipassu" role="tabpanel" class="hidden"><section class="card" style="padding:18px;margin:14px 0"><h2>Conferência Embalado × PariPassu</h2><section id="etapa4PainelPendencias" class="etapa4-pari-painel" aria-live="polite">
 <div class="etapa4-pari-cabecalho"><div><h3>Pendências de estoque</h3><p id="etapa4PainelMensagem">Aguardando conferência automática dos estoques.</p></div><strong class="etapa4-pari-contador" id="etapa4PainelContador">—</strong></div>
@@ -403,7 +401,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.156";
+const APP_VERSION = "2.0.157";
 const versaoAplicativoEl=document.getElementById("versaoAplicativo");
 if(versaoAplicativoEl)versaoAplicativoEl.textContent="v"+APP_VERSION;
 const VERSION_URL = "version.json";
@@ -756,7 +754,7 @@ async function apagarDestino(destino) {
     }
     salvarLocalStorage();
     // As exclusões individuais já entram na fila durável do SharePoint. Não geram baixa de estoque.
-    if(navigator.onLine){import('./integracao/sharepoint-sync.mjs?v=2.0.156').then(m=>m.sincronizarMovimentos250()).catch(err=>console.warn('Exclusão preservada na fila; sincronização pendente',err));}
+    if(navigator.onLine){import('./integracao/sharepoint-sync.mjs?v=2.0.157').then(m=>m.sincronizarMovimentos250()).catch(err=>console.warn('Exclusão preservada na fila; sincronização pendente',err));}
     alert(`Destino ${nomeDestino} apagado. As entradas dos demais Destinos foram mantidas.`);
 }
 
@@ -1961,7 +1959,7 @@ async function guardarBackupIdentificacaoFila(copia){
   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('Cópia de segurança cancelada.'));
  });}finally{db.close();}
 }
-async function resolverPendenciasSincronizacao(botao,mensagem,carregar=()=>import('./integracao/sharepoint-sync.mjs?v=2.0.156')){
+async function resolverPendenciasSincronizacao(botao,mensagem,carregar=()=>import('./integracao/sharepoint-sync.mjs?v=2.0.157')){
  botao.disabled=true;mensagem.textContent='Enviando pendências. Aguarde a confirmação do sistema.';
  try{
   if(!navigator.onLine)throw Error('Sem internet. Reconecte este aparelho e tente novamente.');
@@ -3166,7 +3164,7 @@ function renderizarEstoqueCompletoTeste() {
 }
 // Etapa 2A: leitura isolada do estoque. Não modifica registros, reservas ou arquivos.
 async function importarEstoqueTeste(event) {
-  const arquivo = event.target.files && event.target.files[0];
+  const arquivo = event?.target?.files?.[0] || event;
   if (!arquivo) return;
   const aviso = document.getElementById("resultadoEstoqueTeste");
   const resumo = document.getElementById("resumoEstoqueTeste");
@@ -3206,8 +3204,9 @@ async function importarEstoqueTeste(event) {
     const total=[...mapa.values()].reduce((acc,x)=>acc+x.saldo,0);
     aviso.textContent="Arquivo: "+arquivo.name+" | "+mapa.size+" lotes | "+total.toLocaleString("pt-BR")+" caixas em saldo. Exibindo todos os lotes. Reservas locais de novas entradas ativadas. Nenhuma baixa foi feita.";
     resumo.classList.remove("hidden");
-  } catch(e) {window.estoqueTesteConsulta=null; window.reservaTesteAtiva=false; aviso.textContent="Erro ao importar: "+e.message;}
+  } catch(e) {window.estoqueTesteConsulta=null; window.reservaTesteAtiva=false; aviso.textContent="Erro ao importar: "+e.message;throw e;}
 }
+window.importarEstoqueTeste=importarEstoqueTeste;
 </script>
 
 <script>
@@ -3448,7 +3447,7 @@ function operadorVerPendencias(){if(typeof consultarFilaMovimentos==='function')
 let envioFilaMovimentosAtivo=null;
 function iniciarEnvioFilaMovimentos(opcoes={}){
  if(envioFilaMovimentosAtivo)return envioFilaMovimentosAtivo;
- const atual=import('./integracao/sharepoint-sync.mjs?v=2.0.156')
+ const atual=import('./integracao/sharepoint-sync.mjs?v=2.0.157')
   .then(m=>m.sincronizarMovimentos250(opcoes))
   .finally(()=>{envioFilaMovimentosAtivo=null;});
  envioFilaMovimentosAtivo=atual;
@@ -3532,7 +3531,13 @@ async function operadorSincronizarAgora(){
    central.contentWindow.postMessage({origem:'romaneio-sync-operador',acao:'receber-agora',requestId:id},location.origin);
   });
   if(typeof operadorAtualizarPainel==='function')operadorAtualizarPainel();
-  if(estado)estado.textContent=resposta;
+  let respostaEstoques='';
+  try{
+   const {refreshSharePointStocks}=await import('./integracao/sharepoint-stock.mjs?v=2.0.157');
+   const atualizacao=await refreshSharePointStocks();
+   respostaEstoques=' '+atualizacao.message;
+  }catch(erroEstoque){respostaEstoques=' Estoques não atualizados: '+(erroEstoque?.message||String(erroEstoque));}
+  if(estado)estado.textContent=resposta+respostaEstoques;
   if(botao)botao.textContent='SINCRONIZAÇÃO CONCLUÍDA';
  }catch(e){
   if(botao)botao.textContent='VERIFICAR SINCRONIZAÇÃO';
@@ -3632,8 +3637,8 @@ btn?.addEventListener('click',async()=>{
  try{
   const embalado=window.estoqueTesteConsulta;
   if(!embalado?.size)throw Error('Importe primeiro o Estoque Embalado.');
-  const file=document.getElementById('arquivoParipassuOperacao').files?.[0];
-  if(!file)throw Error('Selecione a planilha PariPassu.');
+  const file=window.__sharePointParipassuFile||document.getElementById('arquivoParipassuOperacao')?.files?.[0];
+  if(!file)throw Error('Clique em SINCRONIZAR AGORA para carregar a planilha PariPassu do SharePoint.');
   if(typeof XLSX==='undefined')throw Error('Leitor Excel indisponível.');
   const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});
   const normalizar=x=>String(x).trim().toUpperCase();
@@ -3654,7 +3659,7 @@ btn?.addEventListener('click',async()=>{
  }catch(e){resumo.textContent='Conferência não realizada: '+e.message;}finally{btn.disabled=false;}
 });
 </script>
-<script type="module" src="./integracao/sharepoint-estoques-ui.mjs?v=2.0.156"></script>
+<script type="module" src="./integracao/sharepoint-estoques-ui.mjs?v=2.0.157"></script>
 <script type="module">
 import {prepararBaixa,prepararAjuste} from './integracao/operacoes-estoque.mjs';
 import {selecionarRomaneios,chaveSelecao,assinaturaRegistros,planejarExclusao,gravarExclusaoLocal,pendente,fontesOperacionais} from './integracao/selecao-romaneios.mjs?v=2.0.146';
@@ -3731,7 +3736,7 @@ async function excluirRomaneiosSelecionados(selecao=chavesSelecionadas()){
   document.querySelector('#tabela tbody').replaceChildren();carregarLocalStorage();
   operadorAtualizarPainel();atualizarResumoReservaTeste();renderizarPendenciasConferenciaEstoque();atualizarIndicadorFilaMovimentos();atualizarDestinosBaixa();
   status.textContent=destinos.join(', ')+': '+cx+' caixas excluídas dos romaneios SEM BAIXA. Estoque preservado. '+(plano.movimentos.length?'Correções identificadas registradas na fila para sincronização.':'Entradas antigas encerradas localmente com auditoria.');
-  if(plano.movimentos.length&&navigator.onLine)void import('./integracao/sharepoint-sync.mjs?v=2.0.156').then(m=>m.sincronizarMovimentos250()).catch(e=>console.warn('Exclusão preservada na fila:',e));
+  if(plano.movimentos.length&&navigator.onLine)void import('./integracao/sharepoint-sync.mjs?v=2.0.157').then(m=>m.sincronizarMovimentos250()).catch(e=>console.warn('Exclusão preservada na fila:',e));
  }catch(e){status.textContent='Exclusão não concluída: '+e.message;await confirmarRaiar(status.textContent,{titulo:'Conferir exclusão',cancelar:'FECHAR',confirmar:'OK, ENTENDI'});}
  finally{exclusaoRomaneiosEmAndamento=false;}
 }
@@ -3828,7 +3833,8 @@ document.getElementById('etapa4Exportar')?.addEventListener('click',async()=>{
    btn.hidden=false;btn.disabled=false;
   }
   if(resultadoEtapa4&&res.operacao==='baixa'){
-   resultadoEtapa4.exportado=true; // Excel gerado e download solicitado após aviso Raiar
+   resultadoEtapa4.excelAtualizado={blob:res.blob,nome:'ESTOQUE_EMBALADO_BAIXA_'+new Date().toISOString().slice(0,10)+'.xlsx'};
+   resultadoEtapa4.exportado=true; // Excel gerado; a confirmação publica este mesmo arquivo no SharePoint.
    const completa=(resultadoEtapa4.destino.startsWith('arquivo:')||resultadoEtapa4.destino.startsWith('ativo:'))&&resultadoEtapa4.resultado.aplicados.length>0;
    const botao=document.getElementById('etapa4ConfirmarBaixa');
    botao.hidden=false;botao.disabled=Boolean(resultadoEtapa4.confirmada);
@@ -3919,7 +3925,7 @@ document.getElementById('etapa4ConfirmarBaixa')?.addEventListener('click',async(
   validarSelecaoPreparada(atual);
   const executar=document.getElementById('etapa4ConfirmarBaixa');executar.disabled=true;
   let executado;
-  try{executado=await window.registrarBaixaConferida({resultado:{...atual.resultado,origem:atual.origem},versaoInicial:atual.versaoInicial,destino,registros:baixados});}
+  try{executado=await window.registrarBaixaConferida({resultado:{...atual.resultado,origem:atual.origem,excelAtualizado:atual.excelAtualizado},versaoInicial:atual.versaoInicial,destino,registros:baixados});}
   catch(erro){executar.disabled=false;throw erro;}
   // Baixa concluída: arquivar somente os registros realmente confirmados.
   // Não marcar indiscriminadamente outros destinos ou novas pendências locais.

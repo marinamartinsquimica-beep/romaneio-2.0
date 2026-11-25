@@ -71,15 +71,31 @@ export async function testSharePointConnection(){
  await graph(siteListPath(config)+'/items?$top=1');
  return {user:user.displayName||user.userPrincipalName,list:list.displayName||config.listId};
 }
-export async function uploadSharePointFile(file,name){
- if(!file||!name)throw Error('Selecione a planilha para publicar.');
+function drivePath(path){return String(path).split('/').filter(Boolean).map(encodeURIComponent).join('/');}
+export async function getSharePointFileMetadataByPath(path){
  const config=readSharePointConfig();
  if(!config.driveId)throw Error('Informe o ID da biblioteca de documentos SharePoint.');
- const path=name.split('/').map(encodeURIComponent).join('/');
- const result=await graph('/drives/'+encodeURIComponent(config.driveId)+'/root:/'+path+':/content',{method:'PUT',body:file,headers:{'Content-Type':file.type||'application/octet-stream'}});
- return {driveId:config.driveId,itemId:String(result.id),name:String(result.name||name),webUrl:String(result.webUrl||'')};
+ if(!String(path||'').trim())throw Error('Caminho do arquivo SharePoint não informado.');
+ return graph('/drives/'+encodeURIComponent(config.driveId)+'/root:/'+drivePath(path)+'?%24select=id,name,size,eTag,lastModifiedDateTime,%40microsoft.graph.downloadUrl');
+}
+export async function downloadSharePointDriveItem(itemId){
+ const config=readSharePointConfig();
+ if(!config.driveId||!itemId)throw Error('Arquivo SharePoint sem identificador.');
+ const meta=await graph('/drives/'+encodeURIComponent(config.driveId)+'/items/'+encodeURIComponent(itemId)+'?%24select=id,%40microsoft.graph.downloadUrl');
+ const url=meta?.['@microsoft.graph.downloadUrl'];
+ if(!url)throw Error('O SharePoint não forneceu o endereço de leitura do arquivo.');
+ const response=await fetch(url);if(!response.ok)throw Error('Download do arquivo SharePoint falhou: HTTP '+response.status+'.');return response.blob();
+}
+export async function replaceSharePointDriveItemContent(itemId,blob,etag){
+ const config=readSharePointConfig();
+ if(!config.driveId||!itemId||!blob)throw Error('Arquivo SharePoint incompleto para atualização.');
+ if(!etag)throw Error('Versão do estoque não identificada; atualize os estoques antes da baixa.');
+ if(blob.size>250*1024*1024)throw Error('O arquivo excede o limite de envio direto do SharePoint.');
+ return graph('/drives/'+encodeURIComponent(config.driveId)+'/items/'+encodeURIComponent(itemId)+'/content',{method:'PUT',body:blob,headers:{'Content-Type':blob.type||'application/octet-stream','If-Match':etag}});
 }
 export async function downloadSharePointFile(driveId,itemId){
  if(!driveId||!itemId)throw Error('Arquivo SharePoint sem identificador.');
- return graph('/drives/'+encodeURIComponent(driveId)+'/items/'+encodeURIComponent(itemId)+'/content');
+ const meta=await graph('/drives/'+encodeURIComponent(driveId)+'/items/'+encodeURIComponent(itemId)+'?%24select=id,%40microsoft.graph.downloadUrl');
+ const url=meta?.['@microsoft.graph.downloadUrl'];if(!url)throw Error('O SharePoint não forneceu o endereço de leitura do arquivo.');
+ const response=await fetch(url);if(!response.ok)throw Error('Download do arquivo SharePoint falhou: HTTP '+response.status+'.');return response.blob();
 }

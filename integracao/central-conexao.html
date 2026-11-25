@@ -18,15 +18,15 @@ import {connectSharePoint,testSharePointConnection} from './sharepoint-client.mj
 const $=id=>document.getElementById(id),status=$('status');
 function load(){
  const c=readSharePointConfig();
- for(const k of ['tenantId','clientId','siteId','listId','driveId','redirectUri'])$(k).value=c[k]||'';
+ for(const k of ['tenantId','clientId','siteId','listId','driveId','redirectUri','stockFolderPath','embaladoFileName','paripassuFileName'])$(k).value=c[k]||'';
  status.textContent='Preencha os dados do aplicativo Microsoft e do site SharePoint.';
 }
 $('save').onclick=()=>{
- try{saveSharePointConfig(Object.fromEntries(['tenantId','clientId','siteId','listId','driveId','redirectUri'].map(k=>[k,$(k).value.trim()])));status.textContent='Configuração salva neste aparelho. Nenhum dado operacional foi alterado.';}
+ try{saveSharePointConfig(Object.fromEntries(['tenantId','clientId','siteId','listId','driveId','redirectUri','stockFolderPath','embaladoFileName','paripassuFileName'].map(k=>[k,$(k).value.trim()])));status.textContent='Configuração salva neste aparelho. Nenhum dado operacional foi alterado.';}
  catch(e){status.textContent=e.message;}
 };
 $('connect').onclick=async()=>{
- try{saveSharePointConfig(Object.fromEntries(['tenantId','clientId','siteId','listId','driveId','redirectUri'].map(k=>[k,$(k).value.trim()])));await connectSharePoint();status.textContent='Conta Microsoft conectada. Agora você pode testar o acesso à lista.';}
+ try{saveSharePointConfig(Object.fromEntries(['tenantId','clientId','siteId','listId','driveId','redirectUri','stockFolderPath','embaladoFileName','paripassuFileName'].map(k=>[k,$(k).value.trim()])));await connectSharePoint();status.textContent='Conta Microsoft conectada. Agora você pode testar o acesso à lista.';}
  catch(e){status.textContent='Conexão não concluída: '+e.message;}
 };
 $('test').onclick=async()=>{
@@ -53,8 +53,8 @@ window.addEventListener('message',async event=>{
 </head>
 <body><main>
 <h1>Conexão do sistema</h1>
-<p>Esta cópia está preparada para autenticar no Microsoft 365 e trocar registros por uma lista do SharePoint. A configuração é salva localmente neste aparelho.</p>
-<p class="note">A lista precisa ter as colunas <strong>Title</strong> (com valores exclusivos), <strong>RecordType</strong>, <strong>Scope</strong> e <strong>Payload</strong>. Para publicar planilhas, informe também o ID da biblioteca de documentos. O cadastro do aplicativo Microsoft deve permitir este endereço de retorno.</p>
+<p>Esta cópia conecta ao Microsoft 365, sincroniza movimentações e lê os estoques da pasta SharePoint configurada. A configuração é salva localmente neste aparelho.</p>
+<p class="note">A lista precisa ter as colunas <strong>Title</strong> (com valores exclusivos), <strong>RecordType</strong>, <strong>Scope</strong> e <strong>Payload</strong>. Informe a biblioteca, a pasta e os nomes exatos dos arquivos Embalado e PariPassu. O sistema lê os dois arquivos ao sincronizar e grava a baixa confirmada no mesmo arquivo Embalado.</p>
 <div class="grid">
 <div><label for="tenantId">ID do locatário Microsoft</label><input id="tenantId" autocomplete="off"></div>
 <div><label for="clientId">ID do aplicativo</label><input id="clientId" autocomplete="off"></div>
@@ -62,6 +62,9 @@ window.addEventListener('message',async event=>{
 <div><label for="listId">ID da lista de dados</label><input id="listId" autocomplete="off"></div>
 <div><label for="driveId">ID da biblioteca de documentos</label><input id="driveId" autocomplete="off"></div>
 <div><label for="redirectUri">Endereço de retorno cadastrado</label><input id="redirectUri" autocomplete="url"></div>
+<div><label for="stockFolderPath">Pasta dos estoques (dentro da biblioteca)</label><input id="stockFolderPath" placeholder="Informe o caminho relativo exato"></div>
+<div><label for="embaladoFileName">Nome exato do arquivo Embalado</label><input id="embaladoFileName" placeholder="Ex.: Estoque Embalado.xlsx"></div>
+<div><label for="paripassuFileName">Nome exato do arquivo PariPassu</label><input id="paripassuFileName" placeholder="Ex.: Estoque PariPassu.xlsx"></div>
 </div>
 <button id="save" type="button">SALVAR CONFIGURAÇÃO</button>
 <button id="connect" type="button">CONECTAR CONTA MICROSOFT</button>
