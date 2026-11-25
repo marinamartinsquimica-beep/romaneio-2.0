@@ -31,7 +31,7 @@ test('marcadores anteriores são preservados ao limpar novo romaneio',()=>{
  assert.equal(final.length,2);
  assert.equal(filtrarMovimentosJaFechados([evento('A','2026-10-19T12:00:00Z'),evento('B','2026-10-19T14:50:00Z')],final).length,0);
 });
-test('o filtro não modifica os movimentos do Firebase',()=>{
+test('o filtro não modifica os movimentos do SharePoint',()=>{
  const movs=[evento('A','2026-10-19T12:00:00Z')],original=JSON.stringify(movs);
  filtrarMovimentosJaFechados(movs,registrarFechamento([item('A')],[],corte));
  assert.equal(JSON.stringify(movs),original);

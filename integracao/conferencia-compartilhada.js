@@ -1,5 +1,5 @@
 /* Romaneio 2.0.50 — núcleo isolado de conferência.
-   Sem efeitos colaterais: não altera estoque, romaneio, Firebase ou interface.
+   Sem efeitos colaterais: não altera estoque, romaneio, SharePoint ou interface.
    Integrar somente após testes em dispositivo e aprovação. */
 export function chaveConferencia(sku,lote) {
   return String(sku??"").trim().toUpperCase()+"\u0000"+String(lote??"").trim().toUpperCase();

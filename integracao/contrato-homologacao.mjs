@@ -1,5 +1,5 @@
 // Homologação só opera com conta e dados do ambiente de teste explicitamente configurado.
-// Este controle é verificado antes de qualquer gravação no Firestore.
+// Este controle é verificado antes de qualquer gravação no SharePoint.
 export function exigirHomologacao(config){
  const id=String(config?.ambienteId||'');
  if(!/^homologacao_[a-zA-Z0-9_-]{6,80}$/.test(id))throw Error('Ambiente de homologação não configurado.');

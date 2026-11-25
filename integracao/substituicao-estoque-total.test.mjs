@@ -62,8 +62,8 @@ test('conferência da baixa de expedição permanece separada',()=>{
  assert.match(source,/id="etapa4ConfirmarSubstituicao"/);
  assert.match(source,/if\(!atual.exportado\|\|!atual.excelAtualizado\?\.blob\)/);
 });
-test('contrato Firestore mantém versão esperada, permissões e apenas estoque embalado',()=>{
- const ui=readFileSync(new URL('./estoques-firebase-ui.mjs',import.meta.url),'utf8');
+test('contrato SharePoint mantém versão esperada, permissões e apenas estoque embalado',()=>{
+ const ui=readFileSync(new URL('./estoques-SharePoint-ui.mjs',import.meta.url),'utf8');
  assert.match(ui,/window.substituirEstoqueEmbaladoPeloInventario=async/);
  assert.match(ui,/ambienteAtual\?\.permissoes\?\.publicarExcel/);
  assert.match(ui,/tipo:'embalado',dados,versaoEsperada:versaoInicial/);

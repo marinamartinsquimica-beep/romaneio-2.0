@@ -1,6 +1,6 @@
 /* Núcleo de baixa adaptado do sistema Baixa de Estoque Embalado aprovado.
  Mantém regras de remoção de zerados, renumeração, fórmulas e atualização de Painel/Tem-Não Tem.
- Não escreve no Firebase nem sobrescreve arquivo de origem. */
+ Não escreve no SharePoint nem sobrescreve arquivo de origem. */
 const NS="http://schemas.openxmlformats.org/spreadsheetml/2006/main",RELNS="http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 const normText=v=>String(v??"").trim().replace(/\s+/g," ").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase();
 const normSku=v=>{let s=String(v??"").trim();if(/^\d+([.,]0+)?$/.test(s))s=String(parseInt(s.replace(",","."),10));return s.toUpperCase()};
@@ -85,7 +85,7 @@ export function alinharModeloComEstoqueOficial(stock,oficial){
   diferencas.push({sku:row.sku,lote:row.lote,anterior:saldoOriginal,oficial:saldoOficial});
   row.saldo=saldoOficial;row.saidas=row.caixas-saldoOficial;
  }
- for(const [k,saldo] of porChave){if(saldo>0&&!stock.map.has(k))throw Error('O estoque do Firebase contém lote não presente no modelo Excel: '+k+'. Importe um modelo atualizado.');}
+ for(const [k,saldo] of porChave){if(saldo>0&&!stock.map.has(k))throw Error('O estoque do SharePoint contém lote não presente no modelo Excel: '+k+'. Importe um modelo atualizado.');}
  return diferencas;
 }
 async function installPanelFormulas(xlsx){

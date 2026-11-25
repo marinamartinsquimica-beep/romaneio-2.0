@@ -1,4 +1,4 @@
-const CACHE_NAME = "romaneio-2-0-cache-v2153-backup-indexeddb";
+const CACHE_NAME = "romaneio-2-0-cache-v2156-sharepoint";
 
 const FILES_TO_CACHE = [
   "./integracao/sincronizacao-por-eventos.mjs?v=2.0.148",
@@ -11,9 +11,6 @@ const FILES_TO_CACHE = [
   "./integracao/bases-compartilhadas.mjs?v=2.0.118",
   "./integracao/controle-tentativas.mjs?v=2.0.137",
   "./integracao/resetar-dados-teste.mjs?v=2.0.141",
-  "./integracao/envio-movimentos250.js?v=2.0.149",
-  "./integracao/sincronizador-fila.js?v=2.0.137",
-  "./integracao/publicador-firestore.js?v=2.0.145",
   "./integracao/correcoes-lancamentos.mjs?v=2.0.118",
   "./integracao/comprovante-baixa-agrupada.mjs?v=2.0.106",
   "./integracao/status-baixa-romaneio.mjs?v=2.0.118",
@@ -34,9 +31,6 @@ const FILES_TO_CACHE = [
   "./integracao/modelo-estoque-persistente.mjs?v=2.0.118",
   "./integracao/controle-leituras-automaticas.mjs?v=2.0.99",
   "./integracao/erro-publicacao-estoque.mjs?v=2.0.99",
-  "./integracao/estoques-firebase-ui.mjs?v=2.0.149",
-  "./integracao/baixa-transacional.mjs",
-  "./integracao/baixa-transacional.mjs?v=2.0.118",
   "./integracao/filtro-expedicoes-baixadas.mjs",
   "./integracao/direcao-sincronizacao.mjs",
   "./integracao/regularizar-identificacao-fila.mjs?v=2.0.97",
@@ -45,12 +39,16 @@ const FILES_TO_CACHE = [
   "./integracao/recuperar-paletes-remotos.mjs",
   "./integracao/marcos-romaneios-fechados.mjs",
   "./integracao/painel-paletes-outros-usuarios.mjs",
-  "./integracao/recepcao-romaneios-ativos.mjs?v=2.0.118",
   "./vendor/LICENSE-zxing.txt",
   "./qr-parser.js",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png"
+  "./integracao/sharepoint-config.mjs",
+  "./integracao/sharepoint-client.mjs",
+  "./integracao/sharepoint-sync.mjs",
+  "./integracao/sharepoint-estoques-ui.mjs",
+  "./integracao/central-conexao.html"
 ];
 
 self.addEventListener("install", event => {

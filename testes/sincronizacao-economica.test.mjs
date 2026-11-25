@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import {criarControleLeituras} from '../integracao/controle-leituras-automaticas.mjs';
 const html=readFileSync(new URL('../integracao/central-conexao.html',import.meta.url),'utf8');
-const ui=readFileSync(new URL('../integracao/estoques-firebase-ui.mjs',import.meta.url),'utf8');
+const ui=readFileSync(new URL('../integracao/estoques-SharePoint-ui.mjs',import.meta.url),'utf8');
 function simular(desktop){
  let tempo=1000000;const contagem={envios:0,recepcoes:0,expedicoes:0,consolidacoes:0};
  const dados=new Map([['entradas','[{"registroId":"preservado"}]'],['romaneio2_movimentos_pendentes_v1','[]'],['romaneio2_historico_fechamentos_v1','[{"id":"historico-preservado"}]']]);

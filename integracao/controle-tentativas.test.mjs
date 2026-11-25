@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {criarControleTentativas,controleEnviosCompartilhado} from './controle-tentativas.mjs';import {criarPublicadorMovimentos} from './publicador-firestore.js';
+import test from 'node:test';import assert from 'node:assert/strict';import {criarControleTentativas,controleEnviosCompartilhado} from './controle-tentativas.mjs';import {criarPublicadorMovimentos} from './publicador-SharePoint.js';
 test('cota mantém espera e bloqueia tentativa manual até expirar',()=>{
  let agora=0;const c=criarControleTentativas({agora:()=>agora});assert.equal(c.iniciar(),true);c.falhou({code:'resource-exhausted'});c.encerrar();assert.equal(c.restanteMs,900000);assert.equal(c.iniciar(),false);c.liberarEspera();assert.equal(c.iniciar(),false);agora=900000;assert.equal(c.iniciar(),true);c.sucesso();c.encerrar();assert.equal(c.podeTentar(),true);
 });

@@ -1,4 +1,4 @@
-// Permissões de interface; as regras do Firestore/Storage são a autoridade real.
+// Permissões de interface; as regras do SharePoint/Storage são a autoridade real.
 // Nunca usar esta verificação para dispensar regras no servidor.
 export const PERFIS=Object.freeze({
  administrador:Object.freeze({consultar:true,romaneio:true,prepararBaixa:true,publicarExcel:true,usuarios:true}),

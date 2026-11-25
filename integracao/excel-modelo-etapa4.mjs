@@ -1,5 +1,5 @@
 /* Mantém o XLSX original como modelo: modifica apenas entradas/saídas e acrescenta histórico.
-   A planilha original permanece intacta; nenhuma baixa é confirmada no Firebase. */
+   A planilha original permanece intacta; nenhuma baixa é confirmada no SharePoint. */
 const norm=x=>String(x??'').trim().toUpperCase();
 const key=(a,b)=>JSON.stringify([norm(a),norm(b)]);
 const M='http://schemas.openxmlformats.org/spreadsheetml/2006/main';
@@ -40,7 +40,7 @@ export async function gerarExcelModeloEstoque({arquivo,operacao,estoqueOriginal,
  const entries=new Map(),sums=new Map();
  for(let i=3;i<rows.length;i++){const r=rows[i],sku=String(r[0]??'').trim(),lote=String(r[3]??'').trim();if(!sku||!lote)continue;const saldo=numero(r[9]),entrada=numero(r[7]),saida=numero(r[8]);if(entrada-saida!==saldo)throw Error('Fórmula SALDO divergente na linha '+(i+1)+'. Abra e salve o arquivo no Excel antes de continuar.');const k=key(sku,lote),a=entries.get(k)||[];a.push({row:i+1,sku,lote,produto:String(r[1]??''),saldo,entrada,saida});entries.set(k,a);sums.set(k,(sums.get(k)||0)+saldo)}
  if(!Array.isArray(estoqueOriginal)||!estoqueOriginal.length)throw Error('Estoque de referência ausente.');
- const known=new Set();for(const x of estoqueOriginal){const k=key(x.sku,x.lote);known.add(k);if((sums.get(k)||0)!==numero(x.saldo))throw Error('Modelo Excel difere do saldo compartilhado: '+x.sku+'/'+x.lote+'. Importe a versão atual antes da baixa.')}for(const [k,total] of sums){if(total&& !known.has(k))throw Error('Há lote no Excel que não consta no Firebase. Atualize a consulta antes de continuar.')}
+ const known=new Set();for(const x of estoqueOriginal){const k=key(x.sku,x.lote);known.add(k);if((sums.get(k)||0)!==numero(x.saldo))throw Error('Modelo Excel difere do saldo compartilhado: '+x.sku+'/'+x.lote+'. Importe a versão atual antes da baixa.')}for(const [k,total] of sums){if(total&& !known.has(k))throw Error('Há lote no Excel que não consta no SharePoint. Atualize a consulta antes de continuar.')}
  const mudancas=[],historico=[],id=crypto.randomUUID(),agora=new Date().toISOString();
  const movimentos=operacao==='baixa'?resultado.aplicados:resultado.alteracoes;
  if(!movimentos?.length)throw Error('Nenhuma alteração preparada.');

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {criarPublicadorMovimentos} from './publicador-firestore.js';
+import {criarPublicadorMovimentos} from './publicador-SharePoint.js';
 import {criarSincronizadorFila} from './sincronizador-fila.js';
 import {motivosFormatoOperacional} from './protocolo-movimentos.js';
 const ordenar=x=>x&&typeof x==='object'?Array.isArray(x)?x.map(ordenar):Object.fromEntries(Object.keys(x).sort().map(k=>[k,ordenar(x[k])])):x;

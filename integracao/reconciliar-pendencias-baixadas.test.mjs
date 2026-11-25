@@ -23,7 +23,7 @@ test('baixado pelo próprio documento de exclusão também é reconciliado',asyn
  assert.equal(r.concluidas,1);
  assert.equal(r.registros[0].referenciaBaixaConcluida,excluido(primeira));
 });
-test('sem saldo, mas Firebase ainda pendente: não encerrar sem confirmação',async()=>{
+test('sem saldo, mas SharePoint ainda pendente: não encerrar sem confirmação',async()=>{
  const r=await reconciliarPendenciasJaBaixadas([primeira],async()=>({...primeira,estado:'PENDENTE_BAIXA'}));
  assert.equal(r.concluidas,0);
  assert.equal(r.pendentes,1);
@@ -47,7 +47,7 @@ test('falta de identificador seguro mantém a pendência',async()=>{
  assert.equal(r.pendentes,1);
 });
 test('erro de conexão rejeita reconciliação; não considera saldo zerado prova',async()=>{
- await assert.rejects(reconciliarPendenciasJaBaixadas([primeira],async()=>{throw Error('Firebase indisponível')}),/Firebase indisponível/);
+ await assert.rejects(reconciliarPendenciasJaBaixadas([primeira],async()=>{throw Error('SharePoint indisponível')}),/SharePoint indisponível/);
 });
 test('idempotência: reconciliação repetida não altera históricos concluídos',async()=>{
  const dados=new Map([[ativo(primeira),concluido(primeira)]]);

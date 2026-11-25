@@ -20,7 +20,7 @@ function mesmaExpedicao(local,remoto){
 }
 export async function reconciliarPendenciasJaBaixadas(registros,buscar){
  if(!Array.isArray(registros))throw Error('Arquivo de expedições inválido.');
- if(typeof buscar!=='function')throw Error('Consulta online ao Firebase indisponível.');
+ if(typeof buscar!=='function')throw Error('Consulta online ao SharePoint indisponível.');
  const atualizado=registros.map(x=>({...x}));
  const cache=new Map();
  const consultar=id=>{

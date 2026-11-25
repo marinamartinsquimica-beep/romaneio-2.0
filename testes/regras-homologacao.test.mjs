@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-const s=readFileSync(new URL('../firebase/firestore-novo-ambiente.rules',import.meta.url),'utf8');
+const s=readFileSync(new URL('../SharePoint/SharePoint-novo-ambiente.rules',import.meta.url),'utf8');
 test('regras de homologação não têm expressões truncadas e preservam permissões',()=>{
  assert.match(s,/match \/romaneio_ambientes\/\{ambiente\}/);
  assert.match(s,/get\(membroPath\(ambiente\)\)/);

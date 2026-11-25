@@ -5,7 +5,7 @@ import {identidadeExpedicaoBaixa} from './baixa-transacional.mjs';
 // buscar(id) deve consultar o servidor, não o cache local.
 export async function filtrarExpedicoesJaBaixadas({registros,destino,buscar}){
  if(!Array.isArray(registros)||!registros.length)throw Error('Nenhum romaneio selecionado.');
- if(typeof buscar!=='function')throw Error('Consulta ao Firebase indisponível.');
+ if(typeof buscar!=='function')throw Error('Consulta ao SharePoint indisponível.');
  const ativos=destino==='TODOS OS DESTINOS'&&registros.every(x=>!x.movimentoExclusaoId);
  const pendentes=[],concluidos=[],ocorrencias=new Map(),consultas=new Map();
  for(const registro of registros){const id=identidadeExpedicaoBaixa(registro,ativos||registro.origemBaixa==='ativo').id;ocorrencias.set(id,(ocorrencias.get(id)||0)+1);}
@@ -33,7 +33,7 @@ export async function filtrarExpedicoesJaBaixadas({registros,destino,buscar}){
     return {registro,concluido:true};
    }
    if(encontrado&&encontrado.estado!=='PENDENTE_BAIXA')
-    throw Error('Expedição com estado desconhecido no Firebase. Conferência bloqueada.');
+    throw Error('Expedição com estado desconhecido no SharePoint. Conferência bloqueada.');
    return {registro,concluido:false};
   }));
   for(const item of estados)(item.concluido?concluidos:pendentes).push(item.registro);

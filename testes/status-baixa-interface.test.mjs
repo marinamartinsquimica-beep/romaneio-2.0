@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import {registroBaixadoNoEstoque} from '../integracao/status-baixa-romaneio.mjs';
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
-const ui=readFileSync(new URL('../integracao/estoques-firebase-ui.mjs',import.meta.url),'utf8');
+const ui=readFileSync(new URL('../integracao/estoques-SharePoint-ui.mjs',import.meta.url),'utf8');
 const linha={registroId:'reg-existente',data:'20/10/2026',sku:'5002',destino:'SC',palete:'24',loteCompleto:'LOTE',lote:'LT',postura:'19/10/26',caixas:10};
 function renderizar(comprovantes,registros=[linha],excluidos=[],saldo=0){
  class El{constructor(){this.children=[];this.style={};this.textContent='';}replaceChildren(){this.children=[];}append(...xs){this.children.push(...xs);}appendChild(x){this.children.push(x);}addEventListener(){}}

@@ -31,7 +31,7 @@ test('navegação offline continua abrindo a tela de entrada',async()=>{
 });
 test('importação e conferência pedem o mesmo leitor identificado e pré-carregado',()=>{
  const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');
- const ui=readFileSync(new URL('../integracao/estoques-firebase-ui.mjs',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../integracao/estoques-SharePoint-ui.mjs',import.meta.url),'utf8');
  const leitor=index.match(/leitor-paripassu\.mjs\?v=[\d.]+/)[0];
  assert.ok(ui.includes(leitor));assert.ok(codigo.includes(leitor));
 });

@@ -1,4 +1,4 @@
-/* Núcleo de conferência da etapa 4. Cálculos puros: jamais baixa ou grava planilha/Firebase. */
+/* Núcleo de conferência da etapa 4. Cálculos puros: jamais baixa ou grava planilha/SharePoint. */
 import {conferirEstoques} from './conferencia-estoques.mjs';
 const chave = x => JSON.stringify([String(x.sku??'').trim().toUpperCase(),String(x.lote??'').trim().toUpperCase()]);
 function numero(v,nome){const n=Number(v);if(!Number.isSafeInteger(n)||n<0)throw Error(nome+' deve ser inteiro não negativo.');return n;}

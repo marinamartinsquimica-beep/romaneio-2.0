@@ -62,7 +62,7 @@ test('base completa confirmada substitui varreduras sem truncar expedições em 
  assert.ok(trecho.indexOf('const verificadas=await reconciliarPendenciasJaBaixadas')<trecho.indexOf('for(const x of verificadas.registros)'));
  assert.doesNotMatch(trecho,/tx\.update\(d,\{estado:'BAIXA_CONCLUIDA'/);
 });
-test('marcação de pendência encerrada não desconta saldo nem escreve Firestore',()=>{
+test('marcação de pendência encerrada não desconta saldo nem escreve SharePoint',()=>{
  const bloco=index.slice(index.indexOf('async function arquivarPendenciaHistoricaSemNovaBaixa('),index.indexOf('function mostrarExpedicoesExcluidasOperador(){'));
  assert.match(bloco,/await confirmarRaiar\(/);
  assert.match(bloco,/x\.estado='ARQUIVADA_APOS_CONFERENCIA'/);

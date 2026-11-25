@@ -1,5 +1,5 @@
 /* Substituição integral do estoque EMBALADO pelo inventário do romaneio ESTOQUE.
- * Puro: não grava Firebase, não mexe na baixa de expedição e não altera originais.
+ * Puro: não grava SharePoint, não mexe na baixa de expedição e não altera originais.
  */
 const n=x=>String(x??'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
 const sku=x=>{const t=n(x).replace(',','.');return /^\d+(?:\.0+)?$/.test(t)?String(Number(t)):t};

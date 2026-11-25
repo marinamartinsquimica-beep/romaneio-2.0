@@ -87,7 +87,7 @@ button{border-radius:13px;font-family:inherit}.btn-primary{background:#254D69;bo
 .raiar-linha-pendente{background:#fff2d2!important;outline:3px solid #f3b622;outline-offset:-3px;box-shadow:inset 6px 0 #FFA385}.raiar-linha-pendente td{background:transparent!important;color:#254D69!important;font-weight:700}.raiar-linha-pendente td:first-child:before{content:"CONFERIR";display:inline-block;background:#FFD043;color:#254D69;font-size:10px;padding:4px 7px;border-radius:6px;margin-right:7px;font-weight:900}@media(prefers-reduced-motion:no-preference){.raiar-linha-pendente{animation:raiar-pendente-pulso 1.4s ease-in-out 2}}@keyframes raiar-pendente-pulso{50%{box-shadow:inset 6px 0 #FFA385,0 0 0 5px rgba(255,208,67,.35)}}
 
 
-.firebase-footer-link{display:inline-block;margin:8px 12px;padding:5px 10px;border:1px solid currentColor;border-radius:7px;font-size:12px;font-weight:600;color:inherit;text-decoration:none;line-height:1.3}.firebase-footer-link:hover,.firebase-footer-link:focus-visible{text-decoration:underline;outline-offset:3px}
+.sharepoint-footer-link{display:inline-block;margin:8px 12px;padding:5px 10px;border:1px solid currentColor;border-radius:7px;font-size:12px;font-weight:600;color:inherit;text-decoration:none;line-height:1.3}.SharePoint-footer-link:hover,.SharePoint-footer-link:focus-visible{text-decoration:underline;outline-offset:3px}
 
 /* Bloco 4 — organização visual inspirada no Portal de Pedidos SAP Raiar.
    Somente apresentação: NÃO alterar cores, background, bordas coloridas ou estados de botões. */
@@ -125,9 +125,9 @@ tbody td,.operator-table tbody td{padding:9px 12px;border-bottom:1px solid var(-
 tbody tr:nth-child(even),.operator-table tbody tr:nth-child(even){background:var(--raiar-par)}
 tbody tr:hover,.operator-table tbody tr:hover{background:#EAF6FA}
 #opAbaImportacao>.card,#opAbaMovimentos>.card,#opAbaEstoque>.card{max-width:none;margin-top:12px}
-#opAbaImportacao #etapa4Firebase,#opAbaMovimentos #etapa4Operacoes{background:#fff!important;border:1px solid var(--raiar-borda)!important;border-radius:8px!important;padding:18px!important}
-#opAbaImportacao #etapa4Firebase>label,#opAbaMovimentos #etapa4Operacoes>label{display:block;margin:12px 0 6px}
-#opAbaImportacao #etapa4Firebase>select,#opAbaImportacao #etapa4Firebase>input[type=file],#opAbaMovimentos #etapa4Operacoes>select{display:block;max-width:650px;width:100%;min-height:42px}
+#opAbaImportacao #etapa4SharePoint,#opAbaMovimentos #etapa4Operacoes{background:#fff!important;border:1px solid var(--raiar-borda)!important;border-radius:8px!important;padding:18px!important}
+#opAbaImportacao #etapa4SharePoint>label,#opAbaMovimentos #etapa4Operacoes>label{display:block;margin:12px 0 6px}
+#opAbaImportacao #etapa4SharePoint>select,#opAbaImportacao #etapa4SharePoint>input[type=file],#opAbaMovimentos #etapa4Operacoes>select{display:block;max-width:650px;width:100%;min-height:42px}
 #opAbaImportacao #etapa4Pendencias{border:1px solid var(--raiar-borda);border-radius:6px;list-style:none;padding:8px 14px}
 #opAbaImportacao #etapa4Pendencias:empty{display:none}
 #opAbaImportacao #etapa4Pendencias li{padding:9px 3px;border-bottom:1px solid var(--raiar-borda)}
@@ -204,17 +204,17 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 @media(max-width:900px){body.modo-operador .raiar-main-tabs{display:flex!important}}
 
 /* Importação compacta: uma única escolha de arquivo, campos alinhados horizontalmente. */
-#opAbaImportacao #etapa4Firebase{display:grid;grid-template-columns:minmax(180px,1fr) minmax(280px,1.6fr);gap:10px 16px;align-items:end}
-#opAbaImportacao #etapa4Firebase>h3,#opAbaImportacao #etapa4Firebase>p{grid-column:1/-1;margin:0}
-#opAbaImportacao #etapa4Firebase>label{margin:0!important}
-#opAbaImportacao #etapa4Firebase>select,#opAbaImportacao #etapa4Firebase>input[type=file]{width:100%;max-width:none;min-height:44px;margin:0}
-#opAbaImportacao #etapa4Firebase>button,#opAbaImportacao #etapa4Firebase>#etapa4FirebaseStatus{grid-column:1/-1}
-#opAbaImportacao #etapa4Firebase>button{max-width:460px}
-#opAbaImportacao #etapa4Firebase>label[for=etapa4Tipo]{grid-column:1;grid-row:3}
-#opAbaImportacao #etapa4Firebase>label[for=etapa4Arquivo]{grid-column:2;grid-row:3}
+#opAbaImportacao #etapa4SharePoint{display:grid;grid-template-columns:minmax(180px,1fr) minmax(280px,1.6fr);gap:10px 16px;align-items:end}
+#opAbaImportacao #etapa4SharePoint>h3,#opAbaImportacao #etapa4SharePoint>p{grid-column:1/-1;margin:0}
+#opAbaImportacao #etapa4SharePoint>label{margin:0!important}
+#opAbaImportacao #etapa4SharePoint>select,#opAbaImportacao #etapa4SharePoint>input[type=file]{width:100%;max-width:none;min-height:44px;margin:0}
+#opAbaImportacao #etapa4SharePoint>button,#opAbaImportacao #etapa4SharePoint>#etapa4SharePointStatus{grid-column:1/-1}
+#opAbaImportacao #etapa4SharePoint>button{max-width:460px}
+#opAbaImportacao #etapa4SharePoint>label[for=etapa4Tipo]{grid-column:1;grid-row:3}
+#opAbaImportacao #etapa4SharePoint>label[for=etapa4Arquivo]{grid-column:2;grid-row:3}
 #opAbaImportacao #etapa4Tipo{grid-column:1;grid-row:4}
 #opAbaImportacao #etapa4Arquivo{grid-column:2;grid-row:4}
-@media(max-width:760px){#opAbaImportacao #etapa4Firebase{display:flex;flex-direction:column;align-items:stretch}}
+@media(max-width:760px){#opAbaImportacao #etapa4SharePoint{display:flex;flex-direction:column;align-items:stretch}}
 
 .etapa4-resumo-baixa{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:14px 0}
 .etapa4-resumo-card{padding:12px;border:1px solid #dde3e8;background:#fff;border-radius:7px;display:flex;flex-direction:column;gap:5px}
@@ -296,13 +296,13 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  <div class="operator-metrics"><div class="operator-metric"><span>Caixas no estoque</span><strong id="opEstoqueCaixas">—</strong></div><div class="operator-metric"><span>SKUs distintos no estoque</span><strong id="opEstoqueSkus">—</strong></div></div>
  <section class="operator-pending" id="historicoDestinosExcluidos" style="margin-bottom:12px"><h3>Destinos removidos do celular — aguardando baixa no computador</h3><p>Estes paletes já foram apagados no celular. Permanecem somente no computador para conferência e baixa; não são paletes ativos no celular.</p><div id="listaDestinosExcluidos"></div></section><div id="etapa4ResumoVisao" role="status" aria-live="polite" style="padding:10px 14px;margin:12px 0;background:#fff;border-left:4px solid #5CDCF2;border-radius:6px">Conferência PariPassu: aguardando os dois estoques.</div><div class="operator-workspace"><div class="operator-box"><h3>Paletes registrados</h3><div style="overflow-x:auto"><table class="operator-table"><thead><tr><th>Palete</th><th>Destino</th><th>SKU</th><th>Caixas</th><th>Ação</th></tr></thead><tbody id="opTabelaDestinos"></tbody></table></div><p class="operator-status">As correções serão feitas pelas funções atuais do romaneio até a etapa de edição e histórico ser concluída.</p></div><div class="operator-box"><h3>Controle de estoque</h3><p id="opResumoEstoque" class="operator-status">Consulta local disponível após importação de uma cópia do estoque.</p><div class="operator-pending"><h4>Pendências de conferência</h4><p id="opPendenciasEstoqueResumo">Consulte o estoque compartilhado para verificar as entradas.</p><button type="button" onclick="operadorSelecionarAba('estoque');document.getElementById('pendenciasConferenciaEstoque')?.scrollIntoView({behavior:'smooth',block:'start'})">VER PENDÊNCIAS</button></div><div class="operator-note">Baixa e ajuste disponíveis na aba própria. A alteração do estoque compartilhado ocorre somente após a publicação do Excel atualizado.</div><p id="opUltimaConsulta" class="operator-status"></p></div></div>
 <section class="operator-box" id="operadorHistoricoFechamentos" aria-label="Histórico de romaneios encerrados"><details id="historicoFechamentosRecolhivel"><summary class="historico-fechamentos-resumo"><span>Histórico de romaneios encerrados</span><span id="quantidadeHistoricoFechamentos" class="historico-fechamentos-total"></span></summary><p class="operator-status">Cópias anteriores preservadas neste dispositivo, sem alterar o estoque. Baixe o Excel antes de apagar um histórico que deseje guardar.</p><p>Cópias locais dos romaneios encerrados: retenção de 5 dias. Históricos com pendências não resolvidas são preservados.</p><div id="historicoFechamentos"></div></details></section>
-</div><div id="opAbaImportacao" role="tabpanel" class="hidden"><section class="card" style="margin:14px 0;padding:20px"><h2>Importação de estoques</h2><p>Envie uma planilha de cada tipo. Ao publicar no sistema, a conferência acontece automaticamente para todos os dispositivos.</p><section id="etapa4Firebase" style="padding:14px;margin:12px 0;border:1px solid #a7b8cd;border-radius:12px;background:#eef6ff">
+</div><div id="opAbaImportacao" role="tabpanel" class="hidden"><section class="card" style="margin:14px 0;padding:20px"><h2>Importação de estoques</h2><p>Envie uma planilha de cada tipo. Ao publicar no sistema, a conferência acontece automaticamente para todos os dispositivos.</p><section id="etapa4SharePoint" style="padding:14px;margin:12px 0;border:1px solid #a7b8cd;border-radius:12px;background:#eef6ff">
 <h3>Estoques compartilhados</h3>
 <p style="color:#334155">Os arquivos são publicados como consulta compartilhada. A publicação substitui somente a versão compartilhada no sistema; nenhuma planilha é alterada automaticamente.</p>
 <label for="etapa4Tipo">Estoque</label><select id="etapa4Tipo"><option value="embalado">Estoque Embalado</option><option value="paripassu">Estoque PariPassu</option></select>
 <label for="etapa4Arquivo">Planilha atualizada</label><input type="file" id="etapa4Arquivo" accept=".xlsx,.xls">
 <button type="button" id="etapa4Publicar">PUBLICAR ESTOQUE COMPARTILHADO</button>
-<p id="etapa4FirebaseStatus" role="status">Aguardando conexão autenticada.</p>
+<p id="etapa4SharePointStatus" role="status">Aguardando conexão autenticada.</p>
 
 </section>
 <p id="etapa4AvisosStatus" role="status">Avisos de divergência aparecem no próprio Romaneio 2.0.</p></section></div><div id="opAbaParipassu" role="tabpanel" class="hidden"><section class="card" style="padding:18px;margin:14px 0"><h2>Conferência Embalado × PariPassu</h2><section id="etapa4PainelPendencias" class="etapa4-pari-painel" aria-live="polite">
@@ -356,7 +356,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
 <section class="card"><div class="card-header"><h2>Selecionar paletes</h2><span class="badge" id="badgePaletesCaminhao">0 paletes</span></div><div class="truck-select-actions"><button class="btn-primary" type="button" onclick="selecionarTodosPaletes()">SELECIONAR TODOS</button><button class="btn-secondary" type="button" onclick="limparSelecaoPaletes()">LIMPAR SELEÇÃO</button></div><div id="listaPaletesCaminhao" class="truck-pallets"></div></section>
 <section class="card truck-entries"><div class="card-header"><h2>Histórico de caminhões</h2><span class="badge" id="badgeHistoricoCaminhoes">0 caminhões</span></div><div class="table-container"><table id="tabelaHistoricoCaminhoes"><thead><tr><th>PLACA</th><th>PALETES</th><th>DESTINO</th><th>CAIXAS</th><th>CARREGAMENTO</th><th>RESPONSÁVEL</th><th>FINALIZADO EM</th><th>AÇÃO</th></tr></thead><tbody></tbody></table><div class="truck-empty" id="historicoCaminhoesVazio">Nenhum caminhão finalizado neste romaneio.</div></div></section>
 </main>
-<footer class="footer">🛡️ <strong>Romaneio de Paletes 2.0</strong> &nbsp;•&nbsp; Dados salvos localmente no aparelho<a id="abrirCentralConexao250" href="integracao/central-conexao.html" class="firebase-footer-link">Conexão do sistema</a><span class="footer-credit">Criado por: Marina Martins Costa</span></footer></div><button class="fab" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+<footer class="footer">🛡️ <strong>Romaneio de Paletes 2.0</strong> &nbsp;•&nbsp; Dados salvos localmente no aparelho<a id="abrirCentralConexao250" href="integracao/central-conexao.html" class="SharePoint-footer-link">Conexão do sistema</a><span class="footer-credit">Criado por: Marina Martins Costa</span></footer></div><button class="fab" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <div id="updateBanner" class="update-banner" aria-live="polite">
   <div><strong>🚀 Nova versão disponível</strong><span>Toque para atualizar o app.</span></div>
@@ -403,7 +403,7 @@ body.modo-operador .topbar .brand h1{font-size:21px!important}
  };
 
 })();
-const APP_VERSION = "2.0.155";
+const APP_VERSION = "2.0.156";
 const versaoAplicativoEl=document.getElementById("versaoAplicativo");
 if(versaoAplicativoEl)versaoAplicativoEl.textContent="v"+APP_VERSION;
 const VERSION_URL = "version.json";
@@ -755,8 +755,8 @@ async function apagarDestino(destino) {
         esconderAvisoPaleteAberto();
     }
     salvarLocalStorage();
-    // As exclusões individuais já entram na fila durável do Firebase. Não geram baixa de estoque.
-    if(navigator.onLine){import('./integracao/envio-movimentos250.js?v=2.0.149').then(m=>m.sincronizarMovimentos250()).catch(err=>console.warn('Exclusão preservada na fila; sincronização pendente',err));}
+    // As exclusões individuais já entram na fila durável do SharePoint. Não geram baixa de estoque.
+    if(navigator.onLine){import('./integracao/sharepoint-sync.mjs?v=2.0.156').then(m=>m.sincronizarMovimentos250()).catch(err=>console.warn('Exclusão preservada na fila; sincronização pendente',err));}
     alert(`Destino ${nomeDestino} apagado. As entradas dos demais Destinos foram mantidas.`);
 }
 
@@ -1961,7 +1961,7 @@ async function guardarBackupIdentificacaoFila(copia){
   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('Cópia de segurança cancelada.'));
  });}finally{db.close();}
 }
-async function resolverPendenciasSincronizacao(botao,mensagem,carregar=()=>import('./integracao/envio-movimentos250.js?v=2.0.149')){
+async function resolverPendenciasSincronizacao(botao,mensagem,carregar=()=>import('./integracao/sharepoint-sync.mjs?v=2.0.156')){
  botao.disabled=true;mensagem.textContent='Enviando pendências. Aguarde a confirmação do sistema.';
  try{
   if(!navigator.onLine)throw Error('Sem internet. Reconecte este aparelho e tente novamente.');
@@ -1979,13 +1979,13 @@ async function resolverPendenciasSincronizacao(botao,mensagem,carregar=()=>impor
   const fila=lerFilaMovimentos();
   const causas=[...(retorno?.falhas||[]),...(retorno?.rejeitados||[])].map(f=>{
    const mov=fila.find(x=>x.id===f.id)||fila[f.indice];const it=mov?.item||{};
-   const descricao=String(f.mensagem||f.motivo||f.codigo||'Motivo não informado').replace(/Firebase|Firestore/gi,'sistema');
+   const descricao=String(f.mensagem||f.motivo||f.codigo||'Motivo não informado').replace(/SharePoint|SharePoint/gi,'sistema');
    return 'Palete '+String(it.palete||'—')+' · SKU '+String(it.sku||'—')+': '+descricao;
   });
   mensagem.textContent=restantes?restantes+' movimentação(ões) continuam pendentes. Nada foi descartado. '+(causas.length?causas.join(' | '):'O sistema não confirmou o envio. Consulte a validação do formato de envio nesta janela.'):'Pendências enviadas e confirmadas pelo sistema.';
   return restantes===0;
  }catch(e){
-  const detalhe=String(e?.message||e).replace(/Firebase/gi,'sistema');
+  const detalhe=String(e?.message||e).replace(/SharePoint/gi,'sistema');
   mensagem.textContent='Não foi possível concluir: '+detalhe+' A fila permanece preservada. Confira o acesso pela Central de Conexão e tente novamente.';
   return false;
  }finally{
@@ -2040,7 +2040,7 @@ function salvarLocalStorage() {
     // 2.0.50: evento local, sem envio remoto e sem bloquear salvamento offline.
         registrarCopiaSegurancaOffline(dados);
     registrarMovimentosLocais(dados);
-    // Envia a fila durável em segundo plano: cada operação só sai após confirmação do Firebase.
+    // Envia a fila durável em segundo plano: cada operação só sai após confirmação do SharePoint.
     if (navigator.onLine) iniciarEnvioFilaMovimentos()
       .catch(e=>{
         console.warn('Movimentações preservadas para próximo envio:',e);
@@ -2381,7 +2381,7 @@ async function exportarHistoricoFechamento(id){
  }catch(e){alert('Histórico não exportado: '+e.message);}
 }
 // Exclui apenas um fechamento local (IndexedDB + índice local), sem tocar
-// nos romaneios ativos, estoque compartilhado, Firebase ou outros backups.
+// nos romaneios ativos, estoque compartilhado, SharePoint ou outros backups.
 let exclusaoHistoricoFechamentoEmAndamento=false;
 async function apagarHistoricoFechamento(id){
  if(exclusaoHistoricoFechamentoEmAndamento)return;
@@ -2465,7 +2465,7 @@ async function reiniciarEntradas() {
       registrarMovimentosLocais([]);
     } else if(!filaPendente) {
       // Não redefinir a base de comparação quando a fila ainda precisa
-      // ser entregue ao Firebase, mesmo que a tela já esteja vazia.
+      // ser entregue ao SharePoint, mesmo que a tela já esteja vazia.
       localStorage.setItem(BASE_MOVIMENTOS_KEY,'[]');
     }
     // Marca o início do próximo romaneio apenas neste dispositivo.
@@ -3218,7 +3218,7 @@ function lerExpedicoesPendentes(){
  try{const x=JSON.parse(localStorage.getItem(CHAVE_EXPEDICOES_PENDENTES)||'[]');return Array.isArray(x)?x:[]}catch{return []}
 }
 // Arquiva somente as pendências cujo identificador e conteúdo físico foram
-// comprovados na consulta ou na transação Firebase. Não altera saldos.
+// comprovados na consulta ou na transação SharePoint. Não altera saldos.
 function marcarExpedicoesBaixadasNoArquivo(confirmadas,resumoBaixa=null){
  if(!Array.isArray(confirmadas)||!confirmadas.length)return 0;
  const origem=lerExpedicoesPendentes();
@@ -3262,7 +3262,7 @@ async function confirmarBaixaExpedicao(destino,resumoBaixa=null){
  return true;
 }
 // Exceção auditável para baixa anterior cujo documento antigo não pode ser
-// comprovado: arquiva a PENDÊNCIA LOCAL, sem dizer que houve baixa nova no Firebase.
+// comprovado: arquiva a PENDÊNCIA LOCAL, sem dizer que houve baixa nova no SharePoint.
 // Não baixa saldo, não altera outras expedições nem toca na fila de movimentos.
 async function arquivarPendenciaHistoricaSemNovaBaixa(destino,correcao=false){
  const registros=lerExpedicoesPendentes();
@@ -3448,7 +3448,7 @@ function operadorVerPendencias(){if(typeof consultarFilaMovimentos==='function')
 let envioFilaMovimentosAtivo=null;
 function iniciarEnvioFilaMovimentos(opcoes={}){
  if(envioFilaMovimentosAtivo)return envioFilaMovimentosAtivo;
- const atual=import('./integracao/envio-movimentos250.js?v=2.0.149')
+ const atual=import('./integracao/sharepoint-sync.mjs?v=2.0.156')
   .then(m=>m.sincronizarMovimentos250(opcoes))
   .finally(()=>{envioFilaMovimentosAtivo=null;});
  envioFilaMovimentosAtivo=atual;
@@ -3479,7 +3479,7 @@ async function sincronizarRomaneioCelular(){
    atualizarIndicadorFilaMovimentos();
    if(qtd){
     const causas=[...(retorno?.falhas||[]),...(retorno?.rejeitados||[])].map(f=>String(f?.mensagem||f?.motivo||f?.codigo||'')).filter(Boolean);
-    const detalhe=causas.length?' Motivo: '+causas[0].replace(/Firebase|Firestore/gi,'sistema').slice(0,180)+'.':' Abra “Pendências de sincronização” para ver o diagnóstico.';
+    const detalhe=causas.length?' Motivo: '+causas[0].replace(/SharePoint|SharePoint/gi,'sistema').slice(0,180)+'.':' Abra “Pendências de sincronização” para ver o diagnóstico.';
     throw Error(qtd+' movimentação(ões) continuam pendentes. '+detalhe+' A fila foi preservada.');
    }
    const confirmados=Math.max(0,Number(retorno?.confirmados)||0);
@@ -3493,7 +3493,7 @@ async function sincronizarRomaneioCelular(){
    setTimeout(()=>{if(botao)botao.textContent='SINCRONIZAR';},2500);
    return true;
   }catch(e){
-   const detalhe=String(e?.message||e).replace(/Firebase|Firestore/gi,'sistema');
+   const detalhe=String(e?.message||e).replace(/SharePoint|SharePoint/gi,'sistema');
    if(botao)botao.textContent='PENDENTE';
    mostrar('Sincronização não concluída: '+detalhe+' A fila foi preservada.');
    console.warn('Sincronização preservada:',e);
@@ -3551,7 +3551,7 @@ window.matchMedia('(max-width:767px)').addEventListener('change',event=>{if(even
 (function(){
  const central=document.createElement('iframe');
  central.id='romaneioSincronizacaoAutomatica';
- central.src='./integracao/central-conexao.html?estado=2_0_155';
+ central.src='./integracao/central-conexao.html?estado=2_0_156';
  central.title='Sincronização automática do Romaneio';
  central.tabIndex=-1;
  central.setAttribute('aria-hidden','true');
@@ -3654,7 +3654,7 @@ btn?.addEventListener('click',async()=>{
  }catch(e){resumo.textContent='Conferência não realizada: '+e.message;}finally{btn.disabled=false;}
 });
 </script>
-<script type="module" src="./integracao/estoques-firebase-ui.mjs?v=2.0.149"></script>
+<script type="module" src="./integracao/sharepoint-estoques-ui.mjs?v=2.0.156"></script>
 <script type="module">
 import {prepararBaixa,prepararAjuste} from './integracao/operacoes-estoque.mjs';
 import {selecionarRomaneios,chaveSelecao,assinaturaRegistros,planejarExclusao,gravarExclusaoLocal,pendente,fontesOperacionais} from './integracao/selecao-romaneios.mjs?v=2.0.146';
@@ -3731,7 +3731,7 @@ async function excluirRomaneiosSelecionados(selecao=chavesSelecionadas()){
   document.querySelector('#tabela tbody').replaceChildren();carregarLocalStorage();
   operadorAtualizarPainel();atualizarResumoReservaTeste();renderizarPendenciasConferenciaEstoque();atualizarIndicadorFilaMovimentos();atualizarDestinosBaixa();
   status.textContent=destinos.join(', ')+': '+cx+' caixas excluídas dos romaneios SEM BAIXA. Estoque preservado. '+(plano.movimentos.length?'Correções identificadas registradas na fila para sincronização.':'Entradas antigas encerradas localmente com auditoria.');
-  if(plano.movimentos.length&&navigator.onLine)void import('./integracao/envio-movimentos250.js?v=2.0.149').then(m=>m.sincronizarMovimentos250()).catch(e=>console.warn('Exclusão preservada na fila:',e));
+  if(plano.movimentos.length&&navigator.onLine)void import('./integracao/sharepoint-sync.mjs?v=2.0.156').then(m=>m.sincronizarMovimentos250()).catch(e=>console.warn('Exclusão preservada na fila:',e));
  }catch(e){status.textContent='Exclusão não concluída: '+e.message;await confirmarRaiar(status.textContent,{titulo:'Conferir exclusão',cancelar:'FECHAR',confirmar:'OK, ENTENDI'});}
  finally{exclusaoRomaneiosEmAndamento=false;}
 }

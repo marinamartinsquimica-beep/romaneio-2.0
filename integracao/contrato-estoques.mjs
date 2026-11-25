@@ -23,5 +23,5 @@ export function podeSubstituirVersao(atual, nova) {
  if(!atual)return true;
  if(atual.tipo!==nova.tipo)throw Error('Tentativa de substituir estoque de tipo diferente.');
  if(atual.versao===nova.versao)throw Error('Versão já importada. Nenhuma substituição realizada.');
- return true; // Ordem temporal é controlada na transação do Firebase.
+ return true; // Ordem temporal é controlada na transação do SharePoint.
 }

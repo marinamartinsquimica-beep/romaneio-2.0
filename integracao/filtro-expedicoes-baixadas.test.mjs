@@ -53,8 +53,8 @@ test('falha na consulta remota bloqueia em vez de utilizar cache ou descontar',a
  await assert.rejects(
   filtrarExpedicoesJaBaixadas({
    registros:[base[0]],destino:'TODOS OS DESTINOS',
-   buscar:async()=>{throw Error('Firebase offline');}
+   buscar:async()=>{throw Error('SharePoint offline');}
   }),
-  /Firebase offline/
+  /SharePoint offline/
  );
 });
